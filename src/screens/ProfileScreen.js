@@ -21,6 +21,7 @@ import {
 import { colors } from '../constants/colors';
 import SettingsModal from '../components/SettingsModal';
 import Listing from '../components/Listing';
+import CarCard from '../components/CarCard';
 
 const ProfileScreen = () => {
   const dispatch = useDispatch();
@@ -70,6 +71,7 @@ const ProfileScreen = () => {
     return (
       <Listing 
         config={config}
+        CustomComponent={activeTab === 'garage' ? CarCard : undefined}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false }

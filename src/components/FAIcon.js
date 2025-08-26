@@ -14,6 +14,8 @@ import {
   faShare,
   faChevronLeft,
   faChevronRight,
+  faChevronUp,
+  faChevronDown,
   faEllipsisV,
   faUsers,
   faStore,
@@ -25,7 +27,8 @@ import {
   faHistory,
   faMapMarker,
   faTag,
-  faClock
+  faClock,
+  faFilter
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -56,7 +59,10 @@ const iconMap = {
   share: faShare,
   'chevron-left': faChevronLeft,
   'chevron-right': faChevronRight,
+  'chevron-up': faChevronUp,
+  'chevron-down': faChevronDown,
   'ellipsis-v': faEllipsisV,
+  filter: faFilter,
   users: faUsers,
   store: faStore,
   marketplace: faStore,

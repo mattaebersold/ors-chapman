@@ -111,11 +111,9 @@ const EventCarousel = ({ events = [], displayOptions = {} }) => {
   };
 
   const handleViewMore = (event) => {
-    console.log('View more pressed for event:', event.title, 'internal_id:', event.internal_id);
     // Use the same modal system that Card components use
     // This will automatically use the PostDetailModal with our event handling
     if (showPostModal) {
-      console.log('Showing modal for event:', event);
       showPostModal(event);
     } else {
       console.warn('showPostModal not available');
@@ -125,7 +123,6 @@ const EventCarousel = ({ events = [], displayOptions = {} }) => {
 
   const renderEventCard = (event, index) => {
     const imageSource = getImageSource(event);
-    console.log('EventCarousel - rendering event:', event.title, 'location:', event.location, 'type:', event.type);
 
     return (
       <View
@@ -270,7 +267,7 @@ const styles = StyleSheet.create({
   },
   carouselWrapper: {
     overflow: 'hidden',
-    paddingBottom: 140,
+    paddingBottom: 0,
   },
   carouselContent: {
     flexDirection: 'row',
@@ -300,7 +297,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: 200, // Fixed height for image area
+    aspectRatio: 9/16,
     overflow: 'hidden',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,

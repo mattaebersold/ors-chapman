@@ -14,7 +14,6 @@ export const createFormData = (postData, schema = Schema) => {
     if (postData[key] !== undefined) {
       if (key === "gallery" && Array.isArray(postData[key])) {
         postData[key].forEach((imgObj, index) => {
-          console.log("Processing image:", imgObj);
           
           // New images from React Native (isNew flag)
           if (imgObj.isNew && imgObj.uri) {
@@ -41,7 +40,6 @@ export const createFormData = (postData, schema = Schema) => {
       } else if (key === "images" && Array.isArray(postData[key])) {
         // Handle the images array from our React Native form
         postData[key].forEach((imgObj, index) => {
-          console.log("Processing RN image:", imgObj);
           
           if (imgObj.isNew && imgObj.uri) {
             // Append to gallery key (server expects this)
@@ -82,10 +80,9 @@ export const createFormData = (postData, schema = Schema) => {
   });
 
   // Debug logging
-  console.log('FormData entries created:');
-  for (const pair of fd.entries()) {
-    console.log(pair[0], typeof pair[1] === 'object' ? JSON.stringify(pair[1]) : pair[1]);
-  }
+  // for (const pair of fd.entries()) {
+  //   console.log(pair[0], typeof pair[1] === 'object' ? JSON.stringify(pair[1]) : pair[1]);
+  // }
 
   return fd;
 };

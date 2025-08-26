@@ -7,10 +7,11 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Keyboard,
 } from 'react-native';
 import { colors } from '../constants/colors';
 import FAIcon from './FAIcon';
-import { useSearchUsernamesQuery } from '../services/apiService';
+import { useGetUsersQuery } from '../services/apiService';
 
 const UsernameSearch = ({ onUserSelect, style }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,37 +28,66 @@ const UsernameSearch = ({ onUserSelect, style }) => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Use dedicated search API endpoint
-  const { data: searchResults, isLoading, error: searchError } = useSearchUsernamesQuery(
-    { query: debouncedSearchTerm, limit: 8 },
+  // Get a large batch of users for comprehensive search
+  const { data: usersResponse, isLoading, error: searchError } = useGetUsersQuery(
+    { page: 1, limit: 500 }, // Get many users to search through
     { 
       skip: debouncedSearchTerm.length < 2,
-      refetchOnMountOrArgChange: true
+      refetchOnMountOrArgChange: false // Don't refetch on search term change
     }
   );
+  
+  console.log('API Query params:', { page: 1, limit: 500 });
+  console.log('Skip condition:', debouncedSearchTerm.length < 2);
+  console.log('Full API response:', usersResponse);
 
-  // Use search results directly from the backend
-  const finalResults = searchResults || [];
+  // Extract users from the response (getUsers returns { entries: [...], total: ... })
+  const searchResults = usersResponse?.entries || [];
+  
+  // Apply client-side filtering as backup (in case backend search isn't working)
+  const filteredResults = searchResults.filter(user => {
+    if (!debouncedSearchTerm) return true; // Show all if no search term
+    
+    const searchLower = debouncedSearchTerm.toLowerCase();
+    return (
+      user.username?.toLowerCase().includes(searchLower) ||
+      user.firstName?.toLowerCase().includes(searchLower) ||
+      user.lastName?.toLowerCase().includes(searchLower) ||
+      `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(searchLower)
+    );
+  });
+  
+  // Limit results to keep dropdown manageable
+  const finalResults = filteredResults.slice(0, 8);
 
   // Debug logging
   useEffect(() => {
+    console.log('UsernameSearch Debug:');
+    console.log('- searchTerm:', searchTerm);
+    console.log('- debouncedSearchTerm:', debouncedSearchTerm);
+    console.log('- isLoading:', isLoading);
+    console.log('- total users available:', usersResponse?.total || 'unknown');
+    console.log('- users loaded for search:', searchResults.length);
+    console.log('- after client filtering:', filteredResults.length);
+    console.log('- final results (limited):', finalResults.length);
+    console.log('- searchError:', searchError);
+    console.log('- showResults:', showResults);
+    
     if (debouncedSearchTerm.length >= 2) {
-      console.log('\n=== UsernameSearch Debug ===');
-      console.log('Search term:', debouncedSearchTerm);
-      console.log('Search API results:', searchResults);
-      console.log('Final results count:', finalResults.length);
-      console.log('Final results usernames:', finalResults.map(u => u.username || u.firstName || u.name));
-      console.log('Loading:', isLoading);
+      console.log('- Users before filtering:', searchResults.map(u => u.username));
+      console.log('- Users after filtering:', finalResults.map(u => u.username));
+      
       if (searchError) {
         console.log('Search Error:', searchError);
       }
       console.log('=== End Debug ===\n');
     }
-  }, [debouncedSearchTerm, searchResults, finalResults, isLoading, searchError]);
+  }, [searchTerm, debouncedSearchTerm, searchResults, filteredResults, finalResults, isLoading, searchError, showResults]);
 
   const handleUserSelect = (user) => {
     setSearchTerm('');
     setShowResults(false);
+    Keyboard.dismiss(); // Dismiss keyboard when user is selected
     onUserSelect(user);
   };
 

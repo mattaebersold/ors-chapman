@@ -30,18 +30,9 @@ const EventsList = () => {
     time_filter: 'past'
   });
 
-  console.log('EventsList - recurringEvents:', recurringEvents);
-  console.log('EventsList - recurringLoading:', recurringLoading);
-  console.log('EventsList - recurringError:', recurringError);
   // Memoize the events arrays to prevent infinite re-renders
   const memoizedRecurringEvents = useMemo(() => recurringEvents?.entries || [], [recurringEvents?.entries]);
   const memoizedPastEvents = useMemo(() => pastEvents?.entries || [], [pastEvents?.entries]);
-
-  console.log('EventsList - pastEvents:', pastEvents);
-  console.log('EventsList - pastLoading:', pastLoading);
-  console.log('EventsList - pastError:', pastError);
-  console.log('EventsList - memoizedPastEvents length:', memoizedPastEvents?.length);
-  console.log('EventsList - memoizedPastEvents sample:', memoizedPastEvents?.[0]);
   
   // Memoize the config objects to prevent infinite re-renders
   const listingConfig = useMemo(() => ({
@@ -96,7 +87,6 @@ const EventsList = () => {
 
 
   const renderPastEventItem = ({ item }) => {
-    console.log('Rendering past event item:', item.title || item._id);
     return (
       <Card 
         post={item} 

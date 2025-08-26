@@ -12,6 +12,7 @@ import {
 import { colors } from '../constants/colors';
 import { useSearchQuery } from '../services/apiService';
 import Card from '../components/Card';
+import UserRow from '../components/UserRow';
 import FAIcon from '../components/FAIcon';
 
 const SearchScreen = ({ navigation, route }) => {
@@ -86,6 +87,25 @@ const SearchScreen = ({ navigation, route }) => {
     { key: 'users', label: 'Users', count: searchResults?.users?.length || 0 },
     { key: 'events', label: 'Events', count: searchResults?.events?.length || 0 },
   ];
+
+  const renderSearchItem = ({ item }) => {
+    // Determine if this is a user or post/car/event
+    const isUser = item.resultType === 'users' || item.username || (item.name && !item.title);
+    
+    if (isUser) {
+      return (
+        <UserRow 
+          user={item} 
+          onPress={(user) => navigation.navigate('UserDetail', { 
+            userId: user._id || user.id,
+            user: user 
+          })}
+        />
+      );
+    } else {
+      return <Card post={item} />;
+    }
+  };
 
   const renderSearchForm = () => (
     <View style={styles.searchContainer}>
@@ -240,7 +260,7 @@ const SearchScreen = ({ navigation, route }) => {
         
         <FlatList
           data={filteredResults}
-          renderItem={({ item }) => <Card post={item} />}
+          renderItem={renderSearchItem}
           keyExtractor={(item, index) => item._id || item.id || `search-${index}`}
           contentContainerStyle={styles.resultsList}
           showsVerticalScrollIndicator={false}

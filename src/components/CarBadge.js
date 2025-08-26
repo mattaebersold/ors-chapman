@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useGetCarQuery } from '../services/apiService';
 import FAIcon from './FAIcon';
 
 const CarBadge = ({ carId, style = {} }) => {
+  const navigation = useNavigation();
   const { data: car, isLoading, error } = useGetCarQuery(carId, {
     skip: !carId
   });
@@ -28,8 +30,19 @@ const CarBadge = ({ carId, style = {} }) => {
     return 'Car';
   };
 
+  const handlePress = () => {
+    if (navigation && carId) {
+      const actualCarId = car._id || car.id || carId;
+      navigation.navigate('CarDetail', { carId: actualCarId });
+    }
+  };
+
   return (
-    <View style={[styles.badge, style]}>
+    <TouchableOpacity 
+      style={[styles.badge, style]} 
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
       <View style={styles.imageContainer}>
         {getCarImageSource() ? (
           <Image
@@ -46,7 +59,7 @@ const CarBadge = ({ carId, style = {} }) => {
       <Text style={styles.text} numberOfLines={1}>
         {getDisplayName()}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 

@@ -35,15 +35,6 @@ const UserDetailScreen = () => {
   // Determine the correct user ID to use (prioritize user_id field)
   const actualUserId = user?.user_id || user?._id || user?.id || userId;
 
-  console.log('UserDetailScreen Debug:');
-  console.log('- userId from route params:', userId);
-  console.log('- passedUser:', passedUser);
-  console.log('- user object:', user);
-  console.log('- user.user_id:', user?.user_id);
-  console.log('- user._id:', user?._id);
-  console.log('- user.id:', user?.id);
-  console.log('- actualUserId (final):', actualUserId);
-
   // Follow functionality - backend uses username
   const { data: followStatus, isLoading: statusLoading } = useGetFollowStatusQuery(user?.username, {
     skip: !user || isOwnProfile || !user?.username
@@ -104,13 +95,6 @@ const UserDetailScreen = () => {
     skip: !actualUserId 
   });
 
-  console.log('Data fetching results:');
-  console.log('- userPostsStats:', userPostsStats);
-  console.log('- userCarsStats:', userCarsStats);
-  console.log('- userEvents:', userEvents);
-  console.log('- userEvents loading:', eventsLoading);
-  console.log('- userEvents error:', eventsError);
-  
   const tabs = [
     { key: 'posts', label: 'Posts', type: 'posts', apiUrl: `/api/post?user_id=${actualUserId}`, heading: 'User Posts' },
     { key: 'cars', label: 'Cars', type: 'cars', apiUrl: `/api/garage?user_id=${actualUserId}`, heading: 'User Cars' },
@@ -300,6 +284,8 @@ const UserDetailScreen = () => {
             config={getTabConfig(activeTab)} 
             displayOptions={{ badgeProfile: false, badgeCar: false }}
             HeaderComponent={renderHeader}
+            showFilters={activeTab === 'posts'} 
+            filterTypes={['postType']}
           />
         </>
       )}

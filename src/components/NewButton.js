@@ -12,7 +12,6 @@ const NewButton = () => {
 
   const handleCreatePost = async (formData) => {
     try {
-      console.log('Creating post:', formData);
       
       // Prepare post data using Murray's pattern
       const postData = preparePostData(formData);

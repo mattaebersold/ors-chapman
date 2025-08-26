@@ -25,6 +25,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SearchScreen from '../screens/SearchScreen';
 import UserDetailScreen from '../screens/UserDetailScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
+import CarDetailScreen from '../screens/CarDetailScreen';
 import LoadingScreen from '../screens/LoadingScreen';
 
 // Import marketing screens
@@ -221,6 +222,22 @@ const AppNavigator = () => (
       options={({ route }) => ({
         headerShown: false, // Custom header in component
         title: route.params?.event?.title || 'Event Details',
+      })}
+    />
+    <AppStack.Screen 
+      name="CarDetail" 
+      component={CarDetailScreen}
+      options={({ route }) => ({
+        headerShown: true,
+        title: 'Car Details',
+        headerStyle: {
+          backgroundColor: colors.BRG,
+          height: 100,
+        },
+        headerTintColor: colors.WHITE,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       })}
     />
     <AppStack.Screen 

@@ -22,7 +22,7 @@ const baseQuery = fetchBaseQuery({
 export const apiService = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events'],
+  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Mods', 'CarGallery'],
   endpoints: (builder) => ({
     // User authentication endpoints
     getUserDetails: builder.query({
@@ -75,7 +75,6 @@ export const apiService = createApi({
           params.user_id = user_id;
         }
         
-        console.log('API getCars - params with user_id:', params);
         return {
           url: '/api/garage',
           method: 'GET',
@@ -190,7 +189,6 @@ export const apiService = createApi({
           ...(model && make && { model }), // Add model parameter if provided (requires make)
           ...(user_id && { user_id }) // Add user_id parameter if provided
         };
-        console.log('API getPosts - params with user_id:', params);
         return {
           url: '/api/post',
           method: 'GET',
@@ -460,6 +458,161 @@ export const apiService = createApi({
       providesTags: ['Events'],
       keepUnusedDataFor: 0, // Don't cache for debugging
     }),
+
+    // Mods endpoints
+    getMods: builder.query({
+      query: ({ car_id, page = 1, limit = 20 }) => {
+        const params = { 
+          page: page - 1, // Backend uses 0-based indexing
+          limit,
+          sort: 'created_at',
+          order: 'desc'
+        };
+        
+        // Add car_id parameter if provided
+        if (car_id) {
+          params.car_id = car_id;
+        }
+        
+        return {
+          url: '/api/mods',
+          method: 'GET',
+          params
+        };
+      },
+      providesTags: (result, error, { car_id }) => [
+        'Mods',
+        ...(car_id ? [{ type: 'Mods', id: `car-${car_id}` }] : [])
+      ],
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
+    // Get single mod by ID
+    getMod: builder.query({
+      query: (modId) => ({
+        url: `/api/mods/${modId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, modId) => [{ type: 'Mods', id: modId }],
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
+    // Create new mod
+    createMod: builder.mutation({
+      query: (modData) => ({
+        url: '/api/mods',
+        method: 'POST',
+        body: modData,
+      }),
+      invalidatesTags: (result, error, { car_id }) => [
+        'Mods',
+        ...(car_id ? [{ type: 'Mods', id: `car-${car_id}` }] : [])
+      ],
+    }),
+
+    // Update existing mod
+    updateMod: builder.mutation({
+      query: ({ modId, ...modData }) => ({
+        url: `/api/mods/${modId}`,
+        method: 'PUT',
+        body: modData,
+      }),
+      invalidatesTags: (result, error, { modId, car_id }) => [
+        'Mods',
+        { type: 'Mods', id: modId },
+        ...(car_id ? [{ type: 'Mods', id: `car-${car_id}` }] : [])
+      ],
+    }),
+
+    // Delete mod
+    deleteMod: builder.mutation({
+      query: (modId) => ({
+        url: `/api/mods/${modId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, modId) => [
+        'Mods',
+        { type: 'Mods', id: modId }
+      ],
+    }),
+
+    // Car Gallery endpoints - separate collection from car.gallery
+    getCarGalleries: builder.query({
+      query: ({ internal_id, page = 1, limit = 20 }) => {
+        const params = { 
+          page: page - 1, // Backend uses 0-based indexing
+          limit,
+          sort: 'created_at',
+          order: 'desc'
+        };
+        
+        // Add internal_id parameter if provided
+        if (internal_id) {
+          params.internal_id = internal_id;
+        }
+        
+        return {
+          url: '/api/carGallery',
+          method: 'GET',
+          params
+        };
+      },
+      providesTags: (result, error, { internal_id }) => [
+        'CarGallery',
+        ...(internal_id ? [{ type: 'CarGallery', id: `car-${internal_id}` }] : [])
+      ],
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
+    // Get single car gallery by ID
+    getCarGallery: builder.query({
+      query: (galleryId) => ({
+        url: `/api/carGallery/${galleryId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, galleryId) => [{ type: 'CarGallery', id: galleryId }],
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
+    // Create new car gallery
+    createCarGallery: builder.mutation({
+      query: (galleryData) => ({
+        url: '/api/carGallery',
+        method: 'POST',
+        body: galleryData,
+      }),
+      invalidatesTags: (result, error, { internal_id }) => [
+        'CarGallery',
+        ...(internal_id ? [{ type: 'CarGallery', id: `car-${internal_id}` }] : [])
+      ],
+    }),
+
+    // Update existing car gallery
+    updateCarGallery: builder.mutation({
+      query: ({ galleryId, ...galleryData }) => ({
+        url: `/api/carGallery/${galleryId}`,
+        method: 'PUT',
+        body: galleryData,
+      }),
+      invalidatesTags: (result, error, { galleryId, internal_id }) => [
+        'CarGallery',
+        { type: 'CarGallery', id: galleryId },
+        ...(internal_id ? [{ type: 'CarGallery', id: `car-${internal_id}` }] : [])
+      ],
+    }),
+
+    // Delete car gallery
+    deleteCarGallery: builder.mutation({
+      query: (galleryId) => ({
+        url: `/api/carGallery/${galleryId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, galleryId) => [
+        'CarGallery',
+        { type: 'CarGallery', id: galleryId }
+      ],
+    }),
+
   }),
 });
 
@@ -497,4 +650,14 @@ export const {
   useDeleteCommentMutation,
   useGetArticlesQuery,
   useGetEventsQuery,
+  useGetModsQuery,
+  useGetModQuery,
+  useCreateModMutation,
+  useUpdateModMutation,
+  useDeleteModMutation,
+  useGetCarGalleriesQuery,
+  useGetCarGalleryQuery,
+  useCreateCarGalleryMutation,
+  useUpdateCarGalleryMutation,
+  useDeleteCarGalleryMutation,
 } = apiService;

@@ -5,7 +5,6 @@ import {
 	StyleSheet,
 	FlatList,
 	RefreshControl,
-	ActivityIndicator,
 	TouchableOpacity,
 	ScrollView,
 	Animated,
@@ -22,6 +21,7 @@ import {
 	useGetEventsQuery,
 } from '../services/apiService';
 import Card from './Card';
+import LoadingIndicator from './LoadingIndicator';
 import { colors, getPostTypeColor, getCategoryColor } from '../constants/colors';
 import FAIcon from './FAIcon';
 
@@ -51,10 +51,8 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 		try {
 			const urlObj = new URL(url, 'http://example.com'); // Create URL object for parsing
 			const type = urlObj.searchParams.get('type');
-			console.log('Listing - Extracted type from URL:', url, '-> type:', type);
 			return type;
 		} catch (error) {
-			console.log('Listing - Error parsing URL:', url, error);
 			return null;
 		}
 	};
@@ -91,7 +89,6 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 		try {
 			const urlObj = new URL(url, 'http://example.com'); // Create URL object for parsing
 			const user_id = urlObj.searchParams.get('user_id');
-			console.log('Listing - Extracted user_id from URL:', url, '-> user_id:', user_id);
 			return user_id;
 		} catch (error) {
 			console.log('Listing - Error parsing URL for user_id:', url, error);
@@ -210,20 +207,15 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 	// Update posts when new data arrives
 	React.useEffect(() => {
 		if (postsData?.entries) {
-			console.log(`Loading page ${currentPage}, received ${postsData.entries.length} posts`);
-			console.log('First post created_at:', postsData.entries[0]?.created_at);
-			console.log('Last post created_at:', postsData.entries[postsData.entries.length - 1]?.created_at);
-			
+
 			if (currentPage === 1) {
 				// Fresh data (pull to refresh)
-				console.log('Setting fresh data');
 				setAllPosts(postsData.entries);
 			} else {
 				// Append new data (infinite scroll) - prevent duplicates
 				setAllPosts(prev => {
 					const existingIds = new Set(prev.map(post => post._id));
 					const newPosts = postsData.entries.filter(post => !existingIds.has(post._id));
-					console.log(`Adding ${newPosts.length} new posts to existing ${prev.length} posts`);
 					return [...prev, ...newPosts];
 				});
 			}
@@ -287,10 +279,12 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 		if (!hasMore) return null;
 		
 		return (
-			<View style={styles.footerLoader}>
-				<ActivityIndicator size="small" color="#1C3738" />
-				<Text style={styles.loadingText}>Loading more posts...</Text>
-			</View>
+			<LoadingIndicator 
+				text="Loading more posts..." 
+				variant="activity" 
+				size="small"
+				style={styles.footerLoader}
+			/>
 		);
 	};
 
