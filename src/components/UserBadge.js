@@ -43,7 +43,7 @@ const UserBadge = ({ userId, style = {} }) => {
           </View>
         )}
       </View>
-      <Text style={styles.text} numberOfLines={1}>
+      <Text style={styles.text}>
         {getDisplayName()}
       </Text>
     </View>
@@ -54,19 +54,11 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.BLACK,
+    backgroundColor: colors.DARK_GRAY,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    maxWidth: 150, // Increased width
-    minWidth: 60, // Added min width
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    width: 'inherit',
     elevation: 2,
   },
   imageContainer: {
@@ -86,7 +78,6 @@ const styles = StyleSheet.create({
     color: colors.WHITE,
     fontSize: 12,
     fontWeight: '600',
-    flex: 1,
   },
 });
 

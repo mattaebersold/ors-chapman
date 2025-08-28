@@ -77,9 +77,6 @@ const ModelDetailScreen = ({ route }) => {
         </View>
         
         <Text style={styles.title}>{brandName} {modelName}</Text>
-        <Text style={styles.subtitle}>
-          Community content for the {brandName} {modelName}
-        </Text>
       </View>
 
       {/* Tab Navigation */}
@@ -178,7 +175,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginHorizontal: 4,
-    borderRadius: 20,
     minWidth: 90,
     justifyContent: 'center',
   },

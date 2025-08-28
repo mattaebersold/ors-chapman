@@ -24,6 +24,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1d94b29e-03eb-487f-85d1-be5bf4750636"
+      }
+    },
+    "owner": "mattaebersold",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/1d94b29e-03eb-487f-85d1-be5bf4750636"
     }
   }
 }

@@ -169,9 +169,6 @@ const BrandDetailScreen = ({ route, navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>{brandName}</Text>
-        <Text style={styles.subtitle}>
-          Explore {brandName} models and community content
-        </Text>
       </View>
 
       {/* Tab Navigation */}
@@ -252,7 +249,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     marginHorizontal: 4,
-    borderRadius: 20,
     minWidth: 80,
     justifyContent: 'center',
   },

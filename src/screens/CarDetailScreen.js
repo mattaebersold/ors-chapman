@@ -42,21 +42,34 @@ const CarDetailScreen = ({ route, navigation }) => {
 
   // Find the specific car in the list
   const carData = carsList?.entries?.find(c => c._id === carId || c.id === carId);
+  
+  // Debug logging for car data
+  React.useEffect(() => {
+    if (carData) {
+      console.log('CarDetailScreen - Car Data:', {
+        _id: carData._id,
+        internal_id: carData.internal_id,
+        make: carData.make,
+        model: carData.model,
+        year: carData.year
+      });
+    }
+  }, [carData]);
 
   // Fetch related content using existing getCars endpoint
   const { data: relatedByMake } = useGetCarsQuery(
-    { make: carData?.make, limit: 10 },
+    { make: carData?.make, limit: 20 },
     { skip: !carData?.make }
   );
   
   const { data: relatedByModel } = useGetCarsQuery(
-    { make: carData?.make, model: carData?.model, limit: 10 },
+    { make: carData?.make, model: carData?.model, limit: 20 },
     { skip: !carData?.make || !carData?.model }
   );
 
-  // Fetch mods for this car
+  // Fetch mods for this car - try both car_id and internal_id
   const { data: modsData, isLoading: modsLoading, error: modsError } = useGetModsQuery(
-    { car_id: carId },
+    { car_id: carData?.internal_id || carId },
     { skip: !carId }
   );
 
@@ -65,6 +78,16 @@ const CarDetailScreen = ({ route, navigation }) => {
     { internal_id: carData?.internal_id },
     { skip: !carData?.internal_id }
   );
+
+  // Debug logging for API responses
+  React.useEffect(() => {
+    console.log('CarDetailScreen - Mods Data:', modsData);
+    console.log('CarDetailScreen - Mods Error:', modsError);
+    console.log('CarDetailScreen - Galleries Data:', carGalleriesData);
+    console.log('CarDetailScreen - Galleries Error:', galleriesError);
+    console.log('CarDetailScreen - Related by Make:', relatedByMake);
+    console.log('CarDetailScreen - Related by Model:', relatedByModel);
+  }, [modsData, modsError, carGalleriesData, galleriesError, relatedByMake, relatedByModel]);
 
   // Memoize related cars and exclude current car
   const relatedMakeCars = useMemo(() => {
@@ -151,8 +174,8 @@ const CarDetailScreen = ({ route, navigation }) => {
     if (carData.color) stats.push({ label: 'Color', value: carData.color, icon: 'paint-brush' });
     if (carData.engine) stats.push({ label: 'Engine', value: carData.engine, icon: 'cog' });
     if (carData.transmission) stats.push({ label: 'Transmission', value: carData.transmission, icon: 'exchange-alt' });
-    if (carData.horsepower) stats.push({ label: 'Horsepower', value: `${carData.horsepower} HP`, icon: 'tachometer-alt' });
-    if (carData.torque) stats.push({ label: 'Torque', value: `${carData.torque} lb-ft`, icon: 'bolt' });
+    if (carData.horsepower) stats.push({ label: 'Horsepower', value: `${carData.horsepower}`, icon: 'tachometer-alt' });
+    if (carData.torque) stats.push({ label: 'Torque', value: `${carData.torque}`, icon: 'bolt' });
     if (carData.drivetrain) stats.push({ label: 'Drivetrain', value: carData.drivetrain, icon: 'road' });
     if (carData.fuelType) stats.push({ label: 'Fuel Type', value: carData.fuelType, icon: 'gas-pump' });
     if (carData.mileage) stats.push({ label: 'Mileage', value: `${carData.mileage} miles`, icon: 'route' });

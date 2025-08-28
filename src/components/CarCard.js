@@ -70,11 +70,6 @@ const CarCard = ({ user: car, displayOptions = {} }) => {
             </View>
           )}
           
-          <View style={styles.carFooter}>
-            <Text style={styles.dateText}>
-              {car.created_at ? new Date(car.created_at).toLocaleDateString() : ''}
-            </Text>
-          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -137,15 +132,6 @@ const styles = StyleSheet.create({
   userBadgeContainer: {
     alignSelf: 'flex-start',
     marginBottom: 8,
-  },
-  carFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  dateText: {
-    fontSize: 12,
-    color: colors.TEXT_SECONDARY,
   },
 });
 

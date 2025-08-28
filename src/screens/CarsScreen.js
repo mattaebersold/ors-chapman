@@ -38,10 +38,8 @@ const CarsScreen = ({ navigation }) => {
 
   const tabs = [
     { key: 'member-cars', label: 'Member Cars', type: 'cars', heading: 'Community Cars' },
-    // { key: 'records', label: 'Car Records', type: 'posts', apiUrl: '/api/post?type=record', heading: 'Car Records' },
     { key: 'spots', label: 'Spotted', type: 'posts', apiUrl: '/api/post?type=spot', heading: 'Spotted Cars' },
     { key: 'brands', label: 'Brands', type: 'brands', heading: 'Car Brands' },
-    // { key: 'models', label: 'Models', type: 'userEntries', apiUrl: '/api/cars/models', heading: 'Car Models' },
   ];
 
   const getTabConfig = (tabKey) => {
@@ -253,7 +251,7 @@ const CarsScreen = ({ navigation }) => {
             CustomComponent={CarCard}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            key={`${selectedUser?._id || 'no-user'}-${selectedMake || 'no-make'}`} // Force re-render when filters change
+            key={`${selectedUser?._id || 'no-user'}-${selectedMake || 'no-make'}`}
           />
         </View>
       );

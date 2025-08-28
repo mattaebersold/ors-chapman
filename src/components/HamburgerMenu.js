@@ -42,45 +42,44 @@ const HamburgerMenu = ({ navigation }) => {
       <Modal
         visible={isVisible}
         animationType="slide"
-        transparent={true}
+        transparent={false}
         onRequestClose={() => setIsVisible(false)}
+        presentationStyle="fullScreen"
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.menuContainer}>
-            <SafeAreaView style={styles.safeArea}>
-              {/* Header */}
-              <View style={styles.menuHeader}>
-                <Text style={styles.menuTitle}>Open Road Society</Text>
-                <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
-                  <FAIcon name="times" size={24} color={colors.WHITE} />
+        <View style={styles.menuContainer}>
+          <SafeAreaView style={styles.safeArea}>
+            {/* Header */}
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>Open Road Society</Text>
+              <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
+                <FAIcon name="times" size={24} color={colors.WHITE} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Menu Items */}
+            <ScrollView style={styles.menuContent}>
+              {menuItems.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.menuItem}
+                  onPress={() => navigateToPage(item.page)}
+                >
+                  <FAIcon name={item.icon} size={20} color={colors.WHITE} />
+                  <Text style={styles.menuItemText}>{item.title}</Text>
+                  <FAIcon name="chevron-right" size={16} color={colors.WHITE} />
                 </TouchableOpacity>
+              ))}
+
+              {/* Divider */}
+              <View style={styles.divider} />
+
+              {/* Additional Info */}
+              <View style={styles.infoSection}>
+                <Text style={styles.infoText}>Open Road Society</Text>
+                <Text style={styles.infoSubtext}>Car enthusiast community</Text>
               </View>
-
-              {/* Menu Items */}
-              <ScrollView style={styles.menuContent}>
-                {menuItems.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.menuItem}
-                    onPress={() => navigateToPage(item.page)}
-                  >
-                    <FAIcon name={item.icon} size={20} color={colors.WHITE} />
-                    <Text style={styles.menuItemText}>{item.title}</Text>
-                    <FAIcon name="chevron-right" size={16} color={colors.WHITE} />
-                  </TouchableOpacity>
-                ))}
-
-                {/* Divider */}
-                <View style={styles.divider} />
-
-                {/* Additional Info */}
-                <View style={styles.infoSection}>
-                  <Text style={styles.infoText}>Open Road Society</Text>
-                  <Text style={styles.infoSubtext}>Car enthusiast community</Text>
-                </View>
-              </ScrollView>
-            </SafeAreaView>
-          </View>
+            </ScrollView>
+          </SafeAreaView>
         </View>
       </Modal>
     </>
@@ -100,14 +99,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.WHITE,
     borderRadius: 1,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
   menuContainer: {
     flex: 1,
     backgroundColor: colors.BRG,
-    width: '80%',
+    width: '100%',
   },
   safeArea: {
     flex: 1,
