@@ -8,6 +8,7 @@ import { colors } from '../constants/colors';
 import {
   StyleSheet,
   View,
+  Text,
   TouchableOpacity,
   Image,
 } from 'react-native';
@@ -23,6 +24,7 @@ import ArticlesScreen from '../screens/ArticlesScreen';
 import NewButtonFAB from '../components/NewButtonFAB';
 import ProfileScreen from '../screens/ProfileScreen';
 import SearchScreen from '../screens/SearchScreen';
+import MyGarageScreen from '../screens/MyGarageScreen';
 import UserDetailScreen from '../screens/UserDetailScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
 import CarDetailScreen from '../screens/CarDetailScreen';
@@ -118,15 +120,24 @@ const TabNavigator = ({ navigation }) => (
         fontWeight: 'bold',
       },
       headerLeft: () => (
-        <HamburgerMenu navigation={navigation} />
-      ),
-      headerRight: () => (
-        <View style={styles.headerRight}>
+        <View style={styles.headerLeft}>
+          <HamburgerMenu navigation={navigation} />
           <TouchableOpacity 
             style={styles.searchButton}
             onPress={() => navigation.navigate('Search')}
           >
             <FAIcon name="search" size={20} color={colors.WHITE} />
+          </TouchableOpacity>
+        </View>
+      ),
+      headerRight: () => (
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.garageButton}
+            onPress={() => navigation.navigate('MyGarage')}
+          >
+            <FAIcon name="car" size={16} color={colors.WHITE} />
+            <Text style={styles.garageButtonText}>My Garage</Text>
           </TouchableOpacity>
           <ProfileButton onPress={() => navigation.navigate('Profile')} />
         </View>
@@ -193,6 +204,22 @@ const AppNavigator = () => (
         headerStyle: {
           backgroundColor: colors.BRG,
           height: 100, // Increased height for better spacing
+        },
+        headerTintColor: colors.WHITE,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    />
+    <AppStack.Screen 
+      name="MyGarage" 
+      component={MyGarageScreen}
+      options={{
+        headerShown: true,
+        title: 'My Garage',
+        headerStyle: {
+          backgroundColor: colors.BRG,
+          height: 100,
         },
         headerTintColor: colors.WHITE,
         headerTitleStyle: {
@@ -382,14 +409,31 @@ const MainNavigator = () => {
 };
 
 const styles = StyleSheet.create({
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 16,
+  },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: 16,
   },
   searchButton: {
+    marginLeft: 12,
+    padding: 4,
+  },
+  garageButton: {
     marginRight: 12,
     padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  garageButtonText: {
+    color: colors.WHITE,
+    fontSize: 10,
+    fontWeight: '500',
+    marginTop: 2,
   },
   profileButton: {
     // marginRight: 16, // removed since it's now inside headerRight

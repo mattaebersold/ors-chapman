@@ -52,7 +52,7 @@ export const apiService = createApi({
 
     // Cars endpoints
     getCars: builder.query({
-      query: ({ page = 1, limit = 10, make = null, model = null, user_id = null }) => {
+      query: ({ page = 1, limit = 10, make = null, model = null, make_handle = null, model_handle = null, user_id = null }) => {
         const params = { 
           page: page - 1, // Backend uses 0-based indexing
           limit,
@@ -65,9 +65,19 @@ export const apiService = createApi({
           params.make = make;
         }
         
+        // Add make_handle parameter if provided
+        if (make_handle) {
+          params.make_handle = make_handle;
+        }
+        
         // Add model parameter if provided (requires make)
         if (model && make) {
           params.model = model;
+        }
+        
+        // Add model_handle parameter if provided (requires make_handle)
+        if (model_handle && make_handle) {
+          params.model_handle = model_handle;
         }
         
         // Add user_id parameter if provided
@@ -564,6 +574,32 @@ export const apiService = createApi({
       keepUnusedDataFor: 300, // Cache for 5 minutes
     }),
 
+    // Car-specific galleries using internal_id URL path (like Murray)
+    getCarGalleriesByInternalId: builder.query({
+      query: (carInternalId) => ({
+        url: `/api/car/galleries/${carInternalId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, carInternalId) => [
+        'CarGallery',
+        { type: 'CarGallery', id: `car-${carInternalId}` }
+      ],
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
+    // Car-specific mods using internal_id URL path (like Murray)  
+    getCarModsByInternalId: builder.query({
+      query: (carInternalId) => ({
+        url: `/api/car/mods/${carInternalId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, carInternalId) => [
+        'Mods',
+        { type: 'Mods', id: `car-${carInternalId}` }
+      ],
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
     // Get single car gallery by ID
     getCarGallery: builder.query({
       query: (galleryId) => ({
@@ -660,4 +696,6 @@ export const {
   useCreateCarGalleryMutation,
   useUpdateCarGalleryMutation,
   useDeleteCarGalleryMutation,
+  useGetCarGalleriesByInternalIdQuery,
+  useGetCarModsByInternalIdQuery,
 } = apiService;

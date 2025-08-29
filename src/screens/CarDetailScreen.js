@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery } from '../services/apiService';
+import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery } from '../services/apiService';
 import LoadingIndicator from '../components/LoadingIndicator';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
@@ -24,6 +24,9 @@ const CarDetailScreen = ({ route, navigation }) => {
   const { carId } = route.params;
   const [activeTab, setActiveTab] = useState('overview');
   const [galleryModalVisible, setGalleryModalVisible] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [individualGalleryModalVisible, setIndividualGalleryModalVisible] = useState(false);
+  const [selectedGallery, setSelectedGallery] = useState(null);
 
   if (!carId) {
     return (
@@ -51,54 +54,152 @@ const CarDetailScreen = ({ route, navigation }) => {
         internal_id: carData.internal_id,
         make: carData.make,
         model: carData.model,
+        make_handle: carData.make_handle,
+        model_handle: carData.model_handle,
         year: carData.year
       });
     }
   }, [carData]);
 
-  // Fetch related content using existing getCars endpoint
+  // Fetch related content - try different strategies to get more results
+  const makeParam = carData?.make_handle || carData?.make;
+  const modelParam = carData?.model_handle || carData?.model;
+  
+  // Query 1: Get cars by make only (should return more results)
   const { data: relatedByMake } = useGetCarsQuery(
-    { make: carData?.make, limit: 20 },
-    { skip: !carData?.make }
+    carData?.make_handle 
+      ? { make_handle: carData.make_handle, limit: 50 }  // Increased limit
+      : { make: carData?.make, limit: 50 },  // Increased limit
+    { skip: !makeParam }
   );
   
+  // Query 2: Get cars by make + model (more specific)
   const { data: relatedByModel } = useGetCarsQuery(
-    { make: carData?.make, model: carData?.model, limit: 20 },
-    { skip: !carData?.make || !carData?.model }
+    carData?.make_handle && carData?.model_handle
+      ? { make_handle: carData.make_handle, model_handle: carData.model_handle, limit: 50 }  // Increased limit
+      : carData?.make && carData?.model
+        ? { make: carData?.make, model: carData?.model, limit: 50 }  // Increased limit
+        : null,
+    { skip: !makeParam || !modelParam }
+  );
+  
+  // Query 3: Fallback - get all cars and filter client-side if backend filtering isn't working
+  const { data: allCarsData } = useGetCarsQuery(
+    { limit: 100, page: 1 },  // Get more cars to filter from
+    { skip: (relatedByMake?.entries?.length || 0) > 2 }  // Only use as fallback
   );
 
-  // Fetch mods for this car - try both car_id and internal_id
-  const { data: modsData, isLoading: modsLoading, error: modsError } = useGetModsQuery(
-    { car_id: carData?.internal_id || carId },
-    { skip: !carId }
-  );
-
-  // Fetch car galleries (separate collection) using internal_id
-  const { data: carGalleriesData, isLoading: galleriesLoading, error: galleriesError } = useGetCarGalleriesQuery(
-    { internal_id: carData?.internal_id },
+  // Fetch mods for this car using internal_id URL path (Murray pattern)
+  const { data: modsData, isLoading: modsLoading, error: modsError } = useGetCarModsByInternalIdQuery(
+    carData?.internal_id,
     { skip: !carData?.internal_id }
   );
 
+  // Fetch car galleries using internal_id URL path (Murray pattern)
+  const { data: carGalleriesData, isLoading: galleriesLoading, error: galleriesError } = useGetCarGalleriesByInternalIdQuery(
+    carData?.internal_id,
+    { skip: !carData?.internal_id }
+  );
+
+  // Process related cars data with client-side filtering and fallback logic
+  const relatedMakeCars = useMemo(() => {
+    const targetMake = carData?.make_handle || carData?.make;
+    if (!targetMake) return [];
+    
+    // Use primary query results, or fallback to all cars
+    const sourceData = relatedByMake?.entries?.length > 0 
+      ? relatedByMake.entries 
+      : allCarsData?.entries || [];
+    
+    // Filter for matching make and exclude current car
+    const filtered = sourceData.filter(car => {
+      if (car._id === carData?._id) return false;
+      
+      const carMake = car.make_handle || car.make;
+      return carMake && carMake.toLowerCase() === targetMake.toLowerCase();
+    });
+    
+    // Limit to reasonable number for display
+    return filtered.slice(0, 20);
+  }, [relatedByMake, allCarsData, carData]);
+
+  const relatedModelCars = useMemo(() => {
+    const targetMake = carData?.make_handle || carData?.make;
+    const targetModel = carData?.model_handle || carData?.model;
+    if (!targetMake || !targetModel) return [];
+    
+    // Use primary query results, or fallback to all cars
+    const sourceData = relatedByModel?.entries?.length > 0 
+      ? relatedByModel.entries 
+      : allCarsData?.entries || [];
+    
+    // Filter for matching make+model, exclude current car and cars already in make list
+    const filtered = sourceData.filter(car => {
+      if (car._id === carData?._id) return false;
+      
+      // Don't include cars already in the make list
+      if (relatedMakeCars.some(makeCar => makeCar._id === car._id)) return false;
+      
+      const carMake = car.make_handle || car.make;
+      const carModel = car.model_handle || car.model;
+      
+      return carMake && carModel &&
+             carMake.toLowerCase() === targetMake.toLowerCase() &&
+             carModel.toLowerCase() === targetModel.toLowerCase();
+    });
+    
+    // Limit to reasonable number for display
+    return filtered.slice(0, 15);
+  }, [relatedByModel, allCarsData, carData, relatedMakeCars]);
+
   // Debug logging for API responses
   React.useEffect(() => {
-    console.log('CarDetailScreen - Mods Data:', modsData);
-    console.log('CarDetailScreen - Mods Error:', modsError);
-    console.log('CarDetailScreen - Galleries Data:', carGalleriesData);
-    console.log('CarDetailScreen - Galleries Error:', galleriesError);
-    console.log('CarDetailScreen - Related by Make:', relatedByMake);
-    console.log('CarDetailScreen - Related by Model:', relatedByModel);
-  }, [modsData, modsError, carGalleriesData, galleriesError, relatedByMake, relatedByModel]);
+    if (carData) {
+      console.log('=== CarDetailScreen Related Cars Debug ===');
+      console.log('Current Car:', {
+        _id: carData._id,
+        make: carData.make,
+        model: carData.model,
+        make_handle: carData.make_handle,
+        model_handle: carData.model_handle
+      });
+      
+      console.log('Query Parameters:', {
+        makeQuery: carData?.make_handle 
+          ? { make_handle: carData.make_handle, limit: 20 }
+          : { make: carData?.make, limit: 20 },
+        modelQuery: carData?.make_handle && carData?.model_handle
+          ? { make_handle: carData.make_handle, model_handle: carData.model_handle, limit: 20 }
+          : { make: carData?.make, model: carData?.model, limit: 20 }
+      });
+      
+      console.log('Raw API Results:', {
+        relatedByMakeCount: relatedByMake?.entries?.length || 0,
+        relatedByMakeEntries: relatedByMake?.entries?.map(car => ({
+          _id: car._id,
+          make: car.make,
+          model: car.model,
+          make_handle: car.make_handle,
+          model_handle: car.model_handle
+        })) || [],
+        relatedByModelCount: relatedByModel?.entries?.length || 0,
+        allCarsCount: allCarsData?.entries?.length || 0,
+        usingFallback: {
+          makeQuery: (relatedByMake?.entries?.length || 0) <= 2,
+          modelQuery: (relatedByModel?.entries?.length || 0) <= 2
+        }
+      });
+      
+      console.log('Filtered Results:', {
+        relatedMakeCarsCount: relatedMakeCars.length,
+        relatedMakeCars: relatedMakeCars.map(car => `${car.make} ${car.model}`),
+        relatedModelCarsCount: relatedModelCars.length,
+        relatedModelCars: relatedModelCars.map(car => `${car.make} ${car.model}`)
+      });
+      console.log('=== End Debug ===');
+    }
+  }, [carData, relatedByMake, relatedByModel, relatedMakeCars, relatedModelCars]);
 
-  // Memoize related cars and exclude current car
-  const relatedMakeCars = useMemo(() => {
-    const cars = relatedByMake?.entries || [];
-    return cars.filter(c => c._id !== carId);
-  }, [relatedByMake?.entries, carId]);
-  
-  const relatedModelCars = useMemo(() => {
-    const cars = relatedByModel?.entries || [];
-    return cars.filter(c => c._id !== carId);
-  }, [relatedByModel?.entries, carId]);
 
   if (isLoading) {
     return (
@@ -144,15 +245,25 @@ const CarDetailScreen = ({ route, navigation }) => {
     return null;
   };
 
-  const renderCarHeaderImage = ({ item, index }) => (
-    <View style={styles.headerImageContainer}>
-      <Image
-        source={{ uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${item.filename}` }}
-        style={styles.carImage}
-        resizeMode="cover"
-      />
-    </View>
-  );
+  const renderCarHeaderImage = ({ item, index }) => {
+    const imageUri = `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${item.filename}`;
+    
+    return (
+      <View style={styles.headerImageContainer}>
+        <Image
+          source={{ uri: imageUri }}
+          style={styles.carImage}
+          resizeMode="cover"
+        />
+      </View>
+    );
+  };
+
+  const handleHeaderScroll = (event) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const index = Math.round(scrollPosition / screenWidth);
+    setCurrentImageIndex(index);
+  };
 
   const getDisplayName = () => {
     const parts = [carData.year, carData.make, carData.model].filter(Boolean);
@@ -168,17 +279,17 @@ const CarDetailScreen = ({ route, navigation }) => {
     const stats = [];
     
     if (carData.year) stats.push({ label: 'Year', value: carData.year, icon: 'calendar' });
-    if (carData.make) stats.push({ label: 'Make', value: carData.make, icon: 'industry' });
+    if (carData.make) stats.push({ label: 'Make', value: carData.make, icon: 'building' });
     if (carData.model) stats.push({ label: 'Model', value: carData.model, icon: 'car' });
     if (carData.trim) stats.push({ label: 'Trim', value: carData.trim, icon: 'tag' });
-    if (carData.color) stats.push({ label: 'Color', value: carData.color, icon: 'paint-brush' });
-    if (carData.engine) stats.push({ label: 'Engine', value: carData.engine, icon: 'cog' });
-    if (carData.transmission) stats.push({ label: 'Transmission', value: carData.transmission, icon: 'exchange-alt' });
-    if (carData.horsepower) stats.push({ label: 'Horsepower', value: `${carData.horsepower}`, icon: 'tachometer-alt' });
-    if (carData.torque) stats.push({ label: 'Torque', value: `${carData.torque}`, icon: 'bolt' });
+    if (carData.color) stats.push({ label: 'Color', value: carData.color, icon: 'palette' });
+    if (carData.engine) stats.push({ label: 'Engine', value: carData.engine, icon: 'cogs' });
+    if (carData.transmission) stats.push({ label: 'Transmission', value: carData.transmission, icon: 'exchange' });
+    if (carData.horsepower) stats.push({ label: 'Horsepower', value: `${carData.horsepower}`, icon: 'tachometer' });
+    if (carData.torque) stats.push({ label: 'Torque', value: `${carData.torque}`, icon: 'flash' });
     if (carData.drivetrain) stats.push({ label: 'Drivetrain', value: carData.drivetrain, icon: 'road' });
-    if (carData.fuelType) stats.push({ label: 'Fuel Type', value: carData.fuelType, icon: 'gas-pump' });
-    if (carData.mileage) stats.push({ label: 'Mileage', value: `${carData.mileage} miles`, icon: 'route' });
+    if (carData.fuelType) stats.push({ label: 'Fuel Type', value: carData.fuelType, icon: 'tint' });
+    if (carData.mileage) stats.push({ label: 'Mileage', value: `${carData.mileage} miles`, icon: 'map' });
     
     return stats;
   };
@@ -320,21 +431,36 @@ const CarDetailScreen = ({ route, navigation }) => {
               <Text style={styles.galleryDescription}>{gallery.description}</Text>
             )}
             {gallery.gallery && gallery.gallery.length > 0 && (
-              <View style={styles.galleryGrid}>
-                {gallery.gallery.map((image, imageIndex) => (
-                  <TouchableOpacity 
-                    key={imageIndex} 
-                    style={styles.galleryItem}
-                    onPress={() => setGalleryModalVisible(true)}
-                  >
-                    <Image
-                      source={{ uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${image.filename}` }}
-                      style={styles.galleryImage}
-                      resizeMode="cover"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <TouchableOpacity 
+                style={styles.galleryPreview}
+                onPress={() => {
+                  setSelectedGallery(gallery);
+                  setIndividualGalleryModalVisible(true);
+                }}
+              >
+                {/* Show only first image as preview */}
+                <Image
+                  source={{ uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${gallery.gallery[0].filename}` }}
+                  style={styles.galleryPreviewImage}
+                  resizeMode="cover"
+                />
+                
+                {/* Image count overlay */}
+                {gallery.gallery.length > 1 && (
+                  <View style={styles.galleryImageCount}>
+                    <FAIcon name="images" size={14} color={colors.WHITE} />
+                    <Text style={styles.galleryImageCountText}>
+                      {gallery.gallery.length}
+                    </Text>
+                  </View>
+                )}
+                
+                {/* Tap to view overlay */}
+                <View style={styles.galleryTapOverlay}>
+                  <FAIcon name="expand" size={16} color={colors.WHITE} />
+                  <Text style={styles.galleryTapText}>Tap to view</Text>
+                </View>
+              </TouchableOpacity>
             )}
           </View>
         ))}
@@ -543,15 +669,43 @@ const CarDetailScreen = ({ route, navigation }) => {
       <View style={styles.header}>
         <View style={styles.imageContainer}>
           {carData?.gallery?.length > 0 ? (
-            <FlatList
-              data={carData.gallery}
-              renderItem={renderCarHeaderImage}
-              keyExtractor={(item, index) => index.toString()}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              style={styles.headerGallery}
-            />
+            <View style={styles.galleryWrapper}>
+              <FlatList
+                data={carData.gallery}
+                renderItem={renderCarHeaderImage}
+                keyExtractor={(item, index) => index.toString()}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                style={styles.headerGallery}
+                onScroll={handleHeaderScroll}
+                scrollEventThrottle={16}
+              />
+              
+              {/* Pagination dots */}
+              {carData.gallery.length > 1 && (
+                <View style={styles.paginationContainer}>
+                  {carData.gallery.map((_, index) => (
+                    <View
+                      key={index}
+                      style={[
+                        styles.paginationDot,
+                        index === currentImageIndex && styles.paginationDotActive
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
+              
+              {/* Image counter */}
+              {carData.gallery.length > 1 && (
+                <View style={styles.imageCounter}>
+                  <Text style={styles.imageCounterText}>
+                    {currentImageIndex + 1} / {carData.gallery.length}
+                  </Text>
+                </View>
+              )}
+            </View>
           ) : (
             <View style={styles.placeholderContainer}>
               <FAIcon name="car" size={60} color={colors.GRAY} />
@@ -620,6 +774,17 @@ const CarDetailScreen = ({ route, navigation }) => {
         onClose={() => setGalleryModalVisible(false)}
         title={`${getDisplayName()} - Galleries`}
       />
+
+      {/* Individual Gallery Modal */}
+      <ImageGalleryModal
+        visible={individualGalleryModalVisible}
+        images={selectedGallery?.gallery || []}
+        onClose={() => {
+          setIndividualGalleryModalVisible(false);
+          setSelectedGallery(null);
+        }}
+        title={selectedGallery?.title || 'Gallery'}
+      />
     </ScrollView>
   );
 };
@@ -637,6 +802,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 250,
   },
+  galleryWrapper: {
+    position: 'relative',
+    width: '100%',
+    height: 250,
+  },
   headerGallery: {
     width: '100%',
     height: 250,
@@ -648,6 +818,42 @@ const styles = StyleSheet.create({
   carImage: {
     width: '100%',
     height: 250,
+  },
+  paginationContainer: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    backgroundColor: colors.WHITE,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  imageCounter: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  imageCounterText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '600',
   },
   placeholderContainer: {
     width: '100%',
@@ -828,6 +1034,50 @@ const styles = StyleSheet.create({
     color: colors.TEXT_SECONDARY,
     marginBottom: 12,
     lineHeight: 20,
+  },
+  galleryPreview: {
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  galleryPreviewImage: {
+    width: '100%',
+    height: 200,
+  },
+  galleryImageCount: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  galleryImageCountText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  galleryTapOverlay: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  galleryTapText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
   },
   
   // Mods Tab
