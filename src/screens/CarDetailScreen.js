@@ -240,13 +240,13 @@ const CarDetailScreen = ({ route, navigation }) => {
 
   const getCarImageSource = (imageIndex = 0) => {
     if (carData?.gallery?.[imageIndex]?.filename) {
-      return { uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${carData.gallery[imageIndex].filename}` };
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${carData.gallery[imageIndex].filename}` };
     }
     return null;
   };
 
   const renderCarHeaderImage = ({ item, index }) => {
-    const imageUri = `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${item.filename}`;
+    const imageUri = `https://d2481n2uw7a0p.cloudfront.net/${item.filename}`;
     
     return (
       <View style={styles.headerImageContainer}>
@@ -440,7 +440,7 @@ const CarDetailScreen = ({ route, navigation }) => {
               >
                 {/* Show only first image as preview */}
                 <Image
-                  source={{ uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${gallery.gallery[0].filename}` }}
+                  source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${gallery.gallery[0].filename}` }}
                   style={styles.galleryPreviewImage}
                   resizeMode="cover"
                 />
@@ -575,7 +575,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                     {mod.gallery.map((image, imageIndex) => (
                       <TouchableOpacity key={imageIndex} style={styles.modImageContainer}>
                         <Image
-                          source={{ uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${image.filename}` }}
+                          source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${image.filename}` }}
                           style={styles.modImage}
                           resizeMode="cover"
                         />
@@ -647,7 +647,7 @@ const CarDetailScreen = ({ route, navigation }) => {
       <View style={styles.relatedCarImageContainer}>
         {item.gallery?.[0]?.filename ? (
           <Image
-            source={{ uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${item.gallery[0].filename}` }}
+            source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${item.gallery[0].filename}` }}
             style={styles.relatedCarImage}
             resizeMode="cover"
           />

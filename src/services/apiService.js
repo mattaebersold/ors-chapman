@@ -272,6 +272,34 @@ export const apiService = createApi({
       invalidatesTags: ['Post', 'UserEntries'],
     }),
 
+    // Update existing post
+    updatePost: builder.mutation({
+      query: ({ postId, formData }) => ({
+        url: `/api/post/update/${postId}`,
+        method: 'PUT',
+        body: formData,
+        // Don't set Content-Type header - let browser/fetch set it for FormData
+      }),
+      invalidatesTags: (result, error, { postId }) => [
+        'Post',
+        'UserEntries',
+        { type: 'Post', id: postId }
+      ],
+    }),
+
+    // Delete post
+    deletePost: builder.mutation({
+      query: (postId) => ({
+        url: `/api/post/delete/${postId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, postId) => [
+        'Post',
+        'UserEntries',
+        { type: 'Post', id: postId }
+      ],
+    }),
+
     // Search endpoint - matches Murray's approach
     search: builder.query({
       query: ({ query }) => ({
@@ -672,6 +700,8 @@ export const {
   useUpdateUserProfileMutation,
   useUpdateUserPasswordMutation,
   useCreatePostMutation,
+  useUpdatePostMutation,
+  useDeletePostMutation,
   useSearchQuery,
   useSearchUsernamesQuery,
   useFollowUserMutation,

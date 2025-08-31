@@ -83,7 +83,7 @@ const ProfileScreen = () => {
 
   const user = userDetails || userInfo;
   const profileImageUrl = user?.gallery?.[0]?.filename 
-    ? `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${user.gallery[0].filename}`
+    ? `https://d2481n2uw7a0p.cloudfront.net/${user.gallery[0].filename}`
     : null;
 
   // Header animation values

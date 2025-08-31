@@ -28,7 +28,9 @@ import {
   faMapMarker,
   faTag,
   faClock,
-  faFilter
+  faFilter,
+  faEdit,
+  faTrash
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -78,6 +80,8 @@ const iconMap = {
   'map-marker': faMapMarker,
   tag: faTag,
   clock: faClock,
+  edit: faEdit,
+  trash: faTrash,
 };
 
 const FAIcon = ({ name, size = 20, color = '#000', style, ...props }) => {

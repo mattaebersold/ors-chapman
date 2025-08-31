@@ -24,10 +24,10 @@ const ImageGalleryModal = ({ visible, images, onClose, title = "Gallery" }) => {
 
   const getImageSource = (image) => {
     if (typeof image === 'string') {
-      return { uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${image}` };
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${image}` };
     }
     if (image?.filename) {
-      return { uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${image.filename}` };
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${image.filename}` };
     }
     return null;
   };

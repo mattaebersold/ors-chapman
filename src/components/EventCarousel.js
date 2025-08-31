@@ -78,7 +78,7 @@ const EventCarousel = ({ events = [], displayOptions = {} }) => {
 
   const getImageSource = (event) => {
     if (event?.gallery?.[0]?.filename) {
-      return { uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${event.gallery[0].filename}` };
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${event.gallery[0].filename}` };
     }
     return null;
   };

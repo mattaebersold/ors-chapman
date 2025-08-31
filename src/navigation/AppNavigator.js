@@ -62,7 +62,7 @@ const AuthNavigator = () => (
 const ProfileButton = ({ onPress }) => {
   const { data: userDetails } = useGetUserDetailsQuery();
   const profileImageUrl = userDetails?.gallery?.[0]?.filename 
-    ? `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${userDetails.gallery[0].filename}`
+    ? `https://d2481n2uw7a0p.cloudfront.net/${userDetails.gallery[0].filename}`
     : null;
 
   return (
@@ -178,7 +178,7 @@ const TabNavigator = ({ navigation }) => (
 
 const AppNavigator = () => (
   <AppStack.Navigator screenOptions={{ headerShown: false }}>
-    <AppStack.Screen name="Main" component={TabNavigator} />
+    <AppStack.Screen name="Home" component={TabNavigator} />
     <AppStack.Screen 
       name="Profile" 
       component={ProfileScreen}

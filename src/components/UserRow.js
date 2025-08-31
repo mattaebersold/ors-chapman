@@ -60,7 +60,7 @@ const UserRow = ({ user, onPress, displayOptions = {} }) => {
   const getImageSource = () => {
     // First check for gallery[0] (like Murray does)
     if (user?.gallery?.[0]?.filename) {
-      return { uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${user.gallery[0].filename}` };
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${user.gallery[0].filename}` };
     }
     // Fallback to profile_image if available
     if (user?.profile_image) {

@@ -22,7 +22,7 @@ const CarCard = ({ user: car, displayOptions = {} }) => {
 
   const getCarImageSource = () => {
     if (car?.gallery?.[0]?.filename) {
-      return { uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${car.gallery[0].filename}` };
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${car.gallery[0].filename}` };
     }
     return null;
   };

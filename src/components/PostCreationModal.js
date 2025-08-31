@@ -20,7 +20,7 @@ import {
   useGetUserEventsQuery 
 } from '../services/apiService';
 
-const PostCreationModal = ({ visible, onClose, onSubmit }) => {
+const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, existingPost = null }) => {
   const [formData, setFormData] = useState({
     title: '',
     body: '',
@@ -37,6 +37,34 @@ const PostCreationModal = ({ visible, onClose, onSubmit }) => {
   const { data: garageData } = useGetUserGarageQuery({ limit: 100 });
   const { data: projectsData } = useGetUserProjectsQuery({ limit: 100 });
   const { data: eventsData } = useGetUserEventsQuery({ limit: 100 });
+
+  // Populate form data when editing
+  useEffect(() => {
+    if (editMode && existingPost) {
+      setFormData({
+        title: existingPost.title || '',
+        body: existingPost.body || '',
+        type: existingPost.type || 'general',
+        category: existingPost.category || 'show',
+        images: existingPost.gallery || [],
+        car_id: existingPost.car_id || '',
+        project_id: existingPost.project_id || '',
+        event_id: existingPost.event_id || '',
+      });
+    } else if (!editMode) {
+      // Reset form when creating new post
+      setFormData({
+        title: '',
+        body: '',
+        type: 'general',
+        category: 'show',
+        images: [],
+        car_id: '',
+        project_id: '',
+        event_id: '',
+      });
+    }
+  }, [editMode, existingPost, visible]);
 
   const postTypes = [
     { key: 'general', label: 'General' },
@@ -188,7 +216,7 @@ const PostCreationModal = ({ visible, onClose, onSubmit }) => {
           <TouchableOpacity onPress={handleClose}>
             <Text style={styles.cancelButton}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>New Post</Text>
+          <Text style={styles.title}>{editMode ? 'Edit Post' : 'New Post'}</Text>
           <TouchableOpacity 
             onPress={handleSubmit}
             disabled={loading}

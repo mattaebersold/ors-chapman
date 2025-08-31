@@ -1,13 +1,17 @@
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Image,
   TouchableWithoutFeedback,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
+import { useSelector } from 'react-redux';
 import { useModal } from '../contexts/ModalContext';
+import { useDeletePostMutation, useGetUserDetailsQuery } from '../services/apiService';
 import Badge from './Badge';
 import UserBadge from './UserBadge';
 import CarBadge from './CarBadge';
@@ -17,7 +21,25 @@ import Likes from './Likes';
 
 // Post item component  
 const Card = ({ post, onPress, displayOptions = {} }) => {
-  const { showPostModal } = useModal();
+  const { showPostModal, showEditPostModal } = useModal();
+  const { userInfo } = useSelector(state => state.auth);
+  const { data: currentUser } = useGetUserDetailsQuery();
+  const [deletePost] = useDeletePostMutation();
+  const [showActions, setShowActions] = useState(false);
+
+  // Check if current user owns this post
+  const isOwner = currentUser && post && (
+    currentUser.user_id === post.user_id
+  );
+
+  // Debug ownership checking - let's see currentUser fields
+  console.log('Card ownership debug - currentUser exists?:', !!currentUser);
+  console.log('Card ownership debug - full currentUser:', currentUser);
+  console.log('Card ownership debug - currentUser.user_id:', currentUser?.user_id);
+  console.log('Card ownership debug - post.user_id:', post?.user_id);
+  console.log('Card ownership debug - comparison result:', currentUser?.user_id === post?.user_id);
+  console.log('Card ownership debug - isOwner:', isOwner);
+  
 
   const handlePress = useCallback(() => {
     if (showPostModal) {
@@ -26,10 +48,46 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
       onPress(post);
     }
   }, [showPostModal, onPress, post]);
+
+  const handleEdit = useCallback(() => {
+    setShowActions(false);
+    showEditPostModal(post);
+  }, [showEditPostModal, post]);
+
+  const handleDelete = useCallback(() => {
+    setShowActions(false);
+    Alert.alert(
+      'Delete Post',
+      'Are you sure you want to delete this post? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePost(post.internal_id || post._id).unwrap();
+              Alert.alert('Success', 'Post deleted successfully');
+            } catch (error) {
+              console.error('Delete post error:', error);
+              Alert.alert('Error', 'Failed to delete post. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  }, [deletePost, post]);
+
+  const toggleActions = useCallback(() => {
+    setShowActions(!showActions);
+  }, [showActions]);
   let imageUrl = null;
 
   if (post.gallery && post.gallery.length > 0) {
-    imageUrl = `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${post.gallery[0].filename}`;
+    imageUrl = `https://d2481n2uw7a0p.cloudfront.net/${post.gallery[0].filename}`;
   }
   
   return (
@@ -53,6 +111,37 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
             
             {/* Badge Overlays */}
             <Badge type={post.type} category={post.category} style="overlay" />
+            
+            {/* Owner Actions - Only visible to post owner */}
+            {isOwner && (
+              <View style={styles.ownerActionsContainer}>
+                <TouchableOpacity 
+                  style={styles.ownerActionsButton}
+                  onPress={toggleActions}
+                >
+                  <FAIcon name="ellipsis-v" size={16} color={colors.WHITE} />
+                </TouchableOpacity>
+                
+                {showActions && (
+                  <View style={styles.actionsMenu}>
+                    <TouchableOpacity 
+                      style={styles.actionItem}
+                      onPress={handleEdit}
+                    >
+                      <FAIcon name="edit" size={14} color={colors.TEXT_PRIMARY} />
+                      <Text style={styles.actionText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.actionItem, styles.deleteAction]}
+                      onPress={handleDelete}
+                    >
+                      <FAIcon name="trash" size={14} color={colors.ERROR} />
+                      <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
           
           <View style={styles.postContent}>
@@ -143,6 +232,58 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
     gap: 8,
+  },
+  
+  // Owner Actions Styles
+  ownerActionsContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 10,
+  },
+  ownerActionsButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionsMenu: {
+    position: 'absolute',
+    top: 36,
+    right: 0,
+    backgroundColor: colors.WHITE,
+    borderRadius: 8,
+    minWidth: 120,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  deleteAction: {
+    borderBottomWidth: 0,
+  },
+  actionText: {
+    marginLeft: 12,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.TEXT_PRIMARY,
+  },
+  deleteText: {
+    color: colors.ERROR,
   },
 });
 

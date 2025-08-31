@@ -13,6 +13,7 @@ import {
   Share,
   Alert,
 } from 'react-native';
+import { useSelector } from 'react-redux';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { colors } from '../constants/colors';
@@ -22,16 +23,75 @@ import UserBadge from './UserBadge';
 import CarBadge from './CarBadge';
 import Likes from './Likes';
 import Comments from './Comments';
+import { useModal } from '../contexts/ModalContext';
+import { useDeletePostMutation, useGetUserDetailsQuery } from '../services/apiService';
 
 const { width, height } = Dimensions.get('window');
 
 const PostDetailModal = ({ visible, post, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showActions, setShowActions] = useState(false);
+  const { userInfo } = useSelector(state => state.auth);
+  const { data: currentUser } = useGetUserDetailsQuery();
+  const { showEditPostModal } = useModal();
+  const [deletePost] = useDeletePostMutation();
 
   if (!post) return null;
 
+  // Check if current user owns this post
+  const isOwner = currentUser && post && (
+    currentUser.user_id === post.user_id
+  );
+
+  // Debug ownership checking
+  console.log('PostDetailModal ownership check:', {
+    currentUser: currentUser ? {
+      user_id: currentUser.user_id,
+      username: currentUser.username
+    } : null,
+    post: post ? {
+      user_id: post.user_id,
+      title: post.title
+    } : null,
+    isOwner
+  });
+
   // Detect if this is an event and adapt the data structure
   const isEvent = post.event_type || post.event_date || post.recurring_frequency;
+
+  const handleEdit = () => {
+    setShowActions(false);
+    onClose(); // Close the detail modal first
+    showEditPostModal(post);
+  };
+
+  const handleDelete = () => {
+    setShowActions(false);
+    Alert.alert(
+      'Delete Post',
+      'Are you sure you want to delete this post? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePost(post.internal_id || post._id).unwrap();
+              onClose(); // Close modal after successful deletion
+              Alert.alert('Success', 'Post deleted successfully');
+            } catch (error) {
+              console.error('Delete post error:', error);
+              Alert.alert('Error', 'Failed to delete post. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
   
   // Create a normalized data structure for both posts and events
   const normalizedData = {
@@ -183,7 +243,7 @@ const PostDetailModal = ({ visible, post, onClose }) => {
 
   // Create image URLs for gallery
   const imageUrls = normalizedData.gallery 
-    ? normalizedData.gallery.map(img => `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${img.filename}`)
+    ? normalizedData.gallery.map(img => `https://d2481n2uw7a0p.cloudfront.net/${img.filename}`)
     : [];
 
   const renderImageCarousel = () => {
@@ -256,9 +316,40 @@ const PostDetailModal = ({ visible, post, onClose }) => {
             <Text style={styles.cancelButton}>Close</Text>
           </TouchableOpacity>
           <Text style={styles.title}>{normalizedData.type || 'Post'}</Text>
-          <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
-            <FAIcon name="share" size={20} color={colors.WHITE} />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
+              <FAIcon name="share" size={20} color={colors.WHITE} />
+            </TouchableOpacity>
+            {isOwner && (
+              <View style={styles.ownerActionsContainer}>
+                <TouchableOpacity 
+                  style={styles.ownerActionsButton}
+                  onPress={() => setShowActions(!showActions)}
+                >
+                  <FAIcon name="ellipsis-v" size={16} color={colors.WHITE} />
+                </TouchableOpacity>
+                
+                {showActions && (
+                  <View style={styles.actionsMenu}>
+                    <TouchableOpacity 
+                      style={styles.actionItem}
+                      onPress={handleEdit}
+                    >
+                      <FAIcon name="edit" size={14} color={colors.TEXT_PRIMARY} />
+                      <Text style={styles.actionText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.actionItem, styles.deleteAction]}
+                      onPress={handleDelete}
+                    >
+                      <FAIcon name="trash" size={14} color={colors.ERROR} />
+                      <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Content */}
@@ -394,10 +485,64 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'capitalize',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   shareButton: {
-    width: 50,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 8,
+  },
+  ownerActionsContainer: {
+    position: 'relative',
+  },
+  ownerActionsButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionsMenu: {
+    position: 'absolute',
+    top: 45,
+    right: 0,
+    backgroundColor: colors.WHITE,
+    borderRadius: 8,
+    minWidth: 120,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  deleteAction: {
+    borderBottomWidth: 0,
+  },
+  actionText: {
+    marginLeft: 12,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.TEXT_PRIMARY,
+  },
+  deleteText: {
+    color: colors.ERROR,
   },
   content: {
     flex: 1,

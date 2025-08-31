@@ -60,7 +60,7 @@ const UserDetailScreen = () => {
 
   const getProfileImageSource = () => {
     if (user?.gallery?.[0]?.filename) {
-      return { uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${user.gallery[0].filename}` };
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${user.gallery[0].filename}` };
     }
     if (user?.profile_image) {
       return { uri: user.profile_image };

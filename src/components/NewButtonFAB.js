@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useCreatePostMutation } from '../services/apiService';
+import { useCreatePostMutation, useUpdatePostMutation } from '../services/apiService';
 import PostCreationModal from './PostCreationModal';
 import { createFormData, preparePostData } from '../utils/formUtils';
 import { colors } from '../constants/colors';
@@ -9,31 +9,42 @@ import FAIcon from './FAIcon';
 
 const NewButtonFAB = () => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [editPost, setEditPost] = useState(null);
   const [createPost] = useCreatePostMutation();
+  const [updatePost] = useUpdatePostMutation();
   const navigation = useNavigation();
 
   const handleCreatePost = async (formData) => {
     try {
-      
       // Prepare post data using Murray's pattern
       const postData = preparePostData(formData);
       
       // Create FormData using the utility function
       const form = createFormData(postData);
 
-      // Make API call
-      await createPost(form).unwrap();
+      if (editPost) {
+        // Update existing post
+        await updatePost({ 
+          postId: editPost.internal_id || editPost._id, 
+          formData: form 
+        }).unwrap();
+        Alert.alert('Success', 'Post updated successfully!');
+      } else {
+        // Create new post
+        await createPost(form).unwrap();
+        Alert.alert('Success', 'Post created successfully!');
+      }
       
-      // Close modal and navigate back to Feed tab
+      // Close modal and reset state
       setModalVisible(false);
+      setEditPost(null);
       navigation.navigate('Feed');
       
-      Alert.alert('Success', 'Post created successfully!');
     } catch (error) {
-      console.error('Error creating post:', error);
+      console.error('Error saving post:', error);
       
       // Better error handling for server issues
-      let errorMessage = 'Failed to create post';
+      let errorMessage = editPost ? 'Failed to update post' : 'Failed to create post';
       if (error.originalStatus === 502) {
         errorMessage = 'Server is currently unavailable. Please try again later.';
       } else if (error.data?.message) {
@@ -60,8 +71,13 @@ const NewButtonFAB = () => {
       {/* Post Creation Modal */}
       <PostCreationModal
         visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        onClose={() => {
+          setModalVisible(false);
+          setEditPost(null);
+        }}
         onSubmit={handleCreatePost}
+        editMode={!!editPost}
+        existingPost={editPost}
       />
     </>
   );

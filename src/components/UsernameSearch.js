@@ -62,20 +62,8 @@ const UsernameSearch = ({ onUserSelect, style }) => {
 
   // Debug logging
   useEffect(() => {
-    console.log('UsernameSearch Debug:');
-    console.log('- searchTerm:', searchTerm);
-    console.log('- debouncedSearchTerm:', debouncedSearchTerm);
-    console.log('- isLoading:', isLoading);
-    console.log('- total users available:', usersResponse?.total || 'unknown');
-    console.log('- users loaded for search:', searchResults.length);
-    console.log('- after client filtering:', filteredResults.length);
-    console.log('- final results (limited):', finalResults.length);
-    console.log('- searchError:', searchError);
-    console.log('- showResults:', showResults);
     
     if (debouncedSearchTerm.length >= 2) {
-      console.log('- Users before filtering:', searchResults.map(u => u.username));
-      console.log('- Users after filtering:', finalResults.map(u => u.username));
       
       if (searchError) {
         console.log('Search Error:', searchError);
@@ -103,7 +91,7 @@ const UsernameSearch = ({ onUserSelect, style }) => {
 
   const getProfileImageSource = (user) => {
     if (user?.gallery?.[0]?.filename) {
-      return { uri: `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${user.gallery[0].filename}` };
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${user.gallery[0].filename}` };
     }
     if (user?.profile_image) {
       return { uri: user.profile_image };

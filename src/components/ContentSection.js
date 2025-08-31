@@ -13,7 +13,7 @@ import { colors } from '../constants/colors';
 const ContentItem = ({ item, onPress }) => {
   const getImageUrl = (item) => {
     if (item.gallery && item.gallery.length > 0) {
-      return `https://partstash-ghia-images.s3.us-west-2.amazonaws.com/${item.gallery[0].filename}`;
+      return `https://d2481n2uw7a0p.cloudfront.net/${item.gallery[0].filename}`;
     }
     return null;
   };
