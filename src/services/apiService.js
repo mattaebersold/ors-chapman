@@ -22,7 +22,7 @@ const baseQuery = fetchBaseQuery({
 export const apiService = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Mods', 'CarGallery'],
+  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Mods', 'CarGallery', 'CarTask'],
   endpoints: (builder) => ({
     // User authentication endpoints
     getUserDetails: builder.query({
@@ -297,6 +297,56 @@ export const apiService = createApi({
         'Post',
         'UserEntries',
         { type: 'Post', id: postId }
+      ],
+    }),
+
+    // CarTask endpoints
+    getCarTasks: builder.query({
+      query: ({ carId }) => ({
+        url: `/api/cartask/car/${carId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, { carId }) => [
+        { type: 'CarTask', id: `CAR-${carId}` }
+      ],
+    }),
+
+    createCarTask: builder.mutation({
+      query: ({ carId, formData }) => ({
+        url: `/api/cartask/create`,
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header - let browser/fetch set it for FormData
+      }),
+      invalidatesTags: (result, error, { carId }) => [
+        'CarTask',
+        { type: 'CarTask', id: `CAR-${carId}` }
+      ],
+    }),
+
+    updateCarTask: builder.mutation({
+      query: ({ taskId, formData }) => ({
+        url: `/api/cartask/update/${taskId}`,
+        method: 'PUT',
+        body: formData,
+        // Don't set Content-Type header - let browser/fetch set it for FormData
+      }),
+      invalidatesTags: (result, error, { taskId, carId }) => [
+        'CarTask',
+        { type: 'CarTask', id: taskId },
+        { type: 'CarTask', id: `CAR-${carId}` }
+      ],
+    }),
+
+    deleteCarTask: builder.mutation({
+      query: (taskId) => ({
+        url: `/api/cartask/delete/${taskId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, { taskId, carId }) => [
+        'CarTask',
+        { type: 'CarTask', id: taskId },
+        { type: 'CarTask', id: `CAR-${carId}` }
       ],
     }),
 
@@ -728,4 +778,8 @@ export const {
   useDeleteCarGalleryMutation,
   useGetCarGalleriesByInternalIdQuery,
   useGetCarModsByInternalIdQuery,
+  useGetCarTasksQuery,
+  useCreateCarTaskMutation,
+  useUpdateCarTaskMutation,
+  useDeleteCarTaskMutation,
 } = apiService;

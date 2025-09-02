@@ -10,13 +10,15 @@ import {
   Dimensions,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery } from '../services/apiService';
+import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useDeleteCarTaskMutation, useGetUserDetailsQuery, useGetPostsQuery } from '../services/apiService';
 import LoadingIndicator from '../components/LoadingIndicator';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
 import FAIcon from '../components/FAIcon';
 import UserBadge from '../components/UserBadge';
 import ImageGalleryModal from '../components/ImageGalleryModal';
+import CarTaskModal from '../components/CarTaskModal';
+import Listing from '../components/Listing';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -27,6 +29,10 @@ const CarDetailScreen = ({ route, navigation }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [individualGalleryModalVisible, setIndividualGalleryModalVisible] = useState(false);
   const [selectedGallery, setSelectedGallery] = useState(null);
+  const [modsModalVisible, setModsModalVisible] = useState(false);
+  const [selectedMod, setSelectedMod] = useState(null);
+  const [taskModalVisible, setTaskModalVisible] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
 
   if (!carId) {
     return (
@@ -98,6 +104,26 @@ const CarDetailScreen = ({ route, navigation }) => {
   // Fetch car galleries using internal_id URL path (Murray pattern)
   const { data: carGalleriesData, isLoading: galleriesLoading, error: galleriesError } = useGetCarGalleriesByInternalIdQuery(
     carData?.internal_id,
+    { skip: !carData?.internal_id }
+  );
+
+  // Fetch car tasks using internal_id
+  const { data: carTasksData, isLoading: tasksLoading, error: tasksError, refetch: refetchTasks } = useGetCarTasksQuery(
+    { carId: carData?.internal_id },
+    { skip: !carData?.internal_id }
+  );
+
+  // Get current user details for ownership check
+  const { data: currentUser } = useGetUserDetailsQuery();
+
+  // CarTask mutations
+  const [createCarTask] = useCreateCarTaskMutation();
+  const [updateCarTask] = useUpdateCarTaskMutation();
+  const [deleteCarTask] = useDeleteCarTaskMutation();
+
+  // Fetch posts related to this car
+  const { data: carPostsData, isLoading: postsLoading, error: postsError } = useGetPostsQuery(
+    { car_id: carData?.internal_id },
     { skip: !carData?.internal_id }
   );
 
@@ -294,10 +320,17 @@ const CarDetailScreen = ({ route, navigation }) => {
     return stats;
   };
 
+  // Check if current user owns this car
+  const isCarOwner = currentUser && carData && (
+    currentUser.user_id === carData.user_id
+  );
+
   const tabs = [
     { key: 'overview', label: 'Overview', icon: 'info-circle' },
+    { key: 'feed', label: 'Feed', icon: 'feed', count: carPostsData?.entries?.length || 0 },
     { key: 'galleries', label: 'Galleries', icon: 'images', count: carGalleriesData?.entries?.length || 0 },
     { key: 'mods', label: 'Mods', icon: 'wrench', count: modsData?.entries?.length || 0 },
+    ...(isCarOwner ? [{ key: 'tasks', label: 'Tasks', icon: 'check-square', count: carTasksData?.entries?.length || 0 }] : []),
     { key: 'related', label: 'Related', icon: 'cars', count: relatedMakeCars.length + relatedModelCars.length },
   ];
 
@@ -305,15 +338,68 @@ const CarDetailScreen = ({ route, navigation }) => {
     switch (activeTab) {
       case 'overview':
         return renderOverviewTab();
+      case 'feed':
+        return renderFeedTab();
       case 'galleries':
         return renderGalleriesTab();
       case 'mods':
         return renderModsTab();
+      case 'tasks':
+        return renderTasksTab();
       case 'related':
         return renderRelatedTab();
       default:
         return renderOverviewTab();
     }
+  };
+
+  const renderFeedTab = () => {
+    if (postsLoading) {
+      return (
+        <View style={styles.tabContent}>
+          <View style={styles.loadingContainer}>
+            <FAIcon name="spinner" size={20} color={colors.BRG} />
+            <Text style={styles.loadingText}>Loading posts...</Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (postsError) {
+      return (
+        <View style={styles.tabContent}>
+          <View style={styles.errorContainer}>
+            <FAIcon name="exclamation" size={24} color={colors.ERROR} />
+            <Text style={styles.errorText}>Error loading posts</Text>
+            <Text style={styles.errorDetails}>
+              {postsError?.data?.message || postsError?.message || 'Failed to load posts'}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    const posts = carPostsData?.entries || [];
+
+    if (posts.length === 0) {
+      return (
+        <EmptyState
+          title="No Posts"
+          message="No posts found for this car yet"
+          icon="feed"
+        />
+      );
+    }
+
+    return (
+      <View style={styles.tabContent}>
+        <Text style={styles.sectionTitle}>Posts featuring this car ({posts.length})</Text>
+        <Listing 
+          data={carPostsData}
+          displayOptions={{ hideCarBadge: true }} // Hide car badge since we're already on the car's page
+        />
+      </View>
+    );
   };
 
   const renderOverviewTab = () => {
@@ -571,17 +657,36 @@ const CarDetailScreen = ({ route, navigation }) => {
               {/* Mod Images */}
               {mod.gallery && mod.gallery.length > 0 && (
                 <View style={styles.modGallery}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {mod.gallery.map((image, imageIndex) => (
-                      <TouchableOpacity key={imageIndex} style={styles.modImageContainer}>
-                        <Image
-                          source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${image.filename}` }}
-                          style={styles.modImage}
-                          resizeMode="cover"
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                  <TouchableOpacity 
+                    style={styles.modGalleryPreview}
+                    onPress={() => {
+                      setSelectedMod(mod);
+                      setModsModalVisible(true);
+                    }}
+                  >
+                    {/* Show only first image as preview */}
+                    <Image
+                      source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${mod.gallery[0].filename}` }}
+                      style={styles.modPreviewImage}
+                      resizeMode="cover"
+                    />
+                    
+                    {/* Image count overlay */}
+                    {mod.gallery.length > 1 && (
+                      <View style={styles.modImageCount}>
+                        <FAIcon name="images" size={14} color={colors.WHITE} />
+                        <Text style={styles.modImageCountText}>
+                          {mod.gallery.length}
+                        </Text>
+                      </View>
+                    )}
+                    
+                    {/* Tap to view overlay */}
+                    <View style={styles.modTapOverlay}>
+                      <FAIcon name="expand" size={16} color={colors.WHITE} />
+                      <Text style={styles.modTapText}>Tap to view</Text>
+                    </View>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -662,6 +767,216 @@ const CarDetailScreen = ({ route, navigation }) => {
       </Text>
     </TouchableOpacity>
   );
+
+  // CarTask handlers
+  const handleCreateTask = async (formData) => {
+    try {
+      const form = new FormData();
+      
+      // Add basic fields
+      form.append('title', formData.title);
+      form.append('body', formData.body);
+      form.append('type', formData.type);
+      form.append('category', formData.category);
+      form.append('car_id', formData.car_id);
+      
+      // Add images if any
+      if (formData.images && formData.images.length > 0) {
+        formData.images.forEach((image, index) => {
+          form.append('gallery', {
+            uri: image.uri,
+            type: image.type || 'image/jpeg',
+            name: image.fileName || `image_${index}.jpg`,
+          });
+        });
+      }
+
+      await createCarTask({ carId: carData.internal_id, formData: form }).unwrap();
+      refetchTasks();
+    } catch (error) {
+      console.error('Error creating task:', error);
+      throw new Error(error.data?.message || error.message || 'Failed to create task');
+    }
+  };
+
+  const handleUpdateTask = async (formData) => {
+    try {
+      const form = new FormData();
+      
+      // Add basic fields
+      form.append('title', formData.title);
+      form.append('body', formData.body);
+      form.append('type', formData.type);
+      form.append('category', formData.category);
+      form.append('car_id', formData.car_id);
+      
+      // Add images if any
+      if (formData.images && formData.images.length > 0) {
+        formData.images.forEach((image, index) => {
+          form.append('gallery', {
+            uri: image.uri,
+            type: image.type || 'image/jpeg',
+            name: image.fileName || `image_${index}.jpg`,
+          });
+        });
+      }
+
+      await updateCarTask({ 
+        taskId: editingTask.internal_id || editingTask._id, 
+        formData: form,
+        carId: carData.internal_id 
+      }).unwrap();
+      
+      setEditingTask(null);
+      refetchTasks();
+    } catch (error) {
+      console.error('Error updating task:', error);
+      throw new Error(error.data?.message || error.message || 'Failed to update task');
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    Alert.alert(
+      'Delete Task',
+      'Are you sure you want to delete this task?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteCarTask(taskId).unwrap();
+              refetchTasks();
+            } catch (error) {
+              console.error('Error deleting task:', error);
+              Alert.alert('Error', 'Failed to delete task. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const renderTasksTab = () => {
+    if (tasksLoading) {
+      return (
+        <View style={styles.tabContent}>
+          <View style={styles.loadingContainer}>
+            <FAIcon name="spinner" size={20} color={colors.BRG} />
+            <Text style={styles.loadingText}>Loading tasks...</Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (tasksError) {
+      return (
+        <View style={styles.tabContent}>
+          <View style={styles.errorContainer}>
+            <FAIcon name="exclamation" size={24} color={colors.ERROR} />
+            <Text style={styles.errorText}>Error loading tasks</Text>
+            <Text style={styles.errorDetails}>
+              {tasksError?.data?.message || tasksError?.message || 'Failed to load tasks'}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    const tasks = carTasksData?.entries || [];
+
+    // Group tasks by category
+    const tasksByCategory = tasks.reduce((groups, task) => {
+      const category = task.category || 'other';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(task);
+      return groups;
+    }, {});
+
+    // Category display names
+    const categoryLabels = {
+      engine: 'Engine',
+      transmission: 'Transmission',
+      brakes: 'Brakes',
+      suspension: 'Suspension',
+      wheels: 'Wheels',
+      interior: 'Interior',
+      exterior: 'Exterior',
+      electrical: 'Electrical',
+      maintenance: 'General Maintenance',
+      performance: 'Performance',
+      restoration: 'Restoration',
+      other: 'Other',
+    };
+
+    return (
+      <View style={styles.tabContent}>
+        {/* Create New Task Button */}
+        <TouchableOpacity 
+          style={styles.createTaskButton}
+          onPress={() => setTaskModalVisible(true)}
+        >
+          <FAIcon name="plus" size={16} color={colors.WHITE} />
+          <Text style={styles.createTaskButtonText}>Add New Task</Text>
+        </TouchableOpacity>
+
+        {/* Tasks List */}
+        {tasks.length === 0 ? (
+          <EmptyState
+            title="No Tasks"
+            message="No tasks found for this car. Add your first task to get started!"
+            icon="check-square"
+          />
+        ) : (
+          <ScrollView style={styles.tasksContainer}>
+            {Object.entries(tasksByCategory).map(([category, categoryTasks]) => (
+              <View key={category} style={styles.categoryGroup}>
+                <Text style={styles.categoryTitle}>
+                  {categoryLabels[category] || category} ({categoryTasks.length})
+                </Text>
+                {categoryTasks.map((task, index) => (
+                  <View key={task._id || index} style={styles.taskItem}>
+                    <View style={styles.taskHeader}>
+                      <Text style={styles.taskTitle}>{task.title}</Text>
+                      <View style={styles.taskActions}>
+                        <TouchableOpacity 
+                          style={styles.taskActionButton}
+                          onPress={() => {
+                            setEditingTask(task);
+                            setTaskModalVisible(true);
+                          }}
+                        >
+                          <FAIcon name="edit" size={14} color={colors.TEXT_SECONDARY} />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={styles.taskActionButton}
+                          onPress={() => handleDeleteTask(task.internal_id || task._id)}
+                        >
+                          <FAIcon name="trash" size={14} color={colors.ERROR} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                    {task.body && (
+                      <Text style={styles.taskDescription}>{task.body}</Text>
+                    )}
+                    <View style={styles.taskMeta}>
+                      <Text style={styles.taskType}>{task.type}</Text>
+                      <Text style={styles.taskDate}>
+                        {new Date(task.created_at).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </ScrollView>
+        )}
+      </View>
+    );
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -784,6 +1099,30 @@ const CarDetailScreen = ({ route, navigation }) => {
           setSelectedGallery(null);
         }}
         title={selectedGallery?.title || 'Gallery'}
+      />
+
+      {/* Mods Gallery Modal */}
+      <ImageGalleryModal
+        visible={modsModalVisible}
+        images={selectedMod?.gallery || []}
+        onClose={() => {
+          setModsModalVisible(false);
+          setSelectedMod(null);
+        }}
+        title={selectedMod?.title || 'Modification'}
+      />
+
+      {/* Car Task Modal */}
+      <CarTaskModal
+        visible={taskModalVisible}
+        onClose={() => {
+          setTaskModalVisible(false);
+          setEditingTask(null);
+        }}
+        onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
+        carId={carData?.internal_id}
+        editMode={!!editingTask}
+        existingTask={editingTask}
       />
     </ScrollView>
   );
@@ -1177,6 +1516,52 @@ const styles = StyleSheet.create({
   modGallery: {
     marginTop: 8,
   },
+  modGalleryPreview: {
+    position: 'relative',
+    width: '100%',
+    height: 120,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  modPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modImageCount: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  modImageCountText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  modTapOverlay: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  modTapText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // Legacy styles (keeping for compatibility)
   modImageContainer: {
     marginRight: 8,
     borderRadius: 8,
@@ -1185,6 +1570,100 @@ const styles = StyleSheet.create({
   modImage: {
     width: 100,
     height: 80,
+  },
+
+  // Tasks
+  createTaskButton: {
+    backgroundColor: colors.BRG,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 16,
+    gap: 8,
+  },
+  createTaskButtonText: {
+    color: colors.WHITE,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  tasksContainer: {
+    flex: 1,
+  },
+  categoryGroup: {
+    marginBottom: 20,
+  },
+  categoryTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.TEXT_PRIMARY,
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.BRG,
+  },
+  taskItem: {
+    backgroundColor: colors.WHITE,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  taskHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  taskTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+    flex: 1,
+    marginRight: 12,
+  },
+  taskActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  taskActionButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: colors.LIGHT_GRAY,
+  },
+  taskDescription: {
+    fontSize: 14,
+    color: colors.TEXT_SECONDARY,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  taskMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  taskType: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.BRG,
+    textTransform: 'capitalize',
+    backgroundColor: colors.LIGHT_GRAY,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  taskDate: {
+    fontSize: 12,
+    color: colors.TEXT_SECONDARY,
   },
 
   // Related Cars

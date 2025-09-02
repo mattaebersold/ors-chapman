@@ -14,7 +14,8 @@ import {
   useGetCommentsQuery, 
   useCreateCommentMutation, 
   useUpdateCommentMutation, 
-  useDeleteCommentMutation 
+  useDeleteCommentMutation,
+  useGetUserDetailsQuery
 } from '../services/apiService';
 import UserBadge from './UserBadge';
 import LoadingIndicator from './LoadingIndicator';
@@ -23,7 +24,8 @@ import FAIcon from './FAIcon';
 
 const Comments = ({ document_id, document_type = 'post' }) => {
   const { userInfo } = useSelector(state => state.auth);
-  const [collapsed, setCollapsed] = useState(false);
+  const { data: currentUser } = useGetUserDetailsQuery();
+  const [collapsed, setCollapsed] = useState(true); // Start collapsed
   const [newComment, setNewComment] = useState('');
   const [editingComment, setEditingComment] = useState(null);
   const [editText, setEditText] = useState('');
@@ -51,8 +53,9 @@ const Comments = ({ document_id, document_type = 'post' }) => {
   const comments = commentsData?.entries || [];
   const commentCount = comments.length;
 
+
   const handleCreateComment = async () => {
-    if (!newComment.trim() || !userInfo) return;
+    if (!newComment.trim() || !currentUser) return;
 
     try {
       await createComment({
@@ -113,7 +116,7 @@ const Comments = ({ document_id, document_type = 'post' }) => {
   };
 
   const renderComment = ({ item: comment }) => {
-    const isUserComment = userInfo && comment.user_id === userInfo.user_id;
+    const isUserComment = currentUser && comment.user_id === currentUser.user_id;
     const isEditing = editingComment === comment.internal_id;
 
     return (
@@ -210,7 +213,7 @@ const Comments = ({ document_id, document_type = 'post' }) => {
       {!collapsed && (
         <View style={styles.content}>
           {/* New Comment Input */}
-          {userInfo && (
+          {currentUser && (
             <View style={styles.newCommentContainer}>
               <TextInput
                 style={styles.commentInput}

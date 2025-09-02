@@ -1,16 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useGetUserQuery } from '../services/apiService';
 import FAIcon from './FAIcon';
 
 const UserBadge = ({ userId, style = {} }) => {
-  const { data: user, isLoading, error } = useGetUserQuery(userId, {
+  // Safely get navigation - might not be available in modals
+  let navigation;
+  try {
+    navigation = useNavigation();
+  } catch (error) {
+    // Navigation not available (e.g., in modal context)
+    navigation = null;
+  }
+  const { data: user, isLoading, error: userError } = useGetUserQuery(userId, {
     skip: !userId
   });
 
   
-  if (!userId || isLoading || error || !user) return null;
+  if (!userId || isLoading || userError || !user) return null;
 
   const getProfileImageSource = () => {
     if (user?.gallery?.[0]?.filename) {
@@ -28,8 +37,27 @@ const UserBadge = ({ userId, style = {} }) => {
     return 'User';
   };
 
+  const handlePress = () => {
+    if (navigation && userId) {
+      try {
+        navigation.navigate('UserDetail', { 
+          userId: userId,
+          user: user // Pass the user data to avoid re-fetching
+        });
+      } catch (error) {
+        console.error('Navigation error:', error);
+      }
+    }
+    // If navigation is not available (e.g., in modal), do nothing
+  };
+
   return (
-    <View style={[styles.badge, style]}>
+    <TouchableOpacity 
+      style={[styles.badge, style]} 
+      onPress={handlePress}
+      activeOpacity={navigation ? 0.7 : 1}
+      disabled={!navigation}
+    >
       <View style={styles.imageContainer}>
         {getProfileImageSource() ? (
           <Image
@@ -39,14 +67,14 @@ const UserBadge = ({ userId, style = {} }) => {
           />
         ) : (
           <View style={[styles.image, styles.placeholder]}>
-            <FAIcon name="user" size={8} color={colors.WHITE} />
+            <FAIcon name="user" size={12} color={colors.WHITE} />
           </View>
         )}
       </View>
       <Text style={styles.text}>
         {getDisplayName()}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -55,19 +83,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.DARK_GRAY,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     width: 'inherit',
     elevation: 2,
   },
   imageContainer: {
-    marginRight: 6,
+    marginRight: 8,
   },
   image: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   placeholder: {
     backgroundColor: colors.DARK_GRAY,
@@ -76,7 +104,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: colors.WHITE,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

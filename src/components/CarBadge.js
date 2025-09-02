@@ -61,7 +61,7 @@ const CarBadge = ({ carId, style = {} }) => {
           />
         ) : (
           <View style={[styles.image, styles.placeholder]}>
-            <FAIcon name="car" size={8} color={colors.WHITE} />
+            <FAIcon name="car" size={12} color={colors.WHITE} />
           </View>
         )}
       </View>
@@ -77,19 +77,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.DARK_GRAY,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     width: 'inherit',
     elevation: 2,
   },
   imageContainer: {
-    marginRight: 6,
+    marginRight: 8,
   },
   image: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   placeholder: {
     backgroundColor: colors.DARK_GRAY,
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: colors.WHITE,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

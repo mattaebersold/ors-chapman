@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   FlatList,
+  Keyboard,
 } from 'react-native';
 import { colors } from '../constants/colors';
 import { useSearchQuery } from '../services/apiService';
@@ -41,6 +42,7 @@ const SearchScreen = ({ navigation, route }) => {
   const handleSearch = () => {
     if (searchTerm.trim()) {
       setHasSearched(true);
+      Keyboard.dismiss(); // Close the keyboard
     }
   };
 
@@ -127,13 +129,6 @@ const SearchScreen = ({ navigation, route }) => {
         )}
       </View>
 
-      <TouchableOpacity 
-        style={[styles.searchButton, !searchTerm.trim() && styles.searchButtonDisabled]}
-        onPress={handleSearch}
-        disabled={!searchTerm.trim()}
-      >
-        <Text style={styles.searchButtonText}>Search</Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -310,21 +305,6 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 4,
   },
-  searchButton: {
-    backgroundColor: colors.BRG,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  searchButtonDisabled: {
-    backgroundColor: colors.LIGHT_GRAY,
-  },
-  searchButtonText: {
-    color: colors.WHITE,
-    fontSize: 16,
-    fontWeight: '600',
-  },
   tabsContainer: {
     backgroundColor: colors.WHITE,
     borderBottomWidth: 1,
@@ -336,21 +316,23 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
     backgroundColor: colors.BACKGROUND,
     marginRight: 8,
     borderWidth: 1,
     borderColor: colors.BORDER,
+    minHeight: 40, // Ensure consistent height
   },
   activeTabButton: {
     backgroundColor: colors.BRG,
     borderColor: colors.BRG,
   },
   tabButtonText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
     color: colors.TEXT_SECONDARY,
+    textAlign: 'center',
   },
   activeTabButtonText: {
     color: colors.WHITE,

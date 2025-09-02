@@ -30,7 +30,8 @@ import {
   faClock,
   faFilter,
   faEdit,
-  faTrash
+  faTrash,
+  faCheckSquare
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -82,6 +83,7 @@ const iconMap = {
   clock: faClock,
   edit: faEdit,
   trash: faTrash,
+  'check-square': faCheckSquare,
 };
 
 const FAIcon = ({ name, size = 20, color = '#000', style, ...props }) => {

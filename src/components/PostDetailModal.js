@@ -43,18 +43,6 @@ const PostDetailModal = ({ visible, post, onClose }) => {
     currentUser.user_id === post.user_id
   );
 
-  // Debug ownership checking
-  console.log('PostDetailModal ownership check:', {
-    currentUser: currentUser ? {
-      user_id: currentUser.user_id,
-      username: currentUser.username
-    } : null,
-    post: post ? {
-      user_id: post.user_id,
-      title: post.title
-    } : null,
-    isOwner
-  });
 
   // Detect if this is an event and adapt the data structure
   const isEvent = post.event_type || post.event_date || post.recurring_frequency;

@@ -32,13 +32,6 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
     currentUser.user_id === post.user_id
   );
 
-  // Debug ownership checking - let's see currentUser fields
-  console.log('Card ownership debug - currentUser exists?:', !!currentUser);
-  console.log('Card ownership debug - full currentUser:', currentUser);
-  console.log('Card ownership debug - currentUser.user_id:', currentUser?.user_id);
-  console.log('Card ownership debug - post.user_id:', post?.user_id);
-  console.log('Card ownership debug - comparison result:', currentUser?.user_id === post?.user_id);
-  console.log('Card ownership debug - isOwner:', isOwner);
   
 
   const handlePress = useCallback(() => {

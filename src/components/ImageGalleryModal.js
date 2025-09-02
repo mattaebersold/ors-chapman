@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,13 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const ImageGalleryModal = ({ visible, images, onClose, title = "Gallery" }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Reset index when modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      setCurrentIndex(0);
+    }
+  }, [visible]);
 
   if (!images || images.length === 0) {
     return null;
