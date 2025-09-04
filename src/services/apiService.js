@@ -461,16 +461,8 @@ export const apiService = createApi({
     // Comment endpoints
     getComments: builder.query({
       query: ({ document_id, document_type, page = 0, limit = 10 }) => ({
-        url: '/api/comment',
+        url: `/api/comment?entry_type=${document_type}&entry_id=${document_id}&page=${page}&omit=none&limit=${limit}`,
         method: 'GET',
-        params: {
-          document_id,
-          document_type,
-          page,
-          limit,
-          sort: 'created_at',
-          order: 'desc'
-        },
       }),
       providesTags: (result, error, { document_id }) => [
         { type: 'Comment', id: `LIST-${document_id}` }
@@ -481,7 +473,11 @@ export const apiService = createApi({
       query: ({ document_id, document_type, body }) => ({
         url: '/api/comment/create',
         method: 'POST',
-        body: { document_id, document_type, body },
+        body: { 
+          document_id: document_id,
+          document_type: document_type, 
+          body: body 
+        },
       }),
       invalidatesTags: (result, error, { document_id }) => [
         { type: 'Comment', id: `LIST-${document_id}` }

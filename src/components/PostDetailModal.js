@@ -415,31 +415,6 @@ const PostDetailModal = ({ visible, post, onClose }) => {
                 <Comments document_id={normalizedData.internal_id} document_type={isEvent ? "event" : "post"} />
               </View>
 
-              {/* Additional Details */}
-              <View style={styles.detailsContainer}>
-                <Text style={styles.detailsTitle}>Details</Text>
-                
-                {normalizedData.type && (
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Type:</Text>
-                    <Text style={styles.detailValue}>{normalizedData.type}</Text>
-                  </View>
-                )}
-
-                {normalizedData.user_id && (
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Author:</Text>
-                    <Text style={styles.detailValue}>{normalizedData.user_id}</Text>
-                  </View>
-                )}
-
-                {normalizedData.gallery && normalizedData.gallery.length > 1 && (
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Images:</Text>
-                    <Text style={styles.detailValue}>{normalizedData.gallery.length} photos</Text>
-                  </View>
-                )}
-              </View>
             </View>
           </ScrollView>
       </View>
@@ -615,33 +590,6 @@ const styles = StyleSheet.create({
   socialContainer: {
     marginBottom: 20,
     gap: 8,
-  },
-  detailsContainer: {
-    borderTopWidth: 1,
-    borderTopColor: colors.LIGHT_GRAY,
-    paddingTop: 16,
-  },
-  detailsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.TEXT_PRIMARY,
-    marginBottom: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.BACKGROUND,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: colors.TEXT_SECONDARY,
-    fontWeight: '500',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: colors.TEXT_PRIMARY,
   },
   eventDetailsContainer: {
     marginTop: 16,

@@ -51,7 +51,7 @@ const Comments = ({ document_id, document_type = 'post' }) => {
   if (!document_id) return null;
 
   const comments = commentsData?.entries || [];
-  const commentCount = comments.length;
+  const commentCount = commentsData?.total || 0;
 
 
   const handleCreateComment = async () => {
