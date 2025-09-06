@@ -30,14 +30,14 @@ const HomeScreen = () => {
     }
   }, [followingLoading, hasFollowing]);
 
-  // config for the listing based on following status
+  // config for the listing - always use following filter like Murray
   const listingConfig = {
     type: 'posts',
     heading: '',
     // Add special parameters for posts query
     postsParams: {
-      filter: hasFollowing ? 'following' : null,
-      username: hasFollowing ? userInfo?.username : null,
+      filter: 'following',
+      username: userInfo?.username,
       omit: userInfo?.user_id // Always exclude current user's posts
     }
   };
@@ -58,7 +58,7 @@ const HomeScreen = () => {
           <FAIcon name="users" size={24} color={colors.BRG} />
           <Text style={styles.followTitle}>Follow for more posts</Text>
           <Text style={styles.followSubtitle}>
-            Follow other users to see their posts here. For now, here's what everyone's sharing:
+            Follow other users to see their posts in your feed. Use the search or explore sections to find users to follow.
           </Text>
         </View>
       </View>

@@ -24,6 +24,7 @@ import Card from './Card';
 import LoadingIndicator from './LoadingIndicator';
 import { colors, getPostTypeColor, getCategoryColor } from '../constants/colors';
 import FAIcon from './FAIcon';
+import FloatingFiltersButton from './FloatingFiltersButton';
 
 
 const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false }) => {
@@ -33,7 +34,6 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 	const [hasMore, setHasMore] = useState(true);
 	const [selectedPostType, setSelectedPostType] = useState(null);
 	const [selectedCategory, setSelectedCategory] = useState(null);
-	const [filtersExpanded, setFiltersExpanded] = useState(false);
 	
 	const POSTS_PER_PAGE = 10;
 
@@ -312,25 +312,6 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 		);
 	};
 
-	// Filter UI components
-	const renderFilterChip = (label, value, selectedValue, onSelect, getColor) => (
-		<TouchableOpacity
-			key={value}
-			style={[
-				styles.filterChip,
-				selectedValue === value && styles.activeFilterChip,
-				selectedValue === value && { backgroundColor: getColor ? getColor(value) : colors.BRG }
-			]}
-			onPress={() => onSelect(selectedValue === value ? null : value)}
-		>
-			<Text style={[
-				styles.filterChipText,
-				selectedValue === value && styles.activeFilterChipText
-			]}>
-				{label}
-			</Text>
-		</TouchableOpacity>
-	);
 
 	// Clear all filters (only clear filters that are shown)
 	const clearFilters = () => {
@@ -342,96 +323,10 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 		}
 	};
 
-	// Count active filters (only count filters that are shown)
-	const activeFilterCount = 
-		(filterTypes.includes('postType') && selectedPostType ? 1 : 0) + 
-		(filterTypes.includes('category') && selectedCategory ? 1 : 0);
 
-	const renderFilters = () => {
-		if (!showFilters) return null;
-
-		return (
-			<View style={styles.filtersContainer}>
-				{/* Filter Header */}
-				<TouchableOpacity 
-					style={styles.filterHeader}
-					onPress={() => setFiltersExpanded(!filtersExpanded)}
-					activeOpacity={0.7}
-				>
-					<View style={styles.filterHeaderLeft}>
-						<FAIcon name="search" size={16} color={colors.BRG} />
-						<Text style={styles.filterHeaderTitle}>Filters</Text>
-						{activeFilterCount > 0 && (
-							<View style={styles.filterBadge}>
-								<Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
-							</View>
-						)}
-					</View>
-					<View style={styles.filterHeaderRight}>
-						{activeFilterCount > 0 && (
-							<TouchableOpacity onPress={clearFilters} style={styles.clearButton}>
-								<Text style={styles.clearButtonText}>Clear</Text>
-							</TouchableOpacity>
-						)}
-						<FAIcon 
-							name={filtersExpanded ? "chevron-left" : "chevron-right"} 
-							size={16} 
-							color={colors.TEXT_SECONDARY} 
-						/>
-					</View>
-				</TouchableOpacity>
-
-				{/* Expandable Filter Content */}
-				{filtersExpanded && (
-					<View style={styles.filterContent}>
-						{/* Post Type Filters */}
-						{filterTypes.includes('postType') && (
-							<View style={styles.filterSection}>
-								<Text style={styles.filterSectionTitle}>Post Type</Text>
-								<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-									<View style={styles.filterChips}>
-										{postTypes.map(type => 
-											renderFilterChip(
-												type.charAt(0).toUpperCase() + type.slice(1),
-												type,
-												selectedPostType,
-												setSelectedPostType,
-												getPostTypeColor
-											)
-										)}
-									</View>
-								</ScrollView>
-							</View>
-						)}
-
-						{/* Category Filters */}
-						{filterTypes.includes('category') && (
-							<View style={styles.filterSection}>
-								<Text style={styles.filterSectionTitle}>Category</Text>
-								<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-									<View style={styles.filterChips}>
-										{categories.map(category => 
-											renderFilterChip(
-												category.charAt(0).toUpperCase() + category.slice(1),
-												category,
-												selectedCategory,
-												setSelectedCategory,
-												getCategoryColor
-											)
-										)}
-									</View>
-								</ScrollView>
-							</View>
-						)}
-					</View>
-				)}
-			</View>
-		);
-	};
 
 	return (
 		<View style={styles.container}>
-			{renderFilters()}
 			<FlatList
 				data={filteredPosts}
 				renderItem={renderPost}
@@ -451,6 +346,15 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 				onScroll={onScroll}
 				scrollEventThrottle={scrollEventThrottle}
 				nestedScrollEnabled={nestedScrollEnabled}
+			/>
+			<FloatingFiltersButton
+				showFilters={showFilters}
+				filterTypes={filterTypes}
+				selectedPostType={selectedPostType}
+				setSelectedPostType={setSelectedPostType}
+				selectedCategory={selectedCategory}
+				setSelectedCategory={setSelectedCategory}
+				onClearFilters={clearFilters}
 			/>
 		</View>
 	);
@@ -485,101 +389,6 @@ const styles = StyleSheet.create({
 	footerLoader: {
 		paddingVertical: 20,
 		alignItems: 'center',
-	},
-	// Filter styles
-	filtersContainer: {
-		backgroundColor: colors.WHITE,
-		borderBottomWidth: 1,
-		borderBottomColor: colors.BORDER,
-	},
-	filterHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingHorizontal: 16,
-		paddingVertical: 12,
-		backgroundColor: colors.WHITE,
-	},
-	filterHeaderLeft: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8,
-	},
-	filterHeaderTitle: {
-		fontSize: 16,
-		fontWeight: '600',
-		color: colors.TEXT_PRIMARY,
-	},
-	filterBadge: {
-		backgroundColor: colors.BRG,
-		borderRadius: 10,
-		minWidth: 20,
-		height: 20,
-		justifyContent: 'center',
-		alignItems: 'center',
-		paddingHorizontal: 6,
-	},
-	filterBadgeText: {
-		color: colors.WHITE,
-		fontSize: 12,
-		fontWeight: '600',
-	},
-	filterHeaderRight: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12,
-	},
-	clearButton: {
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-	},
-	clearButtonText: {
-		color: colors.BRG,
-		fontSize: 14,
-		fontWeight: '500',
-	},
-	filterContent: {
-		paddingVertical: 12,
-		borderTopWidth: 1,
-		borderTopColor: colors.BORDER,
-	},
-	filterSection: {
-		marginBottom: 12,
-	},
-	filterSectionTitle: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: colors.TEXT_PRIMARY,
-		marginBottom: 8,
-		paddingHorizontal: 16,
-	},
-	filterScroll: {
-		flexGrow: 0,
-	},
-	filterChips: {
-		flexDirection: 'row',
-		paddingHorizontal: 16,
-		gap: 8,
-	},
-	filterChip: {
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 16,
-		backgroundColor: colors.LIGHT_GRAY,
-		borderWidth: 1,
-		borderColor: colors.BORDER,
-	},
-	activeFilterChip: {
-		borderColor: colors.WHITE,
-	},
-	filterChipText: {
-		fontSize: 12,
-		fontWeight: '500',
-		color: colors.TEXT_SECONDARY,
-	},
-	activeFilterChipText: {
-		color: colors.WHITE,
-		fontWeight: '600',
 	},
 });
 

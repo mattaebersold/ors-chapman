@@ -133,11 +133,7 @@ const CarDetailScreen = ({ route, navigation }) => {
   const [deleteMod] = useDeleteModMutation();
   const [deleteCarGallery] = useDeleteCarGalleryMutation();
 
-  // Fetch posts related to this car
-  const { data: carPostsData, isLoading: postsLoading, error: postsError } = useGetPostsQuery(
-    { car_id: carData?.internal_id },
-    { skip: !carData?.internal_id }
-  );
+  // Posts will be handled by the Listing component in renderFeedTab()
 
   // Process related cars data with client-side filtering and fallback logic
   const relatedMakeCars = useMemo(() => {
@@ -339,7 +335,7 @@ const CarDetailScreen = ({ route, navigation }) => {
 
   const tabs = [
     { key: 'overview', label: 'Overview', icon: 'info-circle' },
-    { key: 'feed', label: 'Feed', icon: 'feed', count: carPostsData?.entries?.length || 0 },
+    { key: 'feed', label: 'Feed', icon: 'feed' },
     { key: 'galleries', label: 'Galleries', icon: 'images', count: carGalleriesData?.entries?.length || 0 },
     { key: 'mods', label: 'Mods', icon: 'wrench', count: modsData?.entries?.length || 0 },
     ...(isCarOwner ? [{ key: 'tasks', label: 'Tasks', icon: 'check-square', count: carTasksData?.entries?.length || 0 }] : []),
@@ -366,49 +362,29 @@ const CarDetailScreen = ({ route, navigation }) => {
   };
 
   const renderFeedTab = () => {
-    if (postsLoading) {
-      return (
-        <View style={styles.tabContent}>
-          <View style={styles.loadingContainer}>
-            <FAIcon name="spinner" size={20} color={colors.BRG} />
-            <Text style={styles.loadingText}>Loading posts...</Text>
-          </View>
-        </View>
-      );
-    }
+    // Config for listing posts related to this car
+    const listingConfig = {
+      type: 'posts',
+      heading: '',
+      postsParams: {
+        car_id: carData?.internal_id
+      }
+    };
 
-    if (postsError) {
-      return (
-        <View style={styles.tabContent}>
-          <View style={styles.errorContainer}>
-            <FAIcon name="exclamation" size={24} color={colors.ERROR} />
-            <Text style={styles.errorText}>Error loading posts</Text>
-            <Text style={styles.errorDetails}>
-              {postsError?.data?.message || postsError?.message || 'Failed to load posts'}
-            </Text>
-          </View>
-        </View>
-      );
-    }
-
-    const posts = carPostsData?.entries || [];
-
-    if (posts.length === 0) {
-      return (
-        <EmptyState
-          title="No Posts"
-          message="No posts found for this car yet"
-          icon="feed"
-        />
-      );
-    }
+    // Display options - hide car badge since we're on the car's page
+    const displayOptions = {
+      badgeProfile: true,
+      badgeCar: false, // Hide car badge - we're already on the car page
+    };
 
     return (
       <View style={styles.tabContent}>
-        <Text style={styles.sectionTitle}>Posts featuring this car ({posts.length})</Text>
+        <Text style={styles.sectionTitle}>Posts featuring this car</Text>
         <Listing 
-          data={carPostsData}
-          displayOptions={{ hideCarBadge: true }} // Hide car badge since we're already on the car's page
+          config={listingConfig} 
+          displayOptions={displayOptions}
+          showFilters={true} 
+          filterTypes={['postType']} 
         />
       </View>
     );

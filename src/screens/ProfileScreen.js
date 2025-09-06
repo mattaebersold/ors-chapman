@@ -68,9 +68,17 @@ const ProfileScreen = () => {
 
   const renderTabContent = () => {
     const config = getTabConfig(activeTab);
+    
+    // Display options - hide user badge since this is the user's own profile
+    const displayOptions = {
+      badgeProfile: false, // Hide user badge - this is the user's own profile
+      badgeCar: true, // Keep car badge for posts
+    };
+    
     return (
       <Listing 
         config={config}
+        displayOptions={displayOptions}
         CustomComponent={activeTab === 'garage' ? CarCard : undefined}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
