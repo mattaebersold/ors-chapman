@@ -723,6 +723,45 @@ export const apiService = createApi({
       ],
     }),
 
+    // Garage Car endpoints - main car CRUD operations
+    createGarageCar: builder.mutation({
+      query: (formData) => ({
+        url: '/api/car/create',
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: [
+        'Cars',
+        'UserEntries',
+      ],
+    }),
+
+    updateGarageCar: builder.mutation({
+      query: (formData) => ({
+        url: '/api/car/update',
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: (result, error, formData) => [
+        'Cars',
+        'UserEntries',
+        ...(result?._id ? [{ type: 'Cars', id: result._id }] : [])
+      ],
+    }),
+
+    deleteGarageCar: builder.mutation({
+      query: (carId) => ({
+        url: '/api/car/delete',
+        method: 'POST',
+        body: { internal_id: carId },
+      }),
+      invalidatesTags: (result, error, carId) => [
+        'Cars',
+        'UserEntries',
+        { type: 'Cars', id: carId }
+      ],
+    }),
+
   }),
 });
 
@@ -778,4 +817,7 @@ export const {
   useCreateCarTaskMutation,
   useUpdateCarTaskMutation,
   useDeleteCarTaskMutation,
+  useCreateGarageCarMutation,
+  useUpdateGarageCarMutation,
+  useDeleteGarageCarMutation,
 } = apiService;

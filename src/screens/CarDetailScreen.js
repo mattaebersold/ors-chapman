@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useDeleteCarTaskMutation, useGetUserDetailsQuery, useGetPostsQuery } from '../services/apiService';
+import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useGetUserDetailsQuery, useGetPostsQuery } from '../services/apiService';
 import LoadingIndicator from '../components/LoadingIndicator';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
@@ -18,6 +18,9 @@ import FAIcon from '../components/FAIcon';
 import UserBadge from '../components/UserBadge';
 import ImageGalleryModal from '../components/ImageGalleryModal';
 import CarTaskModal from '../components/CarTaskModal';
+import CarFormModal from '../components/CarFormModal';
+import ModFormModal from '../components/ModFormModal';
+import GalleryFormModal from '../components/GalleryFormModal';
 import Listing from '../components/Listing';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -33,6 +36,11 @@ const CarDetailScreen = ({ route, navigation }) => {
   const [selectedMod, setSelectedMod] = useState(null);
   const [taskModalVisible, setTaskModalVisible] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [editCarModalVisible, setEditCarModalVisible] = useState(false);
+  const [modFormModalVisible, setModFormModalVisible] = useState(false);
+  const [galleryFormModalVisible, setGalleryFormModalVisible] = useState(false);
+  const [editingMod, setEditingMod] = useState(null);
+  const [editingGallery, setEditingGallery] = useState(null);
 
   if (!carId) {
     return (
@@ -120,6 +128,10 @@ const CarDetailScreen = ({ route, navigation }) => {
   const [createCarTask] = useCreateCarTaskMutation();
   const [updateCarTask] = useUpdateCarTaskMutation();
   const [deleteCarTask] = useDeleteCarTaskMutation();
+  
+  // Mod and Gallery mutations
+  const [deleteMod] = useDeleteModMutation();
+  const [deleteCarGallery] = useDeleteCarGalleryMutation();
 
   // Fetch posts related to this car
   const { data: carPostsData, isLoading: postsLoading, error: postsError } = useGetPostsQuery(
@@ -496,26 +508,60 @@ const CarDetailScreen = ({ route, navigation }) => {
       <View style={styles.tabContent}>
         <View style={styles.galleryHeader}>
           <Text style={styles.sectionTitle}>Car Galleries ({carGalleries.length})</Text>
-          {allGalleryImages.length > 0 && (
-            <TouchableOpacity 
-              style={styles.viewAllButton}
-              onPress={() => setGalleryModalVisible(true)}
-            >
-              <FAIcon name="expand-arrows-alt" size={16} color={colors.BRG} />
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
-          )}
+          <View style={styles.galleryHeaderButtons}>
+            {allGalleryImages.length > 0 && (
+              <TouchableOpacity 
+                style={styles.viewAllButton}
+                onPress={() => setGalleryModalVisible(true)}
+              >
+                <FAIcon name="expand-arrows-alt" size={16} color={colors.BRG} />
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            )}
+            {isCarOwner && (
+              <TouchableOpacity 
+                style={styles.addButton}
+                onPress={() => setGalleryFormModalVisible(true)}
+              >
+                <FAIcon name="plus" size={12} color={colors.BRG} />
+                <Text style={styles.addButtonText}>Add Gallery</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Render each gallery collection */}
         {carGalleries.map((gallery, galleryIndex) => (
           <View key={gallery._id || galleryIndex} style={styles.gallerySection}>
-            <Text style={styles.galleryTitle}>
-              {gallery.title || `Gallery ${galleryIndex + 1}`}
-            </Text>
-            {gallery.description && (
-              <Text style={styles.galleryDescription}>{gallery.description}</Text>
-            )}
+            <View style={styles.galleryTitleRow}>
+              <View style={styles.galleryTitleContainer}>
+                <Text style={styles.galleryTitle}>
+                  {gallery.title || `Gallery ${galleryIndex + 1}`}
+                </Text>
+                {gallery.description && (
+                  <Text style={styles.galleryDescription}>{gallery.description}</Text>
+                )}
+              </View>
+              {isCarOwner && (
+                <View style={styles.galleryActionButtons}>
+                  <TouchableOpacity 
+                    style={styles.galleryActionButton}
+                    onPress={() => {
+                      setEditingGallery(gallery);
+                      setGalleryFormModalVisible(true);
+                    }}
+                  >
+                    <FAIcon name="edit" size={12} color={colors.TEXT_SECONDARY} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.galleryActionButton}
+                    onPress={() => handleDeleteGallery(gallery)}
+                  >
+                    <FAIcon name="trash" size={12} color={colors.ERROR} />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
             {gallery.gallery && gallery.gallery.length > 0 && (
               <TouchableOpacity 
                 style={styles.galleryPreview}
@@ -609,7 +655,18 @@ const CarDetailScreen = ({ route, navigation }) => {
 
     return (
       <View style={styles.tabContent}>
-        <Text style={styles.sectionTitle}>Modifications ({mods.length})</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Modifications ({mods.length})</Text>
+          {isCarOwner && (
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => setModFormModalVisible(true)}
+            >
+              <FAIcon name="plus" size={12} color={colors.BRG} />
+              <Text style={styles.addButtonText}>Add Mod</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <View style={styles.modsList}>
           {mods.map((mod, index) => (
             <View key={mod._id || index} style={styles.modItem}>
@@ -624,11 +681,32 @@ const CarDetailScreen = ({ route, navigation }) => {
                     <Text style={styles.modCategory}>{mod.category}</Text>
                   )}
                 </View>
-                {mod.installation_date && (
-                  <Text style={styles.modDate}>
-                    {new Date(mod.installation_date).toLocaleDateString()}
-                  </Text>
-                )}
+                <View style={styles.modActions}>
+                  {mod.installation_date && (
+                    <Text style={styles.modDate}>
+                      {new Date(mod.installation_date).toLocaleDateString()}
+                    </Text>
+                  )}
+                  {isCarOwner && (
+                    <View style={styles.modActionButtons}>
+                      <TouchableOpacity 
+                        style={styles.modActionButton}
+                        onPress={() => {
+                          setEditingMod(mod);
+                          setModFormModalVisible(true);
+                        }}
+                      >
+                        <FAIcon name="edit" size={12} color={colors.TEXT_SECONDARY} />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.modActionButton}
+                        onPress={() => handleDeleteMod(mod)}
+                      >
+                        <FAIcon name="trash" size={12} color={colors.ERROR} />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </View>
 
               {/* Mod Description */}
@@ -858,6 +936,69 @@ const CarDetailScreen = ({ route, navigation }) => {
     );
   };
 
+  const handleEditCarSuccess = () => {
+    // The car data will be refetched automatically due to cache invalidation
+    setEditCarModalVisible(false);
+  };
+
+  const handleModFormSuccess = () => {
+    // The mods data will be refetched automatically due to cache invalidation
+    setModFormModalVisible(false);
+    setEditingMod(null);
+  };
+
+  const handleGalleryFormSuccess = () => {
+    // The galleries data will be refetched automatically due to cache invalidation
+    setGalleryFormModalVisible(false);
+    setEditingGallery(null);
+  };
+
+  const handleDeleteMod = async (mod) => {
+    Alert.alert(
+      'Delete Modification',
+      `Are you sure you want to delete "${mod.title}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteMod(mod.internal_id || mod._id).unwrap();
+              // The mods data will be refetched automatically
+            } catch (error) {
+              console.error('Error deleting mod:', error);
+              Alert.alert('Error', 'Failed to delete modification. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteGallery = async (gallery) => {
+    Alert.alert(
+      'Delete Gallery',
+      `Are you sure you want to delete "${gallery.title}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteCarGallery(gallery.internal_id || gallery._id).unwrap();
+              // The galleries data will be refetched automatically
+            } catch (error) {
+              console.error('Error deleting gallery:', error);
+              Alert.alert('Error', 'Failed to delete gallery. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderTasksTab = () => {
     if (tasksLoading) {
       return (
@@ -1030,7 +1171,20 @@ const CarDetailScreen = ({ route, navigation }) => {
         </View>
         
         <View style={styles.carInfo}>
-          <Text style={styles.carTitle}>{getDisplayName()}</Text>
+          <View style={styles.carTitleRow}>
+            <Text style={styles.carTitle}>{getDisplayName()}</Text>
+            
+            {/* Edit Button - only show for car owner */}
+            {isCarOwner && (
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => setEditCarModalVisible(true)}
+              >
+                <FAIcon name="edit" size={16} color={colors.BRG} />
+                <Text style={styles.editButtonText}>Edit</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           
           {/* User Badge */}
           {carData.user_id && (
@@ -1124,6 +1278,41 @@ const CarDetailScreen = ({ route, navigation }) => {
         editMode={!!editingTask}
         existingTask={editingTask}
       />
+
+      {/* Car Edit Modal */}
+      <CarFormModal
+        visible={editCarModalVisible}
+        onClose={() => setEditCarModalVisible(false)}
+        editMode={true}
+        existingCar={carData}
+        onSuccess={handleEditCarSuccess}
+      />
+
+      {/* Mod Form Modal */}
+      <ModFormModal
+        visible={modFormModalVisible}
+        onClose={() => {
+          setModFormModalVisible(false);
+          setEditingMod(null);
+        }}
+        editMode={!!editingMod}
+        existingMod={editingMod}
+        carId={carData?.internal_id}
+        onSuccess={handleModFormSuccess}
+      />
+
+      {/* Gallery Form Modal */}
+      <GalleryFormModal
+        visible={galleryFormModalVisible}
+        onClose={() => {
+          setGalleryFormModalVisible(false);
+          setEditingGallery(null);
+        }}
+        editMode={!!editingGallery}
+        existingGallery={editingGallery}
+        carId={carData?.internal_id}
+        onSuccess={handleGalleryFormSuccess}
+      />
     </ScrollView>
   );
 };
@@ -1210,11 +1399,34 @@ const styles = StyleSheet.create({
   carInfo: {
     padding: 16,
   },
+  carTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
   carTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.TEXT_PRIMARY,
-    marginBottom: 16,
+    flex: 1,
+    marginRight: 16,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.LIGHT_GRAY,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.BRG,
+    gap: 6,
+  },
+  editButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.BRG,
   },
   userBadgeContainer: {
     alignSelf: 'flex-start',
@@ -1321,8 +1533,13 @@ const styles = StyleSheet.create({
   galleryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 16,
+  },
+  galleryHeaderButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   viewAllButton: {
     flexDirection: 'row',
@@ -1337,6 +1554,28 @@ const styles = StyleSheet.create({
   viewAllText: {
     marginLeft: 6,
     fontSize: 14,
+    fontWeight: '500',
+    color: colors.BRG,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.LIGHT_GRAY,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.BRG,
+    gap: 4,
+  },
+  addButtonText: {
+    fontSize: 12,
     fontWeight: '500',
     color: colors.BRG,
   },
@@ -1362,6 +1601,16 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.BORDER,
     paddingBottom: 16,
   },
+  galleryTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  galleryTitleContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
   galleryTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -1371,8 +1620,16 @@ const styles = StyleSheet.create({
   galleryDescription: {
     fontSize: 14,
     color: colors.TEXT_SECONDARY,
-    marginBottom: 12,
     lineHeight: 20,
+  },
+  galleryActionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  galleryActionButton: {
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: colors.LIGHT_GRAY,
   },
   galleryPreview: {
     position: 'relative',
@@ -1460,7 +1717,7 @@ const styles = StyleSheet.create({
   },
   modHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 12,
   },
   modIconContainer: {
@@ -1471,9 +1728,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    marginTop: 2,
   },
   modInfo: {
     flex: 1,
+  },
+  modActions: {
+    alignItems: 'flex-end',
+  },
+  modActionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  modActionButton: {
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: colors.LIGHT_GRAY,
   },
   modTitle: {
     fontSize: 16,
