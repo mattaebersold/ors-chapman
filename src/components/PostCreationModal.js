@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { colors } from '../constants/colors';
 import ImageUploader from './ImageUploader';
+import MakeModelPicker from './MakeModelPicker';
+import FAIcon from './FAIcon';
 import { 
   useGetUserGarageQuery, 
   useGetUserProjectsQuery, 
@@ -30,8 +32,15 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
     car_id: '',
     project_id: '',
     event_id: '',
+    // Custom car info fields (alternative to garage car association)
+    year: '',
+    make: '',
+    model: '',
+    trim: '',
+    color: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showCustomCarInfo, setShowCustomCarInfo] = useState(false);
 
   // Load association data
   const { data: garageData } = useGetUserGarageQuery({ limit: 100 });
@@ -41,6 +50,8 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
   // Populate form data when editing
   useEffect(() => {
     if (editMode && existingPost) {
+      const hasCustomCarInfo = existingPost.year || existingPost.make || existingPost.model || existingPost.trim || existingPost.color;
+      
       setFormData({
         title: existingPost.title || '',
         body: existingPost.body || '',
@@ -50,7 +61,15 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
         car_id: existingPost.car_id || '',
         project_id: existingPost.project_id || '',
         event_id: existingPost.event_id || '',
+        year: existingPost.year || '',
+        make: existingPost.make || '',
+        model: existingPost.model || '',
+        trim: existingPost.trim || '',
+        color: existingPost.color || '',
       });
+
+      // Show custom car info section if post has custom car data
+      setShowCustomCarInfo(hasCustomCarInfo);
     } else if (!editMode) {
       // Reset form when creating new post
       setFormData({
@@ -62,7 +81,13 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
         car_id: '',
         project_id: '',
         event_id: '',
+        year: '',
+        make: '',
+        model: '',
+        trim: '',
+        color: '',
       });
+      setShowCustomCarInfo(false);
     }
   }, [editMode, existingPost, visible]);
 
@@ -140,6 +165,14 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
     updateFormData('images', images);
   };
 
+  const handleMakeChange = (make) => {
+    updateFormData('make', make);
+  };
+
+  const handleModelChange = (model) => {
+    updateFormData('model', model);
+  };
+
   const validateForm = () => {
     if (!formData.title.trim()) {
       Alert.alert('Error', 'Title is required');
@@ -173,7 +206,13 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
       car_id: '',
       project_id: '',
       event_id: '',
+      year: '',
+      make: '',
+      model: '',
+      trim: '',
+      color: '',
     });
+    setShowCustomCarInfo(false);
   };
 
   const handleClose = () => {
@@ -432,6 +471,75 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
             )}
           </View>
 
+          {/* Custom Car Info Section */}
+          <View style={styles.section}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setShowCustomCarInfo(!showCustomCarInfo)}
+            >
+              <View style={styles.collapsibleHeaderContent}>
+                <Text style={styles.sectionTitle}>Custom Car Info</Text>
+                <FAIcon 
+                  name={showCustomCarInfo ? "chevron-up" : "chevron-down"} 
+                  size={16} 
+                  color={colors.BRG} 
+                />
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.helpText}>
+              If you want to associate this post with a specific car that's not in your garage, you can set the make/model here instead.
+            </Text>
+
+            {showCustomCarInfo && (
+              <View style={styles.collapsibleContent}>
+                {/* Year Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Year</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="e.g., 2023"
+                    value={formData.year}
+                    onChangeText={(text) => updateFormData('year', text)}
+                    keyboardType="numeric"
+                    maxLength={4}
+                  />
+                </View>
+
+                {/* Make and Model Picker */}
+                <MakeModelPicker
+                  initialMake={formData.make}
+                  initialModel={formData.model}
+                  onMakeChange={handleMakeChange}
+                  onModelChange={handleModelChange}
+                />
+
+                {/* Trim Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Trim</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="e.g., Sport, LX, Base"
+                    value={formData.trim}
+                    onChangeText={(text) => updateFormData('trim', text)}
+                    autoCapitalize="words"
+                  />
+                </View>
+
+                {/* Color Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Color</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="e.g., Red, Blue, White"
+                    value={formData.color}
+                    onChangeText={(text) => updateFormData('color', text)}
+                    autoCapitalize="words"
+                  />
+                </View>
+              </View>
+            )}
+          </View>
+
           {/* Bottom Spacing for Keyboard */}
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -602,6 +710,34 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 100, // Extra space for keyboard avoidance
+  },
+  // Collapsible section styles
+  collapsibleHeader: {
+    marginBottom: 8,
+  },
+  collapsibleHeaderContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  collapsibleContent: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.BORDER,
+  },
+  // Input group styles
+  inputGroup: {
+    marginBottom: 16,
+  },
+  textInput: {
+    backgroundColor: colors.WHITE,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    minHeight: 50,
   },
 });
 

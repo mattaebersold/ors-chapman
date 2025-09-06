@@ -111,7 +111,9 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 					type: postType,
 					make,
 					model,
-					user_id
+					user_id,
+					// Add support for additional params from config
+					...(config?.postsParams || {})
 				}, {
 					skip: !!customEvents
 				});
@@ -160,7 +162,9 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 					type: eventType,
 					make,
 					model,
-					user_id
+					user_id,
+					// Add support for additional params from config
+					...(config?.postsParams || {})
 				}, {
 					skip: !!customEvents
 				});
@@ -180,7 +184,9 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 					type: defaultType,
 					make,
 					model,
-					user_id
+					user_id,
+					// Add support for additional params from config
+					...(config?.postsParams || {})
 				}, {
 					skip: !!customEvents
 				});

@@ -188,7 +188,7 @@ export const apiService = createApi({
 
     // Posts endpoints
     getPosts: builder.query({
-      query: ({ page = 1, limit = 10, type = null, make = null, model = null, user_id = null }) => {
+      query: ({ page = 1, limit = 10, type = null, make = null, model = null, user_id = null, filter = null, username = null, omit = null }) => {
         const params = { 
           page: page - 1, // Backend uses 0-based indexing
           limit,
@@ -197,7 +197,10 @@ export const apiService = createApi({
           ...(type && { type }), // Add type parameter if provided
           ...(make && { make }), // Add make parameter if provided
           ...(model && make && { model }), // Add model parameter if provided (requires make)
-          ...(user_id && { user_id }) // Add user_id parameter if provided
+          ...(user_id && { user_id }), // Add user_id parameter if provided
+          ...(filter && { filter }), // Add filter parameter (e.g., 'following')
+          ...(username && { username }), // Add username parameter (needed for 'following' filter)
+          ...(omit && { omit }) // Add omit parameter to exclude specific user's posts
         };
         return {
           url: '/api/post',
@@ -425,6 +428,15 @@ export const apiService = createApi({
       },
       providesTags: (result, error, username) => [{ type: 'User', id: `follow-${username}` }],
       keepUnusedDataFor: 0, // Don't cache follow status
+    }),
+    // Get users the current user is following
+    getPaginatedFollowing: builder.query({
+      query: ({ index = 0, limit = 10, omit = 'none' }) => ({
+        url: `/api/follow/following/${index}/${omit}/${limit}`,
+        method: 'GET',
+      }),
+      providesTags: ['User'],
+      keepUnusedDataFor: 30, // Cache for 30 seconds
     }),
 
     // Like endpoints
@@ -792,6 +804,7 @@ export const {
   useFollowUserMutation,
   useUnfollowUserMutation,
   useGetFollowStatusQuery,
+  useGetPaginatedFollowingQuery,
   useGetLikeInfoQuery,
   useLikePostMutation,
   useUnlikePostMutation,
