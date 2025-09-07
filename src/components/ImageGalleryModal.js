@@ -15,15 +15,15 @@ import FAIcon from './FAIcon';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const ImageGalleryModal = ({ visible, images, onClose, title = "Gallery" }) => {
+const ImageGalleryModal = ({ visible, images, onClose, title = "Gallery", initialIndex = 0 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Reset index when modal becomes visible
   useEffect(() => {
     if (visible) {
-      setCurrentIndex(0);
+      setCurrentIndex(initialIndex || 0);
     }
-  }, [visible]);
+  }, [visible, initialIndex]);
 
   if (!images || images.length === 0) {
     return null;

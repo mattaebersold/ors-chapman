@@ -65,13 +65,14 @@ const Badge = ({ type, category, style = 'overlay' }) => {
 
 const styles = StyleSheet.create({
   badgeContainer: {
-    flexDirection: 'column',
+    flexDirection: 'row',
+    gap: 6,
     alignItems: 'flex-start',
   },
   overlayContainer: {
     position: 'absolute',
-    top: 12,
-    left: 12,
+    top: 6,
+    left: 6,
   },
   inlineContainer: {
     flexDirection: 'row',
@@ -79,14 +80,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    borderRadius: 6,
     elevation: 5,
   },
   overlayBadge: {
@@ -95,19 +89,20 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   inlineBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   badgeText: {
-    fontWeight: '700',
+    fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontSize: 10,
   },
   overlayText: {
     fontSize: 10,
   },
   inlineText: {
-    fontSize: 11,
+    fontSize: 10,
   },
 });
 

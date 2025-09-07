@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Alert } from 'react-native';
-import PostDetailModal from '../components/PostDetailModal';
-import PostCreationModal from '../components/PostCreationModal';
 import { useUpdatePostMutation } from '../services/apiService';
 import { createFormData, preparePostData } from '../utils/formUtils';
 
@@ -81,22 +79,30 @@ export const ModalProvider = ({ children }) => {
 
     switch (modalState.type) {
       case 'post':
+        // Use lazy loading to avoid circular dependency
+        const PostDetailModal = React.lazy(() => import('../components/PostDetailModal'));
         return (
-          <PostDetailModal
-            visible={modalState.visible}
-            post={modalState.data}
-            onClose={hideModal}
-          />
+          <React.Suspense fallback={null}>
+            <PostDetailModal
+              visible={modalState.visible}
+              post={modalState.data}
+              onClose={hideModal}
+            />
+          </React.Suspense>
         );
       case 'editPost':
+        // Use lazy loading to avoid circular dependency
+        const PostCreationModal = React.lazy(() => import('../components/PostCreationModal'));
         return (
-          <PostCreationModal
-            visible={modalState.visible}
-            onClose={hideModal}
-            onSubmit={handleUpdatePost}
-            editMode={true}
-            existingPost={modalState.data}
-          />
+          <React.Suspense fallback={null}>
+            <PostCreationModal
+              visible={modalState.visible}
+              onClose={hideModal}
+              onSubmit={handleUpdatePost}
+              editMode={true}
+              existingPost={modalState.data}
+            />
+          </React.Suspense>
         );
       default:
         return null;

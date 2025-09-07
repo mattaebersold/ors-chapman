@@ -71,8 +71,8 @@ const HomeScreen = () => {
         config={listingConfig} 
         displayOptions={displayOptions} 
         HeaderComponent={HeaderComponent}
-        showFilters={true} 
-        filterTypes={['postType']} 
+        showFilters={true}
+        filterTypes={['postType']}
       />
     </View>
   );

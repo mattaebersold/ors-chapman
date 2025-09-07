@@ -122,12 +122,14 @@ const Comments = ({ document_id, document_type = 'post' }) => {
     return (
       <View style={styles.commentItem}>
         <View style={styles.commentHeader}>
-          <UserBadge userId={comment.user_id} />
-          {isUserComment && (
-            <View style={styles.yourCommentBadge}>
-              <Text style={styles.yourCommentText}>Your Comment</Text>
-            </View>
-          )}
+          <View style={styles.commentHeaderLeft}>
+            <UserBadge userId={comment.user_id} />
+            {isUserComment && (
+              <View style={styles.yourCommentBadge}>
+                <Text style={styles.yourCommentText}>You</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.commentDate}>
             {new Date(comment.created_at).toLocaleDateString()}
           </Text>
@@ -144,20 +146,20 @@ const Comments = ({ document_id, document_type = 'post' }) => {
             />
             <View style={styles.editActions}>
               <TouchableOpacity 
-                style={styles.cancelButton}
+                style={styles.cancelEditButton}
                 onPress={() => {
                   setEditingComment(null);
                   setEditText('');
                 }}
               >
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelEditText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.saveButton, updating && styles.disabledButton]}
+                style={[styles.saveEditButton, updating && styles.disabledButton]}
                 onPress={handleUpdateComment}
                 disabled={updating}
               >
-                <Text style={styles.saveText}>
+                <Text style={styles.saveEditText}>
                   {updating ? 'Saving...' : 'Save'}
                 </Text>
               </TouchableOpacity>
@@ -169,16 +171,18 @@ const Comments = ({ document_id, document_type = 'post' }) => {
             {isUserComment && (
               <View style={styles.commentActions}>
                 <TouchableOpacity 
-                  style={styles.actionButton}
+                  style={styles.editActionButton}
                   onPress={() => handleEditComment(comment)}
                 >
-                  <FAIcon name="ellipsis-v" size={12} color={colors.TEXT_SECONDARY} />
+                  <FAIcon name="edit" size={10} color={colors.WHITE} />
+                  <Text style={styles.actionButtonText}>Edit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={styles.actionButton}
+                  style={styles.deleteActionButton}
                   onPress={() => handleDeleteComment(comment.internal_id)}
                 >
-                  <FAIcon name="times" size={12} color={colors.ERROR} />
+                  <FAIcon name="trash" size={10} color={colors.WHITE} />
+                  <Text style={styles.actionButtonText}>Delete</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -197,15 +201,15 @@ const Comments = ({ document_id, document_type = 'post' }) => {
         activeOpacity={0.7}
       >
         <View style={styles.headerLeft}>
-          <FAIcon name="comment" size={16} color={colors.BRG} />
+          <FAIcon name="comment" size={16} color={colors.WHITE} />
           <Text style={styles.headerTitle}>
             Comments {commentCount > 0 && `(${commentCount})`}
           </Text>
         </View>
         <FAIcon 
-          name={collapsed ? "chevron-right" : "chevron-left"} 
-          size={16} 
-          color={colors.TEXT_SECONDARY} 
+          name={collapsed ? "chevron-down" : "chevron-up"} 
+          size={14} 
+          color={colors.WHITE} 
         />
       </TouchableOpacity>
 
@@ -225,14 +229,15 @@ const Comments = ({ document_id, document_type = 'post' }) => {
               />
               <TouchableOpacity 
                 style={[
-                  styles.postButton, 
+                  styles.postCommentButton, 
                   (!newComment.trim() || creating) && styles.disabledButton
                 ]}
                 onPress={handleCreateComment}
                 disabled={!newComment.trim() || creating}
               >
-                <Text style={styles.postButtonText}>
-                  {creating ? 'Posting...' : 'Post'}
+                <FAIcon name="send" size={12} color={colors.WHITE} />
+                <Text style={styles.postCommentText}>
+                  {creating ? 'Posting...' : 'Post Comment'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -261,20 +266,30 @@ const Comments = ({ document_id, document_type = 'post' }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.WHITE,
-    marginTop: 8,
-    borderRadius: 8,
+    backgroundColor: colors.BACKGROUND,
+    marginTop: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
     overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.WHITE,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    backgroundColor: colors.BRG,
     borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -283,68 +298,81 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.TEXT_PRIMARY,
+    fontWeight: '700',
+    color: colors.WHITE,
   },
   content: {
-    padding: 16,
+    backgroundColor: colors.WHITE,
   },
   newCommentContainer: {
-    marginBottom: 16,
-    gap: 12,
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: colors.LIGHT_GRAY,
+    gap: 8,
   },
   commentInput: {
+    backgroundColor: colors.WHITE,
     borderWidth: 1,
     borderColor: colors.BORDER,
-    borderRadius: 8,
+    borderRadius: 6,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     fontSize: 14,
     color: colors.TEXT_PRIMARY,
     textAlignVertical: 'top',
-    minHeight: 80,
+    minHeight: 60,
   },
-  postButton: {
+  postCommentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.BRG,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
     alignSelf: 'flex-end',
+    gap: 6,
   },
   disabledButton: {
     backgroundColor: colors.GRAY,
   },
-  postButtonText: {
+  postCommentText: {
     color: colors.WHITE,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
   commentItem: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+    marginBottom: 2,
   },
   commentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  commentHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   yourCommentBadge: {
-    backgroundColor: colors.BRG,
+    backgroundColor: colors.SPEED,
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 1,
+    borderRadius: 8,
   },
   yourCommentText: {
-    color: colors.WHITE,
-    fontSize: 10,
-    fontWeight: '600',
+    color: colors.BLACK,
+    fontSize: 9,
+    fontWeight: '800',
   },
   commentDate: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.TEXT_SECONDARY,
-    marginLeft: 'auto',
+    fontWeight: '500',
   },
   commentContent: {
     flexDirection: 'row',
@@ -359,11 +387,31 @@ const styles = StyleSheet.create({
   },
   commentActions: {
     flexDirection: 'row',
-    gap: 8,
-    marginLeft: 12,
+    gap: 4,
+    marginTop: 6,
   },
-  actionButton: {
-    padding: 4,
+  editActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.BRG,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  deleteActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.ERROR,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  actionButtonText: {
+    color: colors.WHITE,
+    fontSize: 10,
+    fontWeight: '700',
   },
   editContainer: {
     gap: 12,
@@ -384,26 +432,27 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: 'flex-end',
   },
-  cancelButton: {
+  cancelEditButton: {
+    backgroundColor: colors.LIGHT_GRAY,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
-  cancelText: {
-    color: colors.TEXT_SECONDARY,
-    fontSize: 14,
-    fontWeight: '500',
+  cancelEditText: {
+    color: colors.TEXT_PRIMARY,
+    fontSize: 13,
+    fontWeight: '600',
   },
-  saveButton: {
+  saveEditButton: {
     backgroundColor: colors.BRG,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
-  saveText: {
+  saveEditText: {
     color: colors.WHITE,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
   errorText: {
     fontSize: 14,

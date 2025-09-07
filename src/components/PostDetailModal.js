@@ -23,6 +23,7 @@ import UserBadge from './UserBadge';
 import CarBadge from './CarBadge';
 import Likes from './Likes';
 import Comments from './Comments';
+import ImageGalleryModal from './ImageGalleryModal';
 import { useModal } from '../contexts/ModalContext';
 import { useDeletePostMutation, useGetUserDetailsQuery } from '../services/apiService';
 
@@ -31,6 +32,8 @@ const { width, height } = Dimensions.get('window');
 const PostDetailModal = ({ visible, post, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showActions, setShowActions] = useState(false);
+  const [imageGalleryModalVisible, setImageGalleryModalVisible] = useState(false);
+  const [imageGalleryStartIndex, setImageGalleryStartIndex] = useState(0);
   const { userInfo } = useSelector(state => state.auth);
   const { data: currentUser } = useGetUserDetailsQuery();
   const { showEditPostModal } = useModal();
@@ -100,7 +103,10 @@ const PostDetailModal = ({ visible, post, onClose }) => {
     event_type: post.event_type,
   };
 
-
+  const handleImagePress = (index) => {
+    setImageGalleryStartIndex(index);
+    setImageGalleryModalVisible(true);
+  };
 
   // Handle share functionality
   const handleShare = async () => {
@@ -238,12 +244,17 @@ const PostDetailModal = ({ visible, post, onClose }) => {
     if (imageUrls.length === 0) return null;
 
     const renderImage = ({ item, index }) => (
-      <Image 
-        source={{ uri: item }} 
-        style={styles.carouselImage}
-        resizeMode="cover"
-        onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
-      />
+      <TouchableOpacity 
+        onPress={() => handleImagePress(index)}
+        activeOpacity={0.9}
+      >
+        <Image 
+          source={{ uri: item }} 
+          style={styles.carouselImage}
+          resizeMode="cover"
+          onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
+        />
+      </TouchableOpacity>
     );
 
     const handleScroll = (event) => {
@@ -300,13 +311,13 @@ const PostDetailModal = ({ visible, post, onClose }) => {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.cancelButton}>Close</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <FAIcon name="times" size={18} color={colors.WHITE} />
           </TouchableOpacity>
-          <Text style={styles.title}>{normalizedData.type || 'Post'}</Text>
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
-              <FAIcon name="share" size={20} color={colors.WHITE} />
+              <FAIcon name="share" size={16} color={colors.WHITE} />
+              <Text style={styles.shareText}>Share</Text>
             </TouchableOpacity>
             {isOwner && (
               <View style={styles.ownerActionsContainer}>
@@ -418,6 +429,15 @@ const PostDetailModal = ({ visible, post, onClose }) => {
             </View>
           </ScrollView>
       </View>
+
+      {/* Image Gallery Modal */}
+      <ImageGalleryModal
+        visible={imageGalleryModalVisible}
+        images={normalizedData.gallery || []}
+        onClose={() => setImageGalleryModalVisible(false)}
+        title={normalizedData.title || 'Post Images'}
+        initialIndex={imageGalleryStartIndex}
+      />
     </Modal>
   );
 };
@@ -431,33 +451,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingTop: 8,
     backgroundColor: colors.BRG,
     borderBottomWidth: 1,
     borderBottomColor: colors.LIGHT_GRAY,
   },
-  cancelButton: {
-    color: colors.WHITE,
-    fontSize: 16,
-  },
-  title: {
-    color: colors.WHITE,
-    fontSize: 18,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+  closeButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 4,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   shareButton: {
-    width: 40,
-    height: 40,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  shareText: {
+    color: colors.WHITE,
+    fontSize: 11,
+    fontWeight: '800',
+    marginLeft: 6,
   },
   ownerActionsContainer: {
     position: 'relative',
@@ -465,10 +490,11 @@ const styles = StyleSheet.create({
   ownerActionsButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 20,
-    width: 40,
-    height: 40,
+    width: 30,
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 12
   },
   actionsMenu: {
     position: 'absolute',
@@ -556,7 +582,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   postInfo: {
-    padding: 20,
+    padding: 12,
   },
   postTitle: {
     fontSize: 24,

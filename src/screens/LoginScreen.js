@@ -13,7 +13,7 @@ import {
   Image,
   useColorScheme,
 } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView } from 'expo-video';
 import { useDispatch, useSelector } from 'react-redux';
 import { userLogin, clearError } from '../store/authSlice';
 
@@ -44,15 +44,13 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.backgroundContainer}>
-      <Video
+      <VideoView
         source={require('../../assets/login.mov')}
         style={styles.backgroundVideo}
-        resizeMode={ResizeMode.COVER}
-        shouldPlay
-        isLooping
-        isMuted
-        rate={1.0}
-        volume={0}
+        contentFit="cover"
+        shouldPlay={true}
+        isLooping={true}
+        isMuted={true}
       />
       <View style={styles.overlay} />
       <KeyboardAvoidingView 

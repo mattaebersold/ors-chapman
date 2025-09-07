@@ -1,9 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors } from '../constants/colors';
 import { useGetCarQuery } from '../services/apiService';
-import FAIcon from './FAIcon';
+import BaseBadge from './BaseBadge';
 
 const CarBadge = ({ carId, style = {} }) => {
   // Safely get navigation - might not be available in modals
@@ -17,7 +15,6 @@ const CarBadge = ({ carId, style = {} }) => {
   const { data: car, isLoading, error } = useGetCarQuery(carId, {
     skip: !carId
   });
-
 
   if (!carId || isLoading || error || !car) return null;
 
@@ -46,61 +43,15 @@ const CarBadge = ({ carId, style = {} }) => {
   };
 
   return (
-    <TouchableOpacity 
-      style={[styles.badge, style]} 
+    <BaseBadge
+      imageSource={getCarImageSource()}
+      displayName={getDisplayName()}
+      iconName="car"
       onPress={handlePress}
-      activeOpacity={navigation ? 0.7 : 1}
+      style={style}
       disabled={!navigation}
-    >
-      <View style={styles.imageContainer}>
-        {getCarImageSource() ? (
-          <Image
-            source={getCarImageSource()}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={[styles.image, styles.placeholder]}>
-            <FAIcon name="car" size={12} color={colors.WHITE} />
-          </View>
-        )}
-      </View>
-      <Text style={styles.text} numberOfLines={1}>
-        {getDisplayName()}
-      </Text>
-    </TouchableOpacity>
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.DARK_GRAY,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    width: 'inherit',
-    elevation: 2,
-  },
-  imageContainer: {
-    marginRight: 8,
-  },
-  image: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
-  placeholder: {
-    backgroundColor: colors.DARK_GRAY,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: {
-    color: colors.WHITE,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});
 
 export default CarBadge;

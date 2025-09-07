@@ -21,7 +21,6 @@ import MarketplaceScreen from '../screens/MarketplaceScreen';
 import SocietyScreen from '../screens/SocietyScreen';
 import CarsScreen from '../screens/CarsScreen';
 import ArticlesScreen from '../screens/ArticlesScreen';
-import NewButtonFAB from '../components/NewButtonFAB';
 import ProfileScreen from '../screens/ProfileScreen';
 import SearchScreen from '../screens/SearchScreen';
 import MyGarageScreen from '../screens/MyGarageScreen';
@@ -29,6 +28,7 @@ import UserDetailScreen from '../screens/UserDetailScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
 import CarDetailScreen from '../screens/CarDetailScreen';
 import LoadingScreen from '../screens/LoadingScreen';
+import CreateScreen from '../screens/CreateScreen';
 
 // Import marketing screens
 import AboutScreen from '../screens/AboutScreen';
@@ -83,7 +83,6 @@ const ProfileButton = ({ onPress }) => {
 };
 
 const TabNavigator = ({ navigation }) => (
-  <View style={{ flex: 1 }}>
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
@@ -93,6 +92,13 @@ const TabNavigator = ({ navigation }) => (
             iconName = 'feed';
           } else if (route.name === 'Society') {
             iconName = 'society';
+          } else if (route.name === 'Create') {
+            // Special styling for create button
+            return (
+              <View style={[styles.createButton, focused && styles.createButtonActive]}>
+                <FAIcon name="plus" size={22} color={colors.BLACK} />
+              </View>
+            );
           } else if (route.name === 'Browse') {
             iconName = 'marketplace';
           } else if (route.name === 'Cars') {
@@ -101,7 +107,7 @@ const TabNavigator = ({ navigation }) => (
             iconName = 'feed';
           }
 
-          return <FAIcon name={iconName} size={size} color={color} />;
+          return <FAIcon name={iconName} size={20} color={color} />;
         },
       tabBarActiveTintColor: colors.SPEED,
       tabBarInactiveTintColor: colors.WHITE,
@@ -157,7 +163,7 @@ const TabNavigator = ({ navigation }) => (
     <Tab.Screen 
       name="Browse" 
       component={MarketplaceScreen}
-      options={{ title: 'Marketplace' }}
+      options={{ title: 'Market' }}
     />
     <Tab.Screen 
       name="Cars" 
@@ -169,11 +175,15 @@ const TabNavigator = ({ navigation }) => (
       component={ArticlesScreen}
       options={{ title: 'Articles' }}
     />
+    <Tab.Screen 
+      name="Create" 
+      component={CreateScreen}
+      options={{ 
+        title: 'Create',
+        tabBarLabel: () => null, // Hide the label for create button
+      }}
+    />
     </Tab.Navigator>
-    
-    {/* Floating Action Button */}
-    <NewButtonFAB />
-  </View>
 );
 
 const AppNavigator = () => (
@@ -412,12 +422,12 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 16,
+    marginLeft: 0,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 10,
   },
   searchButton: {
     marginLeft: 12,
@@ -452,6 +462,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: colors.WHITE,
+  },
+  createButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.SPEED,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 6,
+  },
+  createButtonActive: {
+    backgroundColor: colors.SPEED,
+    transform: [{ scale: 1.1 }],
   },
 })
 

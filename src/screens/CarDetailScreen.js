@@ -31,6 +31,8 @@ const CarDetailScreen = ({ route, navigation }) => {
   const [galleryModalVisible, setGalleryModalVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [individualGalleryModalVisible, setIndividualGalleryModalVisible] = useState(false);
+  const [carHeaderGalleryModalVisible, setCarHeaderGalleryModalVisible] = useState(false);
+  const [carHeaderGalleryStartIndex, setCarHeaderGalleryStartIndex] = useState(0);
   const [selectedGallery, setSelectedGallery] = useState(null);
   const [modsModalVisible, setModsModalVisible] = useState(false);
   const [selectedMod, setSelectedMod] = useState(null);
@@ -187,52 +189,52 @@ const CarDetailScreen = ({ route, navigation }) => {
   }, [relatedByModel, allCarsData, carData, relatedMakeCars]);
 
   // Debug logging for API responses
-  React.useEffect(() => {
-    if (carData) {
-      console.log('=== CarDetailScreen Related Cars Debug ===');
-      console.log('Current Car:', {
-        _id: carData._id,
-        make: carData.make,
-        model: carData.model,
-        make_handle: carData.make_handle,
-        model_handle: carData.model_handle
-      });
+  // React.useEffect(() => {
+  //   if (carData) {
+  //     console.log('=== CarDetailScreen Related Cars Debug ===');
+  //     console.log('Current Car:', {
+  //       _id: carData._id,
+  //       make: carData.make,
+  //       model: carData.model,
+  //       make_handle: carData.make_handle,
+  //       model_handle: carData.model_handle
+  //     });
       
-      console.log('Query Parameters:', {
-        makeQuery: carData?.make_handle 
-          ? { make_handle: carData.make_handle, limit: 20 }
-          : { make: carData?.make, limit: 20 },
-        modelQuery: carData?.make_handle && carData?.model_handle
-          ? { make_handle: carData.make_handle, model_handle: carData.model_handle, limit: 20 }
-          : { make: carData?.make, model: carData?.model, limit: 20 }
-      });
+  //     console.log('Query Parameters:', {
+  //       makeQuery: carData?.make_handle 
+  //         ? { make_handle: carData.make_handle, limit: 20 }
+  //         : { make: carData?.make, limit: 20 },
+  //       modelQuery: carData?.make_handle && carData?.model_handle
+  //         ? { make_handle: carData.make_handle, model_handle: carData.model_handle, limit: 20 }
+  //         : { make: carData?.make, model: carData?.model, limit: 20 }
+  //     });
       
-      console.log('Raw API Results:', {
-        relatedByMakeCount: relatedByMake?.entries?.length || 0,
-        relatedByMakeEntries: relatedByMake?.entries?.map(car => ({
-          _id: car._id,
-          make: car.make,
-          model: car.model,
-          make_handle: car.make_handle,
-          model_handle: car.model_handle
-        })) || [],
-        relatedByModelCount: relatedByModel?.entries?.length || 0,
-        allCarsCount: allCarsData?.entries?.length || 0,
-        usingFallback: {
-          makeQuery: (relatedByMake?.entries?.length || 0) <= 2,
-          modelQuery: (relatedByModel?.entries?.length || 0) <= 2
-        }
-      });
+  //     console.log('Raw API Results:', {
+  //       relatedByMakeCount: relatedByMake?.entries?.length || 0,
+  //       relatedByMakeEntries: relatedByMake?.entries?.map(car => ({
+  //         _id: car._id,
+  //         make: car.make,
+  //         model: car.model,
+  //         make_handle: car.make_handle,
+  //         model_handle: car.model_handle
+  //       })) || [],
+  //       relatedByModelCount: relatedByModel?.entries?.length || 0,
+  //       allCarsCount: allCarsData?.entries?.length || 0,
+  //       usingFallback: {
+  //         makeQuery: (relatedByMake?.entries?.length || 0) <= 2,
+  //         modelQuery: (relatedByModel?.entries?.length || 0) <= 2
+  //       }
+  //     });
       
-      console.log('Filtered Results:', {
-        relatedMakeCarsCount: relatedMakeCars.length,
-        relatedMakeCars: relatedMakeCars.map(car => `${car.make} ${car.model}`),
-        relatedModelCarsCount: relatedModelCars.length,
-        relatedModelCars: relatedModelCars.map(car => `${car.make} ${car.model}`)
-      });
-      console.log('=== End Debug ===');
-    }
-  }, [carData, relatedByMake, relatedByModel, relatedMakeCars, relatedModelCars]);
+  //     console.log('Filtered Results:', {
+  //       relatedMakeCarsCount: relatedMakeCars.length,
+  //       relatedMakeCars: relatedMakeCars.map(car => `${car.make} ${car.model}`),
+  //       relatedModelCarsCount: relatedModelCars.length,
+  //       relatedModelCars: relatedModelCars.map(car => `${car.make} ${car.model}`)
+  //     });
+  //     console.log('=== End Debug ===');
+  //   }
+  // }, [carData, relatedByMake, relatedByModel, relatedMakeCars, relatedModelCars]);
 
 
   if (isLoading) {
@@ -283,13 +285,17 @@ const CarDetailScreen = ({ route, navigation }) => {
     const imageUri = `https://d2481n2uw7a0p.cloudfront.net/${item.filename}`;
     
     return (
-      <View style={styles.headerImageContainer}>
+      <TouchableOpacity 
+        style={styles.headerImageContainer}
+        onPress={() => handleCarHeaderImagePress(index)}
+        activeOpacity={0.9}
+      >
         <Image
           source={{ uri: imageUri }}
           style={styles.carImage}
           resizeMode="cover"
         />
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -297,6 +303,11 @@ const CarDetailScreen = ({ route, navigation }) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
     const index = Math.round(scrollPosition / screenWidth);
     setCurrentImageIndex(index);
+  };
+
+  const handleCarHeaderImagePress = (index) => {
+    setCarHeaderGalleryStartIndex(index);
+    setCarHeaderGalleryModalVisible(true);
   };
 
   const getDisplayName = () => {
@@ -313,17 +324,17 @@ const CarDetailScreen = ({ route, navigation }) => {
     const stats = [];
     
     if (carData.year) stats.push({ label: 'Year', value: carData.year, icon: 'calendar' });
-    if (carData.make) stats.push({ label: 'Make', value: carData.make, icon: 'building' });
+    if (carData.make) stats.push({ label: 'Make', value: carData.make, icon: 'tag' });
     if (carData.model) stats.push({ label: 'Model', value: carData.model, icon: 'car' });
     if (carData.trim) stats.push({ label: 'Trim', value: carData.trim, icon: 'tag' });
-    if (carData.color) stats.push({ label: 'Color', value: carData.color, icon: 'palette' });
-    if (carData.engine) stats.push({ label: 'Engine', value: carData.engine, icon: 'cogs' });
+    if (carData.color) stats.push({ label: 'Color', value: carData.color, icon: 'paint-brush' });
+    if (carData.engine) stats.push({ label: 'Engine', value: carData.engine, icon: 'cog' });
     if (carData.transmission) stats.push({ label: 'Transmission', value: carData.transmission, icon: 'exchange' });
-    if (carData.horsepower) stats.push({ label: 'Horsepower', value: `${carData.horsepower}`, icon: 'tachometer' });
-    if (carData.torque) stats.push({ label: 'Torque', value: `${carData.torque}`, icon: 'flash' });
+    if (carData.horsepower) stats.push({ label: 'Horsepower', value: `${carData.horsepower}`, icon: 'dashboard' });
+    if (carData.torque) stats.push({ label: 'Torque', value: `${carData.torque}`, icon: 'bolt' });
     if (carData.drivetrain) stats.push({ label: 'Drivetrain', value: carData.drivetrain, icon: 'road' });
     if (carData.fuelType) stats.push({ label: 'Fuel Type', value: carData.fuelType, icon: 'tint' });
-    if (carData.mileage) stats.push({ label: 'Mileage', value: `${carData.mileage} miles`, icon: 'map' });
+    if (carData.mileage) stats.push({ label: 'Mileage', value: `${carData.mileage} miles`, icon: 'road' });
     
     return stats;
   };
@@ -334,34 +345,55 @@ const CarDetailScreen = ({ route, navigation }) => {
   );
 
   const tabs = [
-    { key: 'overview', label: 'Overview', icon: 'info-circle' },
+    { key: 'overview', label: 'Overview', icon: 'info' },
     { key: 'feed', label: 'Feed', icon: 'feed' },
-    { key: 'galleries', label: 'Galleries', icon: 'images', count: carGalleriesData?.entries?.length || 0 },
+    { key: 'galleries', label: 'Galleries', icon: 'image', count: carGalleriesData?.entries?.length || 0 },
     { key: 'mods', label: 'Mods', icon: 'wrench', count: modsData?.entries?.length || 0 },
     ...(isCarOwner ? [{ key: 'tasks', label: 'Tasks', icon: 'check-square', count: carTasksData?.entries?.length || 0 }] : []),
-    { key: 'related', label: 'Related', icon: 'cars', count: relatedMakeCars.length + relatedModelCars.length },
+    { key: 'related', label: 'Related', icon: 'car', count: relatedMakeCars.length + relatedModelCars.length },
   ];
 
   const renderTabContent = () => {
-    switch (activeTab) {
-      case 'overview':
-        return renderOverviewTab();
-      case 'feed':
-        return renderFeedTab();
-      case 'galleries':
-        return renderGalleriesTab();
-      case 'mods':
-        return renderModsTab();
-      case 'tasks':
-        return renderTasksTab();
-      case 'related':
-        return renderRelatedTab();
-      default:
-        return renderOverviewTab();
+    const content = (() => {
+      switch (activeTab) {
+        case 'overview':
+          return renderOverviewTab();
+        case 'feed':
+          return renderFeedTab();
+        case 'galleries':
+          return renderGalleriesTab();
+        case 'mods':
+          return renderModsTab();
+        case 'tasks':
+          return renderTasksTab();
+        case 'related':
+          return renderRelatedTab();
+        default:
+          return renderOverviewTab();
+      }
+    })();
+
+    // For feed tab, don't wrap in ScrollView to avoid VirtualizedList nesting
+    if (activeTab === 'feed') {
+      return content;
     }
+
+    // For other tabs, wrap in ScrollView for scrollable content
+    return (
+      <ScrollView 
+        style={styles.tabContentScrollView} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.tabContentScrollViewContent}
+      >
+        {content}
+      </ScrollView>
+    );
   };
 
   const renderFeedTab = () => {
+    // Debug logging
+    console.log('CarDetailScreen - renderFeedTab car_id:', carData?.internal_id);
+    
     // Config for listing posts related to this car
     const listingConfig = {
       type: 'posts',
@@ -383,7 +415,7 @@ const CarDetailScreen = ({ route, navigation }) => {
         <Listing 
           config={listingConfig} 
           displayOptions={displayOptions}
-          showFilters={true} 
+          showFilters={false} 
           filterTypes={['postType']} 
         />
       </View>
@@ -556,7 +588,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                 {/* Image count overlay */}
                 {gallery.gallery.length > 1 && (
                   <View style={styles.galleryImageCount}>
-                    <FAIcon name="images" size={14} color={colors.WHITE} />
+                    <FAIcon name="image" size={14} color={colors.WHITE} />
                     <Text style={styles.galleryImageCountText}>
                       {gallery.gallery.length}
                     </Text>
@@ -728,7 +760,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                     {/* Image count overlay */}
                     {mod.gallery.length > 1 && (
                       <View style={styles.modImageCount}>
-                        <FAIcon name="images" size={14} color={colors.WHITE} />
+                        <FAIcon name="image" size={14} color={colors.WHITE} />
                         <Text style={styles.modImageCountText}>
                           {mod.gallery.length}
                         </Text>
@@ -1096,7 +1128,7 @@ const CarDetailScreen = ({ route, navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
       {/* Car Header */}
       <View style={styles.header}>
         <View style={styles.imageContainer}>
@@ -1220,6 +1252,15 @@ const CarDetailScreen = ({ route, navigation }) => {
         title={`${getDisplayName()} - Galleries`}
       />
 
+      {/* Car Header Gallery Modal */}
+      <ImageGalleryModal
+        visible={carHeaderGalleryModalVisible}
+        images={carData?.gallery || []}
+        onClose={() => setCarHeaderGalleryModalVisible(false)}
+        title={`${getDisplayName()}`}
+        initialIndex={carHeaderGalleryStartIndex}
+      />
+
       {/* Individual Gallery Modal */}
       <ImageGalleryModal
         visible={individualGalleryModalVisible}
@@ -1289,7 +1330,7 @@ const CarDetailScreen = ({ route, navigation }) => {
         carId={carData?.internal_id}
         onSuccess={handleGalleryFormSuccess}
       />
-    </ScrollView>
+    </View>
   );
 };
 
@@ -1948,6 +1989,12 @@ const styles = StyleSheet.create({
     color: colors.TEXT_PRIMARY,
     textAlign: 'center',
     lineHeight: 16,
+  },
+  tabContentScrollView: {
+    flex: 1,
+  },
+  tabContentScrollViewContent: {
+    flexGrow: 1,
   },
 });
 

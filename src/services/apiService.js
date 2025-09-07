@@ -448,6 +448,17 @@ export const apiService = createApi({
       providesTags: (result, error, entryId) => [{ type: 'Like', id: entryId }],
     }),
 
+    getPostCounts: builder.query({
+      query: (entryId) => ({
+        url: `/api/likes/counts/${entryId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, entryId) => [
+        { type: 'Like', id: entryId },
+        { type: 'Comment', id: entryId }
+      ],
+    }),
+
     likePost: builder.mutation({
       query: ({ document_id, document_type }) => ({
         url: '/api/likes/like',
@@ -806,6 +817,7 @@ export const {
   useGetFollowStatusQuery,
   useGetPaginatedFollowingQuery,
   useGetLikeInfoQuery,
+  useGetPostCountsQuery,
   useLikePostMutation,
   useUnlikePostMutation,
   useGetCommentsQuery,

@@ -24,7 +24,7 @@ import Card from './Card';
 import LoadingIndicator from './LoadingIndicator';
 import { colors, getPostTypeColor, getCategoryColor } from '../constants/colors';
 import FAIcon from './FAIcon';
-import FloatingFiltersButton from './FloatingFiltersButton';
+import FilterBar from './FilterBar';
 
 
 const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false }) => {
@@ -323,7 +323,32 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 		}
 	};
 
+	// Render filter bar if filters are enabled
+	const renderFilterBar = () => {
+		return (
+			<FilterBar
+				showFilters={showFilters}
+				filterTypes={filterTypes}
+				selectedPostType={selectedPostType}
+				setSelectedPostType={setSelectedPostType}
+				selectedCategory={selectedCategory}
+				setSelectedCategory={setSelectedCategory}
+				onClearFilters={clearFilters}
+			/>
+		);
+	};
 
+
+
+	// Combine header and filter bar into single header component
+	const renderCombinedHeader = () => {
+		return (
+			<>
+				{renderHeader()}
+				{renderFilterBar()}
+			</>
+		);
+	};
 
 	return (
 		<View style={styles.container}>
@@ -339,22 +364,13 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 				}
 				onEndReached={handleLoadMore}
 				onEndReachedThreshold={0.5}
-				ListHeaderComponent={renderHeader}
+				ListHeaderComponent={renderCombinedHeader}
 				ListFooterComponent={renderFooter}
 				contentContainerStyle={styles.listContainer}
 				showsVerticalScrollIndicator={false}
 				onScroll={onScroll}
 				scrollEventThrottle={scrollEventThrottle}
 				nestedScrollEnabled={nestedScrollEnabled}
-			/>
-			<FloatingFiltersButton
-				showFilters={showFilters}
-				filterTypes={filterTypes}
-				selectedPostType={selectedPostType}
-				setSelectedPostType={setSelectedPostType}
-				selectedCategory={selectedCategory}
-				setSelectedCategory={setSelectedCategory}
-				onClearFilters={clearFilters}
 			/>
 		</View>
 	);
@@ -383,12 +399,34 @@ const styles = StyleSheet.create({
 	},
 	listContainer: {
 		paddingBottom: 20,
-		paddingLeft: 16,
-		paddingRight: 16,
+		paddingLeft: 10,
+		paddingRight: 10,
 	},
 	footerLoader: {
 		paddingVertical: 20,
 		alignItems: 'center',
+	},
+	filterBar: {
+		backgroundColor: colors.WHITE,
+		borderBottomWidth: 1,
+		borderBottomColor: colors.BORDER,
+		paddingHorizontal: 16,
+		paddingVertical: 8,
+	},
+	filterBarContent: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+	},
+	filterInfo: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+	},
+	filterText: {
+		fontSize: 12,
+		color: colors.TEXT_SECONDARY,
+		fontWeight: '500',
 	},
 });
 

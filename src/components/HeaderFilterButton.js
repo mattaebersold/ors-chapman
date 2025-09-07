@@ -11,7 +11,7 @@ import {
 import { colors, getPostTypeColor, getCategoryColor } from '../constants/colors';
 import FAIcon from './FAIcon';
 
-const FloatingFiltersButton = ({
+const HeaderFilterButton = ({
   showFilters = false,
   filterTypes = ['postType', 'category'],
   selectedPostType,
@@ -83,25 +83,20 @@ const FloatingFiltersButton = ({
 
   return (
     <>
-      {/* Floating Button */}
-      <Animated.View 
-        style={[
-          styles.floatingButton, 
-          { transform: [{ scale: scaleValue }] }
-        ]}
-      >
+      {/* Header Filter Button */}
+      <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
         <TouchableOpacity
           style={[
-            styles.floatingButtonTouchable,
-            activeFilterCount > 0 && styles.floatingButtonActive
+            styles.headerButton,
+            activeFilterCount > 0 && styles.headerButtonActive
           ]}
           onPress={handleButtonPress}
-          activeOpacity={0.8}
+          activeOpacity={0.7}
         >
           <FAIcon 
             name="filter" 
-            size={18} 
-            color={activeFilterCount > 0 ? colors.WHITE : colors.BRG} 
+            size={16} 
+            color={activeFilterCount > 0 ? colors.WHITE : colors.TEXT_SECONDARY} 
           />
           {activeFilterCount > 0 && (
             <View style={styles.filterBadge}>
@@ -192,44 +187,28 @@ const FloatingFiltersButton = ({
 };
 
 const styles = StyleSheet.create({
-  // Floating Button
-  floatingButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    zIndex: 1000,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  floatingButtonTouchable: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.WHITE,
-    borderWidth: 2,
-    borderColor: colors.BRG,
+  // Header Button
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.LIGHT_GRAY,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    marginLeft: 8,
   },
-  floatingButtonActive: {
+  headerButtonActive: {
     backgroundColor: colors.BRG,
-    borderColor: colors.BRG,
   },
   filterBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -4,
+    right: -4,
     backgroundColor: colors.ERROR,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -237,11 +216,11 @@ const styles = StyleSheet.create({
   },
   filterBadgeText: {
     color: colors.WHITE,
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
   },
 
-  // Modal
+  // Modal (same as FloatingFiltersButton)
   modalContainer: {
     flex: 1,
     backgroundColor: colors.BACKGROUND,
@@ -335,4 +314,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FloatingFiltersButton;
+export default HeaderFilterButton;

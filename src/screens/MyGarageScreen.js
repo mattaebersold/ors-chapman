@@ -16,18 +16,16 @@ const MyGarageScreen = () => {
   const { userInfo } = useSelector(state => state.auth);
   const [carFormVisible, setCarFormVisible] = useState(false);
 
-  // Configuration for displaying user's cars - matches the ProfileScreen garage tab exactly
   const config = {
     type: 'userEntries',
     apiUrl: '/api/protected/garage/0/none/10',
   };
 
   const displayOptions = {
-    hideUserBadge: true, // Don't show user badge since these are all the user's cars
+    hideUserBadge: true, 
   };
 
   const handleCarFormSuccess = () => {
-    // The mutation will invalidate the cache, so the listing will refresh automatically
     setCarFormVisible(false);
   };
 
