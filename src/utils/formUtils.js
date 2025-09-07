@@ -71,11 +71,11 @@ export const createFormData = (postData, schema = Schema) => {
     }
   });
 
-  // Add required fields that server expects but might be missing
-  const requiredFields = ['year', 'make', 'model', 'trim', 'color'];
-  requiredFields.forEach(field => {
-    if (!postData[field]) {
-      fd.append(field, '');
+  // Only add car fields if they have values (don't send empty strings)
+  const carFields = ['year', 'make', 'model', 'trim', 'color'];
+  carFields.forEach(field => {
+    if (postData[field] && postData[field].trim() !== '') {
+      fd.append(field, sanitizeInput(postData[field].toString()));
     }
   });
 
