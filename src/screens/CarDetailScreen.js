@@ -7,10 +7,11 @@ import {
   Image,
   TouchableOpacity,
   FlatList,
+  Modal,
   Dimensions,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useGetUserDetailsQuery, useGetPostsQuery } from '../services/apiService';
+import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useGetUserDetailsQuery, useGetPostsQuery } from '../services/apiService';
 import LoadingIndicator from '../components/LoadingIndicator';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
@@ -37,6 +38,7 @@ const CarDetailScreen = ({ route, navigation }) => {
   const [modsModalVisible, setModsModalVisible] = useState(false);
   const [selectedMod, setSelectedMod] = useState(null);
   const [taskModalVisible, setTaskModalVisible] = useState(false);
+  const [tasksViewModalVisible, setTasksViewModalVisible] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [editCarModalVisible, setEditCarModalVisible] = useState(false);
   const [modFormModalVisible, setModFormModalVisible] = useState(false);
@@ -129,6 +131,8 @@ const CarDetailScreen = ({ route, navigation }) => {
   // CarTask mutations
   const [createCarTask] = useCreateCarTaskMutation();
   const [updateCarTask] = useUpdateCarTaskMutation();
+  const [toggleCarTaskCompletion] = useToggleCarTaskCompletionMutation();
+  const [updateCarTaskPositions] = useUpdateCarTaskPositionsMutation();
   const [deleteCarTask] = useDeleteCarTaskMutation();
   
   // Mod and Gallery mutations
@@ -327,11 +331,11 @@ const CarDetailScreen = ({ route, navigation }) => {
     if (carData.make) stats.push({ label: 'Make', value: carData.make, icon: 'tag' });
     if (carData.model) stats.push({ label: 'Model', value: carData.model, icon: 'car' });
     if (carData.trim) stats.push({ label: 'Trim', value: carData.trim, icon: 'tag' });
-    if (carData.color) stats.push({ label: 'Color', value: carData.color, icon: 'paint-brush' });
-    if (carData.engine) stats.push({ label: 'Engine', value: carData.engine, icon: 'cog' });
+    if (carData.color) stats.push({ label: 'Color', value: carData.color, icon: 'palette' });
+    if (carData.engine) stats.push({ label: 'Engine', value: carData.engine, icon: 'cogs' });
     if (carData.transmission) stats.push({ label: 'Transmission', value: carData.transmission, icon: 'exchange' });
-    if (carData.horsepower) stats.push({ label: 'Horsepower', value: `${carData.horsepower}`, icon: 'dashboard' });
-    if (carData.torque) stats.push({ label: 'Torque', value: `${carData.torque}`, icon: 'bolt' });
+    if (carData.horsepower) stats.push({ label: 'Horsepower', value: `${carData.horsepower}`, icon: 'tachometer' });
+    if (carData.torque) stats.push({ label: 'Torque', value: `${carData.torque}`, icon: 'flash' });
     if (carData.drivetrain) stats.push({ label: 'Drivetrain', value: carData.drivetrain, icon: 'road' });
     if (carData.fuelType) stats.push({ label: 'Fuel Type', value: carData.fuelType, icon: 'tint' });
     if (carData.mileage) stats.push({ label: 'Mileage', value: `${carData.mileage} miles`, icon: 'road' });
@@ -345,11 +349,10 @@ const CarDetailScreen = ({ route, navigation }) => {
   );
 
   const tabs = [
-    { key: 'overview', label: 'Overview', icon: 'info' },
-    { key: 'feed', label: 'Feed', icon: 'feed' },
-    { key: 'galleries', label: 'Galleries', icon: 'image', count: carGalleriesData?.entries?.length || 0 },
+    { key: 'overview', label: 'Overview', icon: 'info-circle' },
+    { key: 'feed', label: 'Feed', icon: 'rss' },
+    { key: 'galleries', label: 'Galleries', icon: 'images', count: carGalleriesData?.entries?.length || 0 },
     { key: 'mods', label: 'Mods', icon: 'wrench', count: modsData?.entries?.length || 0 },
-    ...(isCarOwner ? [{ key: 'tasks', label: 'Tasks', icon: 'check-square', count: carTasksData?.entries?.length || 0 }] : []),
     { key: 'related', label: 'Related', icon: 'car', count: relatedMakeCars.length + relatedModelCars.length },
   ];
 
@@ -364,8 +367,6 @@ const CarDetailScreen = ({ route, navigation }) => {
           return renderGalleriesTab();
         case 'mods':
           return renderModsTab();
-        case 'tasks':
-          return renderTasksTab();
         case 'related':
           return renderRelatedTab();
         default:
@@ -391,9 +392,6 @@ const CarDetailScreen = ({ route, navigation }) => {
   };
 
   const renderFeedTab = () => {
-    // Debug logging
-    console.log('CarDetailScreen - renderFeedTab car_id:', carData?.internal_id);
-    
     // Config for listing posts related to this car
     const listingConfig = {
       type: 'posts',
@@ -522,7 +520,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                 style={styles.viewAllButton}
                 onPress={() => setGalleryModalVisible(true)}
               >
-                <FAIcon name="expand-arrows-alt" size={16} color={colors.BRG} />
+                <FAIcon name="expand" size={16} color={colors.BRG} />
                 <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
             )}
@@ -921,6 +919,53 @@ const CarDetailScreen = ({ route, navigation }) => {
     }
   };
 
+  const handleToggleTaskCompletion = async (task) => {
+    try {
+      await toggleCarTaskCompletion({
+        internal_id: task.internal_id,
+        completed: !task.completed,
+        carId: carData.internal_id
+      }).unwrap();
+      
+      refetchTasks();
+    } catch (error) {
+      console.error('Error toggling task completion:', error);
+      Alert.alert('Error', 'Failed to update task. Please try again.');
+    }
+  };
+
+  const handleMoveTask = async (taskId, direction) => {
+    const tasks = carTasksData?.entries || [];
+    const taskIndex = tasks.findIndex(t => (t.internal_id || t._id) === taskId);
+    
+    if (taskIndex === -1) return;
+    
+    const newIndex = direction === 'up' ? taskIndex - 1 : taskIndex + 1;
+    if (newIndex < 0 || newIndex >= tasks.length) return;
+    
+    // Create new tasks array with swapped positions
+    const newTasks = [...tasks];
+    [newTasks[taskIndex], newTasks[newIndex]] = [newTasks[newIndex], newTasks[taskIndex]];
+    
+    // Prepare position updates
+    const positionUpdates = newTasks.map((task, index) => ({
+      internal_id: task.internal_id || task._id,
+      position: index
+    }));
+    
+    try {
+      await updateCarTaskPositions({
+        tasks: positionUpdates,
+        carId: carData.internal_id
+      }).unwrap();
+      
+      refetchTasks();
+    } catch (error) {
+      console.error('Error reordering tasks:', error);
+      Alert.alert('Error', 'Failed to reorder tasks. Please try again.');
+    }
+  };
+
   const handleDeleteTask = async (taskId) => {
     Alert.alert(
       'Delete Task',
@@ -1007,94 +1052,115 @@ const CarDetailScreen = ({ route, navigation }) => {
     );
   };
 
-  const renderTasksTab = () => {
+  const renderTasksContent = () => {
     if (tasksLoading) {
       return (
-        <View style={styles.tabContent}>
-          <View style={styles.loadingContainer}>
-            <FAIcon name="spinner" size={20} color={colors.BRG} />
-            <Text style={styles.loadingText}>Loading tasks...</Text>
-          </View>
+        <View style={styles.tasksModalLoadingContainer}>
+          <FAIcon name="spinner" size={20} color={colors.BRG} />
+          <Text style={styles.loadingText}>Loading tasks...</Text>
         </View>
       );
     }
 
     if (tasksError) {
       return (
-        <View style={styles.tabContent}>
-          <View style={styles.errorContainer}>
-            <FAIcon name="exclamation" size={24} color={colors.ERROR} />
-            <Text style={styles.errorText}>Error loading tasks</Text>
-            <Text style={styles.errorDetails}>
-              {tasksError?.data?.message || tasksError?.message || 'Failed to load tasks'}
-            </Text>
-          </View>
+        <View style={styles.tasksModalErrorContainer}>
+          <FAIcon name="exclamation" size={24} color={colors.ERROR} />
+          <Text style={styles.errorText}>Error loading tasks</Text>
+          <Text style={styles.errorDetails}>
+            {tasksError?.data?.message || tasksError?.message || 'Failed to load tasks'}
+          </Text>
         </View>
       );
     }
 
     const tasks = carTasksData?.entries || [];
 
-    // Group tasks by category
-    const tasksByCategory = tasks.reduce((groups, task) => {
-      const category = task.category || 'other';
-      if (!groups[category]) {
-        groups[category] = [];
+    // Group tasks by type
+    const tasksByType = tasks.reduce((groups, task) => {
+      const type = task.type || 'other';
+      if (!groups[type]) {
+        groups[type] = [];
       }
-      groups[category].push(task);
+      groups[type].push(task);
       return groups;
     }, {});
 
-    // Category display names
-    const categoryLabels = {
-      engine: 'Engine',
-      transmission: 'Transmission',
-      brakes: 'Brakes',
-      suspension: 'Suspension',
-      wheels: 'Wheels',
-      interior: 'Interior',
-      exterior: 'Exterior',
-      electrical: 'Electrical',
-      maintenance: 'General Maintenance',
-      performance: 'Performance',
-      restoration: 'Restoration',
+    // Type display names
+    const typeLabels = {
+      maintenance: 'Maintenance',
+      repair: 'Repair',
+      upgrade: 'Upgrade',
+      inspection: 'Inspection',
+      cleaning: 'Cleaning',
+      modification: 'Modification',
       other: 'Other',
     };
 
     return (
-      <View style={styles.tabContent}>
-        {/* Create New Task Button */}
-        <TouchableOpacity 
-          style={styles.createTaskButton}
-          onPress={() => setTaskModalVisible(true)}
-        >
-          <FAIcon name="plus" size={16} color={colors.WHITE} />
-          <Text style={styles.createTaskButtonText}>Add New Task</Text>
-        </TouchableOpacity>
-
+      <>
         {/* Tasks List */}
         {tasks.length === 0 ? (
-          <EmptyState
-            title="No Tasks"
-            message="No tasks found for this car. Add your first task to get started!"
-            icon="check-square"
-          />
+          <View style={styles.tasksModalEmptyState}>
+            <FAIcon name="check-square" size={40} color={colors.TEXT_SECONDARY} />
+            <Text style={styles.tasksModalEmptyTitle}>No Tasks</Text>
+            <Text style={styles.tasksModalEmptyMessage}>
+              No tasks found for this car. Add your first task to get started!
+            </Text>
+          </View>
         ) : (
-          <ScrollView style={styles.tasksContainer}>
-            {Object.entries(tasksByCategory).map(([category, categoryTasks]) => (
-              <View key={category} style={styles.categoryGroup}>
+          <ScrollView style={styles.tasksModalScrollView} showsVerticalScrollIndicator={false}>
+            {Object.entries(tasksByType).map(([type, typeTasks]) => (
+              <View key={type} style={styles.categoryGroup}>
                 <Text style={styles.categoryTitle}>
-                  {categoryLabels[category] || category} ({categoryTasks.length})
+                  {typeLabels[type] || type} ({typeTasks.length})
                 </Text>
-                {categoryTasks.map((task, index) => (
-                  <View key={task._id || index} style={styles.taskItem}>
+                {typeTasks.map((task, index) => (
+                  <View key={task._id || index} style={[
+                    styles.taskItem,
+                    task.completed && styles.completedTask
+                  ]}>
                     <View style={styles.taskHeader}>
-                      <Text style={styles.taskTitle}>{task.title}</Text>
+                      <View style={styles.taskTitleRow}>
+                        <TouchableOpacity 
+                          style={styles.checkbox}
+                          onPress={() => handleToggleTaskCompletion(task)}
+                        >
+                          <FAIcon 
+                            name={task.completed ? "check-square" : "square-o"} 
+                            size={20} 
+                            color={task.completed ? colors.BRG : colors.TEXT_SECONDARY}
+                          />
+                        </TouchableOpacity>
+                        <Text style={[
+                          styles.taskTitle,
+                          task.completed && styles.completedTaskTitle
+                        ]}>
+                          {task.title}
+                        </Text>
+                      </View>
                       <View style={styles.taskActions}>
+                        <View style={styles.reorderButtons}>
+                          <TouchableOpacity 
+                            style={[styles.reorderButton, index === 0 && styles.disabledButton]}
+                            onPress={() => handleMoveTask(task.internal_id || task._id, 'up')}
+                            disabled={index === 0}
+                          >
+                            <FAIcon name="chevron-up" size={12} color={index === 0 ? colors.LIGHT_GRAY : colors.TEXT_SECONDARY} />
+                          </TouchableOpacity>
+                          <TouchableOpacity 
+                            style={[styles.reorderButton, index === typeTasks.length - 1 && styles.disabledButton]}
+                            onPress={() => handleMoveTask(task.internal_id || task._id, 'down')}
+                            disabled={index === typeTasks.length - 1}
+                          >
+                            <FAIcon name="chevron-down" size={12} color={index === typeTasks.length - 1 ? colors.LIGHT_GRAY : colors.TEXT_SECONDARY} />
+                          </TouchableOpacity>
+                        </View>
                         <TouchableOpacity 
                           style={styles.taskActionButton}
                           onPress={() => {
                             setEditingTask(task);
+                            setTasksViewModalVisible(false);
                             setTaskModalVisible(true);
                           }}
                         >
@@ -1109,11 +1175,33 @@ const CarDetailScreen = ({ route, navigation }) => {
                       </View>
                     </View>
                     {task.body && (
-                      <Text style={styles.taskDescription}>{task.body}</Text>
+                      <Text style={[
+                        styles.taskDescription,
+                        task.completed && styles.completedTaskText
+                      ]} numberOfLines={2}>
+                        {task.body}
+                      </Text>
                     )}
                     <View style={styles.taskMeta}>
-                      <Text style={styles.taskType}>{task.type}</Text>
-                      <Text style={styles.taskDate}>
+                      <View style={styles.taskBadges}>
+                        <Text style={[
+                          styles.taskCategory,
+                          task.completed && styles.completedTaskText
+                        ]}>
+                          {task.category || 'general'}
+                        </Text>
+                        <Text style={[
+                          styles.taskPriority,
+                          styles[`${task.priority || 'medium'}Priority`],
+                          task.completed && styles.completedTaskText
+                        ]}>
+                          {task.priority || 'medium'}
+                        </Text>
+                      </View>
+                      <Text style={[
+                        styles.taskDate,
+                        task.completed && styles.completedTaskText
+                      ]}>
                         {new Date(task.created_at).toLocaleDateString()}
                       </Text>
                     </View>
@@ -1123,7 +1211,7 @@ const CarDetailScreen = ({ route, navigation }) => {
             ))}
           </ScrollView>
         )}
-      </View>
+      </>
     );
   };
 
@@ -1202,6 +1290,45 @@ const CarDetailScreen = ({ route, navigation }) => {
           )}
         </View>
       </View>
+
+      {/* Tasks Section */}
+      {isCarOwner && (
+        <View style={styles.tasksSection}>
+          <View style={styles.tasksSectionHeader}>
+            <View style={styles.tasksSectionTitle}>
+              <FAIcon name="check-square" size={18} color={colors.BRG} />
+              <Text style={styles.tasksSectionTitleText}>
+                Tasks ({carTasksData?.entries?.length || 0})
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.addTaskButton}
+              onPress={() => setTaskModalVisible(true)}
+            >
+              <FAIcon name="plus" size={14} color={colors.WHITE} />
+            </TouchableOpacity>
+          </View>
+          {tasksLoading ? (
+            <View style={styles.tasksPreview}>
+              <FAIcon name="spinner" size={16} color={colors.TEXT_SECONDARY} />
+              <Text style={styles.tasksLoadingText}>Loading...</Text>
+            </View>
+          ) : (
+            <TouchableOpacity 
+              style={styles.tasksPreview}
+              onPress={() => setTasksViewModalVisible(true)}
+            >
+              <Text style={styles.tasksPreviewText}>
+                {carTasksData?.entries?.length > 0 
+                  ? `View all tasks`
+                  : 'No tasks yet. Add your first task!'
+                }
+              </Text>
+              <FAIcon name="chevron-right" size={14} color={colors.TEXT_SECONDARY} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {/* Tab Navigation */}
       <View style={styles.tabsContainer}>
@@ -1295,6 +1422,35 @@ const CarDetailScreen = ({ route, navigation }) => {
         editMode={!!editingTask}
         existingTask={editingTask}
       />
+
+      {/* Tasks View Modal */}
+      <Modal
+        visible={tasksViewModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setTasksViewModalVisible(false)}
+      >
+        <View style={styles.tasksModalContainer}>
+          <View style={styles.tasksModalHeader}>
+            <TouchableOpacity onPress={() => setTasksViewModalVisible(false)}>
+              <FAIcon name="times" size={20} color={colors.WHITE} />
+            </TouchableOpacity>
+            <Text style={styles.tasksModalTitle}>Car Tasks</Text>
+            <TouchableOpacity 
+              style={styles.tasksModalAddButton}
+              onPress={() => {
+                setTasksViewModalVisible(false);
+                setTaskModalVisible(true);
+              }}
+            >
+              <FAIcon name="plus" size={16} color={colors.WHITE} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.tasksModalContent}>
+            {renderTasksContent()}
+          </View>
+        </View>
+      </Modal>
 
       {/* Car Edit Modal */}
       <CarFormModal
@@ -1995,6 +2151,198 @@ const styles = StyleSheet.create({
   },
   tabContentScrollViewContent: {
     flexGrow: 1,
+  },
+
+  // Tasks Section (above tabs)
+  tasksSection: {
+    backgroundColor: colors.WHITE,
+    marginHorizontal: 8,
+    marginBottom: 8,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+  },
+  tasksSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  tasksSectionTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tasksSectionTitleText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.TEXT_PRIMARY,
+  },
+  addTaskButton: {
+    backgroundColor: colors.BRG,
+    borderRadius: 20,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tasksPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  tasksPreviewText: {
+    fontSize: 14,
+    color: colors.TEXT_PRIMARY,
+    flex: 1,
+    marginRight: 8,
+  },
+  tasksLoadingText: {
+    fontSize: 14,
+    color: colors.TEXT_SECONDARY,
+    marginLeft: 8,
+  },
+
+  // Tasks Modal
+  tasksModalContainer: {
+    flex: 1,
+    backgroundColor: colors.WHITE,
+  },
+  tasksModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: 50,
+    backgroundColor: colors.BRG,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  tasksModalTitle: {
+    color: colors.WHITE,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  tasksModalAddButton: {
+    backgroundColor: colors.SPEED,
+    borderRadius: 20,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tasksModalContent: {
+    flex: 1,
+    padding: 16,
+  },
+  tasksModalScrollView: {
+    flex: 1,
+  },
+  tasksModalLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  tasksModalErrorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  tasksModalEmptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  tasksModalEmptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+  },
+  tasksModalEmptyMessage: {
+    fontSize: 14,
+    color: colors.TEXT_SECONDARY,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // Task Checkbox and Completion Styles
+  taskTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  checkbox: {
+    marginRight: 12,
+    padding: 4,
+  },
+  completedTask: {
+    backgroundColor: colors.LIGHT_GRAY,
+    opacity: 0.7,
+  },
+  completedTaskTitle: {
+    textDecorationLine: 'line-through',
+    color: colors.TEXT_SECONDARY,
+  },
+  completedTaskText: {
+    color: colors.TEXT_SECONDARY,
+    opacity: 0.7,
+  },
+  taskBadges: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  taskCategory: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.BRG,
+    textTransform: 'capitalize',
+    backgroundColor: colors.LIGHT_GRAY,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  taskPriority: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    color: colors.WHITE,
+  },
+  
+  // Priority-specific colors
+  criticalPriority: {
+    backgroundColor: '#FF4444',
+  },
+  highPriority: {
+    backgroundColor: '#FF8800',
+  },
+  mediumPriority: {
+    backgroundColor: '#FFBB33',
+  },
+  lowPriority: {
+    backgroundColor: '#00C851',
+  },
+  
+  // Reorder buttons
+  reorderButtons: {
+    flexDirection: 'column',
+    marginRight: 8,
+  },
+  reorderButton: {
+    padding: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: {
+    opacity: 0.3,
   },
 });
 

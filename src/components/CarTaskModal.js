@@ -21,6 +21,7 @@ const CarTaskModal = ({ visible, onClose, onSubmit, carId, editMode = false, exi
     body: '',
     type: 'maintenance', // default type for tasks
     category: 'maintenance', // default category for tasks
+    priority: 'medium', // default priority
     images: [],
     car_id: carId || '', // Always set to the current car
   });
@@ -52,6 +53,14 @@ const CarTaskModal = ({ visible, onClose, onSubmit, carId, editMode = false, exi
     { value: 'other', label: 'Other' },
   ];
 
+  // Priority levels for tasks
+  const priorityLevels = [
+    { value: 'critical', label: 'Critical' },
+    { value: 'high', label: 'High' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'low', label: 'Low' },
+  ];
+
   // Populate form data when editing
   useEffect(() => {
     if (editMode && existingTask) {
@@ -60,6 +69,7 @@ const CarTaskModal = ({ visible, onClose, onSubmit, carId, editMode = false, exi
         body: existingTask.body || '',
         type: existingTask.type || 'maintenance',
         category: existingTask.category || 'maintenance',
+        priority: existingTask.priority || 'medium',
         images: existingTask.gallery || [],
         car_id: existingTask.car_id || carId || '',
       });
@@ -70,6 +80,7 @@ const CarTaskModal = ({ visible, onClose, onSubmit, carId, editMode = false, exi
         body: '',
         type: 'maintenance',
         category: 'maintenance',
+        priority: 'medium',
         images: [],
         car_id: carId || '',
       });
@@ -107,6 +118,7 @@ const CarTaskModal = ({ visible, onClose, onSubmit, carId, editMode = false, exi
         body: '',
         type: 'maintenance',
         category: 'maintenance',
+        priority: 'medium',
         images: [],
         car_id: carId || '',
       });
@@ -175,72 +187,77 @@ const CarTaskModal = ({ visible, onClose, onSubmit, carId, editMode = false, exi
             />
           </View>
 
-          {/* Description Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.body}
-              onChangeText={(text) => updateFormData('body', text)}
-              placeholder="Describe the task..."
-              placeholderTextColor={colors.TEXT_SECONDARY}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              maxLength={1000}
-            />
-          </View>
-
           {/* Type Selection */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Task Type</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-              <View style={styles.optionsContainer}>
-                {taskTypes.map((type) => (
-                  <TouchableOpacity
-                    key={type.value}
-                    style={[
-                      styles.optionChip,
-                      formData.type === type.value && styles.selectedChip
-                    ]}
-                    onPress={() => updateFormData('type', type.value)}
-                  >
-                    <Text style={[
-                      styles.optionText,
-                      formData.type === type.value && styles.selectedOptionText
-                    ]}>
-                      {type.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+            <View style={styles.wrapOptionsContainer}>
+              {taskTypes.map((type) => (
+                <TouchableOpacity
+                  key={type.value}
+                  style={[
+                    styles.optionChip,
+                    formData.type === type.value && styles.selectedChip
+                  ]}
+                  onPress={() => updateFormData('type', type.value)}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    formData.type === type.value && styles.selectedOptionText
+                  ]}>
+                    {type.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Category Selection */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Category</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-              <View style={styles.optionsContainer}>
-                {taskCategories.map((category) => (
-                  <TouchableOpacity
-                    key={category.value}
-                    style={[
-                      styles.optionChip,
-                      formData.category === category.value && styles.selectedChip
-                    ]}
-                    onPress={() => updateFormData('category', category.value)}
-                  >
-                    <Text style={[
-                      styles.optionText,
-                      formData.category === category.value && styles.selectedOptionText
-                    ]}>
-                      {category.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+            <View style={styles.wrapOptionsContainer}>
+              {taskCategories.map((category) => (
+                <TouchableOpacity
+                  key={category.value}
+                  style={[
+                    styles.optionChip,
+                    formData.category === category.value && styles.selectedChip
+                  ]}
+                  onPress={() => updateFormData('category', category.value)}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    formData.category === category.value && styles.selectedOptionText
+                  ]}>
+                    {category.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Priority Selection */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Priority</Text>
+            <View style={styles.wrapOptionsContainer}>
+              {priorityLevels.map((priority) => (
+                <TouchableOpacity
+                  key={priority.value}
+                  style={[
+                    styles.optionChip,
+                    styles[`${priority.value}PriorityChip`],
+                    formData.priority === priority.value && styles.selectedChip
+                  ]}
+                  onPress={() => updateFormData('priority', priority.value)}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    formData.priority === priority.value && styles.selectedOptionText
+                  ]}>
+                    {priority.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Image Upload */}
@@ -250,6 +267,22 @@ const CarTaskModal = ({ visible, onClose, onSubmit, carId, editMode = false, exi
               images={formData.images}
               onImageUpload={handleImageUpload}
               maxImages={5}
+            />
+          </View>
+
+          {/* Notes/Description Input - moved below images */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Notes (Optional)</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={formData.body}
+              onChangeText={(text) => updateFormData('body', text)}
+              placeholder="Add any notes or additional details..."
+              placeholderTextColor={colors.TEXT_SECONDARY}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              maxLength={1000}
             />
           </View>
         </ScrollView>
@@ -332,6 +365,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  wrapOptionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   optionChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -351,6 +389,20 @@ const styles = StyleSheet.create({
   },
   selectedOptionText: {
     color: colors.WHITE,
+  },
+  
+  // Priority-specific chip colors
+  criticalPriorityChip: {
+    borderColor: '#FF4444',
+  },
+  highPriorityChip: {
+    borderColor: '#FF8800',
+  },
+  mediumPriorityChip: {
+    borderColor: '#FFBB33',
+  },
+  lowPriorityChip: {
+    borderColor: '#00C851',
   },
 });
 

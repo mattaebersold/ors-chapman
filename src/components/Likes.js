@@ -20,9 +20,24 @@ const Likes = ({ document_id, document_type = 'post' }) => {
   const [unlikePost] = useUnlikePostMutation();
 
 
-  // Don't show if user not logged in or no data
-  if (!userInfo || !document_id || isLoading || error) {
+  // Don't show if user not logged in or no document_id
+  if (!userInfo || !document_id) {
     return null;
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={styles.likesContainer}>
+        <FAIcon name="heart-o" size={16} color={colors.TEXT_SECONDARY} />
+        <Text style={styles.likeCount}>...</Text>
+      </View>
+    );
+  }
+
+  // Show error state but still allow interaction
+  if (error) {
+    console.warn('Likes component error:', error);
   }
 
   const likes = likeInfo?.entries || [];

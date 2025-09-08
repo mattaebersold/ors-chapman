@@ -1,14 +1,7 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-} from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors } from '../constants/colors';
-import FAIcon from './FAIcon';
+import BaseCard from './BaseCard';
 import UserBadge from './UserBadge';
 
 const CarCard = ({ user: car, displayOptions = {} }) => {
@@ -22,7 +15,7 @@ const CarCard = ({ user: car, displayOptions = {} }) => {
 
   const getCarImageSource = () => {
     if (car?.gallery?.[0]?.filename) {
-      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${car.gallery[0].filename}` };
+      return `https://d2481n2uw7a0p.cloudfront.net/${car.gallery[0].filename}`;
     }
     return null;
   };
@@ -36,98 +29,35 @@ const CarCard = ({ user: car, displayOptions = {} }) => {
     return 'Car';
   };
 
+  const renderFooter = () => {
+    if (car.user_id && !displayOptions.hideUserBadge) {
+      return (
+        <View style={styles.userBadgeContainer}>
+          <UserBadge userId={car.user_id} />
+        </View>
+      );
+    }
+    return null;
+  };
+
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
-      <View style={styles.carCard}>
-        <View style={styles.imageContainer}>
-          {getCarImageSource() ? (
-            <Image 
-              source={getCarImageSource()} 
-              style={styles.carImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.placeholderContainer}>
-              <FAIcon name="car" size={40} color={colors.GRAY} />
-              <Text style={styles.placeholderText}>No Image</Text>
-            </View>
-          )}
-        </View>
-        
-        <View style={styles.carContent}>
-          <Text style={styles.carTitle}>{getDisplayName()}</Text>
-          
-          {car.description && (
-            <Text style={styles.carDescription} numberOfLines={2}>
-              {car.description}
-            </Text>
-          )}
-          
-          {/* User Badge */}
-          {car.user_id && !displayOptions.hideUserBadge && (
-            <View style={styles.userBadgeContainer}>
-              <UserBadge userId={car.user_id} />
-            </View>
-          )}
-          
-        </View>
-      </View>
-    </TouchableOpacity>
+    <BaseCard
+      imageSource={getCarImageSource()}
+      imageHeight={200}
+      placeholderIcon="car"
+      placeholderText="No Image"
+      title={getDisplayName()}
+      description={car.description}
+      onPress={handlePress}
+      cardStyle={styles.carCard}
+      footerComponent={renderFooter()}
+    />
   );
 };
 
 const styles = StyleSheet.create({
   carCard: {
-    backgroundColor: colors.WHITE,
-    borderRadius: 8,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
-    overflow: 'hidden',
     marginTop: 12,
-  },
-  imageContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 200,
-  },
-  carImage: {
-    width: '100%',
-    height: 200,
-  },
-  placeholderContainer: {
-    width: '100%',
-    height: 200,
-    backgroundColor: colors.LIGHT_GRAY,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 12,
-    color: colors.GRAY,
-    marginTop: 8,
-    fontWeight: '500',
-  },
-  carContent: {
-    padding: 16,
-  },
-  carTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.TEXT_PRIMARY,
-    marginBottom: 4,
-  },
-  carDescription: {
-    fontSize: 14,
-    color: colors.TEXT_SECONDARY,
-    lineHeight: 20,
-    marginBottom: 8,
   },
   userBadgeContainer: {
     alignSelf: 'flex-start',

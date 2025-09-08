@@ -341,6 +341,31 @@ export const apiService = createApi({
       ],
     }),
 
+    toggleCarTaskCompletion: builder.mutation({
+      query: ({ internal_id, completed }) => ({
+        url: `/api/cartask/toggle-completion`,
+        method: 'POST',
+        body: { internal_id, completed },
+      }),
+      invalidatesTags: (result, error, { internal_id, carId }) => [
+        'CarTask',
+        { type: 'CarTask', id: internal_id },
+        { type: 'CarTask', id: `CAR-${carId}` }
+      ],
+    }),
+
+    updateCarTaskPositions: builder.mutation({
+      query: ({ tasks, carId }) => ({
+        url: `/api/cartask/update-positions`,
+        method: 'POST',
+        body: { tasks },
+      }),
+      invalidatesTags: (result, error, { carId }) => [
+        'CarTask',
+        { type: 'CarTask', id: `CAR-${carId}` }
+      ],
+    }),
+
     deleteCarTask: builder.mutation({
       query: (taskId) => ({
         url: `/api/cartask/delete/${taskId}`,
@@ -841,6 +866,8 @@ export const {
   useGetCarTasksQuery,
   useCreateCarTaskMutation,
   useUpdateCarTaskMutation,
+  useToggleCarTaskCompletionMutation,
+  useUpdateCarTaskPositionsMutation,
   useDeleteCarTaskMutation,
   useCreateGarageCarMutation,
   useUpdateGarageCarMutation,

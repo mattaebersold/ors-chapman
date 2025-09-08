@@ -240,22 +240,22 @@ const PostDetailModal = ({ visible, post, onClose }) => {
     ? normalizedData.gallery.map(img => `https://d2481n2uw7a0p.cloudfront.net/${img.filename}`)
     : [];
 
+  const renderImage = ({ item, index }) => (
+    <TouchableOpacity 
+      onPress={() => handleImagePress(index)}
+      activeOpacity={0.9}
+    >
+      <Image 
+        source={{ uri: item }} 
+        style={styles.carouselImage}
+        resizeMode="cover"
+        onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
+      />
+    </TouchableOpacity>
+  );
+
   const renderImageCarousel = () => {
     if (imageUrls.length === 0) return null;
-
-    const renderImage = ({ item, index }) => (
-      <TouchableOpacity 
-        onPress={() => handleImagePress(index)}
-        activeOpacity={0.9}
-      >
-        <Image 
-          source={{ uri: item }} 
-          style={styles.carouselImage}
-          resizeMode="cover"
-          onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
-        />
-      </TouchableOpacity>
-    );
 
     const handleScroll = (event) => {
       const scrollPosition = event.nativeEvent.contentOffset.x;
