@@ -278,8 +278,8 @@ export const apiService = createApi({
     // Update existing post
     updatePost: builder.mutation({
       query: ({ postId, formData }) => ({
-        url: `/api/post/update/${postId}`,
-        method: 'PUT',
+        url: `/api/post/update`,
+        method: 'POST',
         body: formData,
         // Don't set Content-Type header - let browser/fetch set it for FormData
       }),

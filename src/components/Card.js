@@ -97,6 +97,26 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
             {/* Badge Overlays */}
             <Badge type={post.type} category={post.category} style="overlay" />
             
+            {/* Price Overlay - Top Right */}
+            {(post.type === 'listing' || post.type === 'want') && post.price && (
+              <View style={styles.priceOverlay}>
+                {post.previous_price ? (
+                  <View style={styles.priceContainer}>
+                    <Text style={styles.previousPriceText}>
+                      {post.previous_price.startsWith('$') ? post.previous_price : `$${post.previous_price}`}
+                    </Text>
+                    <Text style={styles.currentPriceText}>
+                      {post.price.startsWith('$') ? post.price : `$${post.price}`}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.priceText}>
+                    {post.price.startsWith('$') ? post.price : `$${post.price}`}
+                  </Text>
+                )}
+              </View>
+            )}
+            
             {/* User and Car Badges - Bottom Left Overlay */}
             <View style={styles.badgeOverlay}>
               {post.user_id && <UserBadge userId={post.user_id} />}
@@ -133,6 +153,12 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
                 <Text style={styles.dateText}>
                   {new Date(post.created_at).toLocaleDateString()}
                 </Text>
+                {/* Show condition for listing/want posts */}
+                {(post.type === 'listing' || post.type === 'want') && post.condition && (
+                  <Text style={styles.conditionText}>
+                    Condition: {post.condition}
+                  </Text>
+                )}
               </View>
               <View style={styles.statsCell}>
                 <View style={styles.statItem}>
@@ -192,6 +218,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  priceOverlay: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(57, 142, 51, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
+  },
+  priceText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  previousPriceText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 10,
+    fontWeight: '500',
+    textDecorationLine: 'line-through',
+  },
+  currentPriceText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   postContent: {
     padding: 0,
   },
@@ -247,6 +301,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: '#aaa',
+  },
+  conditionText: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#bbb',
+    marginTop: 2,
   },
   editButton: {
     flexDirection: 'row',

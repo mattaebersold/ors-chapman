@@ -23,10 +23,16 @@ const NewButtonFAB = () => {
       const form = createFormData(postData);
 
       if (editPost) {
-        // Update existing post
+        // Update existing post - include internal_id in form data
+        const updateData = preparePostData({
+          ...formData,
+          internal_id: editPost.internal_id || editPost._id
+        });
+        const updateForm = createFormData(updateData);
+        
         await updatePost({ 
           postId: editPost.internal_id || editPost._id, 
-          formData: form 
+          formData: updateForm 
         }).unwrap();
         Alert.alert('Success', 'Post updated successfully!');
       } else {

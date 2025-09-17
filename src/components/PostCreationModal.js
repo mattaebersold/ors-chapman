@@ -38,6 +38,9 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
     model: '',
     trim: '',
     color: '',
+    // Listing fields
+    price: '',
+    condition: '',
   });
   const [loading, setLoading] = useState(false);
   const [showCustomCarInfo, setShowCustomCarInfo] = useState(false);
@@ -66,6 +69,8 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
         model: existingPost.model || '',
         trim: existingPost.trim || '',
         color: existingPost.color || '',
+        price: existingPost.price || '',
+        condition: existingPost.condition || '',
       });
 
       // Show custom car info section if post has custom car data
@@ -86,6 +91,8 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
         model: '',
         trim: '',
         color: '',
+        price: '',
+        condition: '',
       });
       setShowCustomCarInfo(false);
     }
@@ -178,6 +185,10 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
       Alert.alert('Error', 'Title is required');
       return false;
     }
+    if (formData.type === 'listing' && !formData.price.trim()) {
+      Alert.alert('Error', 'Price is required for listings');
+      return false;
+    }
     return true;
   };
 
@@ -211,6 +222,8 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
       model: '',
       trim: '',
       color: '',
+      price: '',
+      condition: '',
     });
     setShowCustomCarInfo(false);
   };
@@ -363,6 +376,48 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
               {formData.body.length}/5000 characters
             </Text>
           </View>
+
+          {/* Listing Fields - Show only for listing and want types */}
+          {(formData.type === 'listing' || formData.type === 'want') && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Listing Details</Text>
+              
+              {/* Price Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Price {formData.type === 'listing' ? '*' : ''}</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="e.g., $500, $50 OBO, Free"
+                  value={formData.price}
+                  onChangeText={(text) => updateFormData('price', text)}
+                />
+              </View>
+
+              {/* Condition Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Condition</Text>
+                <View style={styles.conditionGrid}>
+                  {['New', 'Like New', 'Good', 'Fair', 'Poor', 'For Parts'].map((condition) => (
+                    <TouchableOpacity
+                      key={condition}
+                      style={[
+                        styles.conditionButton,
+                        formData.condition === condition && styles.conditionButtonActive
+                      ]}
+                      onPress={() => updateFormData('condition', condition)}
+                    >
+                      <Text style={[
+                        styles.conditionButtonText,
+                        formData.condition === condition && styles.conditionButtonTextActive
+                      ]}>
+                        {condition}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* Associations Section */}
           <View style={styles.section}>
@@ -738,6 +793,32 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     minHeight: 50,
+  },
+  // Condition selection styles
+  conditionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  conditionButton: {
+    backgroundColor: colors.WHITE,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+  },
+  conditionButtonActive: {
+    backgroundColor: colors.BRG,
+    borderColor: colors.BRG,
+  },
+  conditionButtonText: {
+    fontSize: 12,
+    color: colors.GRAY,
+    fontWeight: '500',
+  },
+  conditionButtonTextActive: {
+    color: colors.WHITE,
   },
 });
 

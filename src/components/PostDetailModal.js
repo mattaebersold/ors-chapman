@@ -371,6 +371,34 @@ const PostDetailModal = ({ visible, post, onClose }) => {
                 </Text>
               </View>
 
+              {/* Listing Details */}
+              {(post.type === 'listing' || post.type === 'want') && (post.price || post.condition) && (
+                <View style={styles.listingDetailsContainer}>
+                  <Text style={styles.listingDetailsTitle}>Listing Details</Text>
+                  {post.price && (
+                    <View style={styles.listingDetailRow}>
+                      <Text style={styles.listingDetailLabel}>Price:</Text>
+                      <View style={styles.priceContainer}>
+                        {post.previous_price && (
+                          <Text style={styles.previousPrice}>
+                            {post.previous_price.startsWith('$') ? post.previous_price : `$${post.previous_price}`}
+                          </Text>
+                        )}
+                        <Text style={styles.listingDetailPrice}>
+                          {post.price.startsWith('$') ? post.price : `$${post.price}`}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                  {post.condition && (
+                    <View style={styles.listingDetailRow}>
+                      <Text style={styles.listingDetailLabel}>Condition:</Text>
+                      <Text style={styles.listingDetailValue}>{post.condition}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
               {/* Body */}
               {normalizedData.body && (
                 <View style={styles.bodyContainer}>
@@ -642,6 +670,55 @@ const styles = StyleSheet.create({
     color: colors.TEXT_PRIMARY,
     flex: 1,
     textAlign: 'right',
+  },
+  // Listing details styles
+  listingDetailsContainer: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#FFF8DC', // Light yellow background
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F0E68C',
+  },
+  listingDetailsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+    marginBottom: 12,
+  },
+  listingDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
+  },
+  listingDetailLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.TEXT_SECONDARY,
+  },
+  listingDetailPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#228B22', // Forest green
+  },
+  previousPrice: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#888',
+    textDecorationLine: 'line-through',
+    marginBottom: 2,
+  },
+  listingDetailValue: {
+    fontSize: 14,
+    color: colors.TEXT_PRIMARY,
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
 });
 

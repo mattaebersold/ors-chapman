@@ -48,7 +48,10 @@ export const ModalProvider = ({ children }) => {
 
   const handleUpdatePost = useCallback(async (formData) => {
     try {
-      const postData = preparePostData(formData);
+      const postData = preparePostData({
+        ...formData,
+        internal_id: modalState.data.internal_id || modalState.data._id
+      });
       const form = createFormData(postData);
 
       await updatePost({ 

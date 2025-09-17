@@ -17,6 +17,9 @@ export const Schema = {
   event_id: "",
   video: "",
   video_id: "",
+  price: "",
+  condition: "",
+  internal_id: "", // Add internal_id for updates
 };
 
 export const associationTypes = ["garage", "projects", "events", "groups"];
