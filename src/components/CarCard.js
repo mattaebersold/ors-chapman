@@ -45,7 +45,7 @@ const CarCard = ({ user: car, displayOptions = {} }) => {
       imageSource={getCarImageSource()}
       imageHeight={200}
       placeholderIcon="car"
-      placeholderText="No Image"
+      placeholderText=""
       title={getDisplayName()}
       description={car.description}
       onPress={handlePress}

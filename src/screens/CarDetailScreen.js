@@ -23,6 +23,7 @@ import CarFormModal from '../components/CarFormModal';
 import ModFormModal from '../components/ModFormModal';
 import GalleryFormModal from '../components/GalleryFormModal';
 import Listing from '../components/Listing';
+import GradientPlaceholder from '../components/GradientPlaceholder';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -1259,10 +1260,12 @@ const CarDetailScreen = ({ route, navigation }) => {
               )}
             </View>
           ) : (
-            <View style={styles.placeholderContainer}>
-              <FAIcon name="car" size={60} color={colors.GRAY} />
-              <Text style={styles.placeholderText}>No Image</Text>
-            </View>
+            <GradientPlaceholder
+              height={250}
+              icon="car"
+              iconSize={60}
+              text=""
+            />
           )}
         </View>
         

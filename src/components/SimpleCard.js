@@ -52,8 +52,8 @@ const SimpleCard = ({ post, onPress, displayOptions = {} }) => {
     <BaseCard
       imageSource={getImageSource()}
       imageHeight={200}
-      placeholderIcon="image"
-      placeholderText="No Image"
+      placeholderIcon="camera"
+      placeholderText=""
       title={post.title}
       description={post.body}
       onPress={onPress}

@@ -18,6 +18,7 @@ import CarBadge from './CarBadge';
 import FAIcon from './FAIcon';
 import { colors } from '../constants/colors';
 import Likes from './Likes';
+import GradientPlaceholder from './GradientPlaceholder';
 
 // Post item component  
 const Card = ({ post, onPress, displayOptions = {} }) => {
@@ -88,10 +89,11 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
                 onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
               />
             ) : (
-              <View style={styles.placeholderContainer}>
-                <FAIcon name="plus" size={40} color={colors.GRAY} />
-                <Text style={styles.placeholderText}>No Image</Text>
-              </View>
+              <GradientPlaceholder
+                height={200}
+                icon="camera"
+                text=""
+              />
             )}
             
             {/* Badge Overlays */}

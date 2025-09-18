@@ -81,7 +81,7 @@ const EventCard = ({ event, displayOptions = {} }) => {
       imageSource={getEventImageSource()}
       imageHeight={200}
       placeholderIcon="calendar"
-      placeholderText="No Image"
+      placeholderText=""
       title={event.title}
       description={event.body || event.description}
       onPress={handlePress}

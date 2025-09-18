@@ -8,12 +8,13 @@ import {
 } from 'react-native';
 import { colors } from '../constants/colors';
 import FAIcon from './FAIcon';
+import GradientPlaceholder from './GradientPlaceholder';
 
 const BaseCard = ({
   // Image props
   imageSource,
   imageHeight = 200,
-  placeholderIcon = 'image',
+  placeholderIcon = 'camera',
   placeholderText = 'No Image',
   
   // Content props
@@ -52,10 +53,11 @@ const BaseCard = ({
           resizeMode="cover"
         />
       ) : (
-        <View style={[styles.placeholderContainer, { height: imageHeight }]}>
-          <FAIcon name={placeholderIcon} size={40} color={colors.GRAY} />
-          <Text style={styles.placeholderText}>{placeholderText}</Text>
-        </View>
+        <GradientPlaceholder
+          height={imageHeight}
+          icon={placeholderIcon}
+          text={placeholderText}
+        />
       )}
       
       {/* Overlay component (badges, buttons, etc.) */}

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { colors } from '../constants/colors';
+import GradientPlaceholder from './GradientPlaceholder';
 
 const ContentItem = ({ item, onPress }) => {
   const getImageUrl = (item) => {
@@ -41,9 +42,14 @@ const ContentItem = ({ item, onPress }) => {
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} style={styles.itemImage} />
         ) : (
-          <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderText}>No Image</Text>
-          </View>
+          <GradientPlaceholder
+            width={60}
+            height={60}
+            icon="camera"
+            iconSize={20}
+            text=""
+            style={styles.smallPlaceholder}
+          />
         )}
         
         <View style={styles.itemInfo}>
@@ -180,6 +186,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.GRAY,
     textAlign: 'center',
+  },
+  smallPlaceholder: {
+    borderRadius: 8,
+    marginRight: 12,
   },
   itemInfo: {
     flex: 1,

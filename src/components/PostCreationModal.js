@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -21,8 +20,10 @@ import {
   useGetUserProjectsQuery, 
   useGetUserEventsQuery 
 } from '../services/apiService';
+import { useBanner } from '../contexts/BannerContext';
 
 const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, existingPost = null }) => {
+  const { showSuccess, showError } = useBanner();
   const [formData, setFormData] = useState({
     title: '',
     body: '',
@@ -182,11 +183,11 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
 
   const validateForm = () => {
     if (!formData.title.trim()) {
-      Alert.alert('Error', 'Title is required');
+      showError('Title is required');
       return false;
     }
     if (formData.type === 'listing' && !formData.price.trim()) {
-      Alert.alert('Error', 'Price is required for listings');
+      showError('Price is required for listings');
       return false;
     }
     return true;
@@ -198,10 +199,11 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
     setLoading(true);
     try {
       await onSubmit(formData);
+      showSuccess(editMode ? 'Post updated successfully!' : 'Post created successfully!');
       resetForm();
       onClose();
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to create post');
+      showError(error.message || `Failed to ${editMode ? 'update' : 'create'} post`);
     } finally {
       setLoading(false);
     }
@@ -229,25 +231,9 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
   };
 
   const handleClose = () => {
-    if (formData.title || formData.body || formData.images.length > 0) {
-      Alert.alert(
-        'Discard Changes?',
-        'You have unsaved changes. Are you sure you want to close?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Discard', 
-            style: 'destructive',
-            onPress: () => {
-              resetForm();
-              onClose();
-            }
-          },
-        ]
-      );
-    } else {
-      onClose();
-    }
+    // For now, just close directly. We could implement a custom confirmation modal later if needed
+    resetForm();
+    onClose();
   };
 
   const availableCategories = categoryData.find(cat => cat.type === formData.type)?.items || [];
@@ -433,24 +419,18 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
                 <TouchableOpacity
                   style={styles.associationSelector}
                   onPress={() => {
-                    const options = ['Cancel', 'Clear Selection', ...garageData.entries.map(car => 
-                      `${car.title} (${car.year} ${car.make} ${car.model})`
-                    )];
-                    const cancelButtonIndex = 0;
-                    const destructiveButtonIndex = 1;
-                    
-                    Alert.alert(
-                      'Select Car',
-                      'Choose a car to associate with this post',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Clear Selection', onPress: () => updateFormData('car_id', '') },
-                        ...garageData.entries.map((car) => ({
-                          text: `${car.title} (${car.year} ${car.make} ${car.model})`,
-                          onPress: () => updateFormData('car_id', car.internal_id),
-                        })),
-                      ]
-                    );
+                    // Cycle through cars or clear selection
+                    const currentIndex = garageData.entries.findIndex(car => car.internal_id === formData.car_id);
+                    if (currentIndex === -1) {
+                      // No selection, select first car
+                      updateFormData('car_id', garageData.entries[0]?.internal_id || '');
+                    } else if (currentIndex === garageData.entries.length - 1) {
+                      // Last car, clear selection
+                      updateFormData('car_id', '');
+                    } else {
+                      // Select next car
+                      updateFormData('car_id', garageData.entries[currentIndex + 1]?.internal_id || '');
+                    }
                   }}
                 >
                   <Text style={styles.associationText}>
@@ -470,18 +450,18 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
                 <TouchableOpacity
                   style={styles.associationSelector}
                   onPress={() => {
-                    Alert.alert(
-                      'Select Project',
-                      'Choose a project to associate with this post',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Clear Selection', onPress: () => updateFormData('project_id', '') },
-                        ...projectsData.entries.map((project) => ({
-                          text: project.title,
-                          onPress: () => updateFormData('project_id', project.internal_id),
-                        })),
-                      ]
-                    );
+                    // Cycle through projects or clear selection
+                    const currentIndex = projectsData.entries.findIndex(project => project.internal_id === formData.project_id);
+                    if (currentIndex === -1) {
+                      // No selection, select first project
+                      updateFormData('project_id', projectsData.entries[0]?.internal_id || '');
+                    } else if (currentIndex === projectsData.entries.length - 1) {
+                      // Last project, clear selection
+                      updateFormData('project_id', '');
+                    } else {
+                      // Select next project
+                      updateFormData('project_id', projectsData.entries[currentIndex + 1]?.internal_id || '');
+                    }
                   }}
                 >
                   <Text style={styles.associationText}>
@@ -501,18 +481,18 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
                 <TouchableOpacity
                   style={styles.associationSelector}
                   onPress={() => {
-                    Alert.alert(
-                      'Select Event',
-                      'Choose an event to associate with this post',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Clear Selection', onPress: () => updateFormData('event_id', '') },
-                        ...eventsData.entries.map((event) => ({
-                          text: event.title,
-                          onPress: () => updateFormData('event_id', event.internal_id),
-                        })),
-                      ]
-                    );
+                    // Cycle through events or clear selection
+                    const currentIndex = eventsData.entries.findIndex(event => event.internal_id === formData.event_id);
+                    if (currentIndex === -1) {
+                      // No selection, select first event
+                      updateFormData('event_id', eventsData.entries[0]?.internal_id || '');
+                    } else if (currentIndex === eventsData.entries.length - 1) {
+                      // Last event, clear selection
+                      updateFormData('event_id', '');
+                    } else {
+                      // Select next event
+                      updateFormData('event_id', eventsData.entries[currentIndex + 1]?.internal_id || '');
+                    }
                   }}
                 >
                   <Text style={styles.associationText}>
