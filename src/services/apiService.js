@@ -204,9 +204,9 @@ export const apiService = createApi({
         };
 
         // Debug logging for home feed posts
-        if (!type && !make && !model && !user_id) {
-          console.log('📡 API getPosts called with params:', params);
-        }
+        // if (!type && !make && !model && !user_id) {
+        //   console.log('📡 API getPosts called with params:', params);
+        // }
 
         return {
           url: '/api/post',
