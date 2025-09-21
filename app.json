@@ -31,10 +31,6 @@
         "projectId": "1d94b29e-03eb-487f-85d1-be5bf4750636"
       }
     },
-    "owner": "mattaebersold",
-    "updates": {
-      "url": "https://u.expo.dev/1d94b29e-03eb-487f-85d1-be5bf4750636"
-    },
-    "runtimeVersion": "1.0.0"
+    "owner": "mattaebersold"
   }
 }
