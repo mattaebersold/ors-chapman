@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import PostCreationModal from '../components/PostCreationModal';
+import PostCreationModal from '../components/modals/PostCreationModal';
 import { useCreatePostMutation } from '../services/apiService';
 import { createFormData, preparePostData } from '../utils/formUtils';
 import { Alert } from 'react-native';
@@ -30,7 +30,6 @@ const CreateScreen = () => {
 
       // Create new post
       await createPost(form).unwrap();
-      Alert.alert('Success', 'Post created successfully!');
       
       // Close modal and navigate to feed
       setModalVisible(false);

@@ -11,8 +11,7 @@ import {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
-import { useModal } from '../contexts/ModalContext';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth * 0.8;
@@ -20,7 +19,6 @@ const CARD_MARGIN = 10;
 
 const EventCarousel = ({ events = [], displayOptions = {} }) => {
   const navigation = useNavigation();
-  const { showPostModal } = useModal();
   const [currentIndex, setCurrentIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
   const baseTranslateX = useRef(new Animated.Value(0)).current;
@@ -111,13 +109,8 @@ const EventCarousel = ({ events = [], displayOptions = {} }) => {
   };
 
   const handleViewMore = (event) => {
-    // Use the same modal system that Card components use
-    // This will automatically use the PostDetailModal with our event handling
-    if (showPostModal) {
-      showPostModal(event);
-    } else {
-      console.warn('showPostModal not available');
-    }
+    // Navigate to EventDetail screen for events
+    navigation.navigate('EventDetail', { event });
   };
 
 

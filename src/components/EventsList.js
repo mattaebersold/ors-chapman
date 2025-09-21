@@ -9,10 +9,10 @@ import {
 import { colors } from '../constants/colors';
 import EventCarousel from './EventCarousel';
 import Listing from './Listing';
-import Card from './Card';
-import LoadingIndicator from './LoadingIndicator';
-import ErrorMessage from './ErrorMessage';
-import EmptyState from './EmptyState';
+import Card from './cards/Card';
+import LoadingIndicator from './ui/LoadingIndicator';
+import ErrorMessage from './ui/ErrorMessage';
+import EmptyState from './ui/EmptyState';
 import { useGetEventsQuery } from '../services/apiService';
 
 const EventsList = () => {

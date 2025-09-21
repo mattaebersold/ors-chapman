@@ -7,7 +7,7 @@ import {
   Image,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 import { useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery } from '../services/apiService';
 import { useSelector } from 'react-redux';
 

@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import FAIcon from '../components/FAIcon';
+import FAIcon from '../components/ui/FAIcon';
 import Listing from '../components/Listing';
 
 const ModelDetailScreen = ({ route }) => {

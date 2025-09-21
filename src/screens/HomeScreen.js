@@ -5,15 +5,18 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSelector } from 'react-redux';
-import { useGetPaginatedFollowingQuery } from '../services/apiService';
+import { useGetPaginatedFollowingQuery, useGetUserDetailsQuery } from '../services/apiService';
 import Listing from '../components/Listing';
 import { colors } from '../constants/colors';
-import FAIcon from '../components/FAIcon';
+import FAIcon from '../components/ui/FAIcon';
 
 const HomeScreen = () => {
   const { userInfo } = useSelector(state => state.auth);
   const [showFollowMessage, setShowFollowMessage] = useState(false);
-  
+
+  // Get current user details (this has the correct user_id and username)
+  const { data: currentUser } = useGetUserDetailsQuery();
+
   // Get the users that the current user is following
   const { data: followingData, isLoading: followingLoading } = useGetPaginatedFollowingQuery({
     index: 0,
@@ -21,26 +24,48 @@ const HomeScreen = () => {
   });
   
   const hasFollowing = followingData?.total > 0;
+  const followingDataLoaded = !followingLoading && followingData !== undefined;
 
   useEffect(() => {
-    if (!followingLoading && !hasFollowing) {
+    if (followingDataLoaded && !hasFollowing) {
       setShowFollowMessage(true);
     } else {
       setShowFollowMessage(false);
     }
-  }, [followingLoading, hasFollowing]);
+  }, [followingDataLoaded, hasFollowing]);
 
-  // config for the listing - always use following filter like Murray
+  // config for the listing - conditional logic based on following status
   const listingConfig = {
     type: 'posts',
     heading: '',
     // Add special parameters for posts query
-    postsParams: {
+    postsParams: (followingDataLoaded && hasFollowing && currentUser) ? {
+      // If user is following people, show only their posts
       filter: 'following',
-      username: userInfo?.username,
-      omit: userInfo?.user_id // Always exclude current user's posts
+      username: currentUser.username,
+      omit: currentUser.user_id // Always exclude current user's posts
+    } : {
+      // If user is not following anyone OR data still loading, show all posts except their own
+      omit: currentUser?.user_id // Exclude current user's posts
     }
   };
+
+  // Debug logging - let's see what's actually in userInfo vs currentUser
+  console.log('🏠 HomeScreen - Full userInfo object:', userInfo);
+  console.log('🏠 HomeScreen - Full currentUser object:', currentUser);
+  console.log('🏠 HomeScreen - Feed Configuration:', {
+    hasFollowing,
+    followingDataLoaded,
+    followingTotal: followingData?.total,
+    followingLoading,
+    userInfo_username: userInfo?.username,
+    userInfo_user_id: userInfo?.user_id,
+    currentUser_username: currentUser?.username,
+    currentUser_user_id: currentUser?.user_id,
+    postsParams: listingConfig.postsParams,
+    willShowFollowingOnly: followingDataLoaded && hasFollowing && currentUser,
+    timestamp: new Date().toISOString()
+  });
 
   // display options for the listing
   const displayOptions = {
@@ -67,9 +92,10 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Listing 
-        config={listingConfig} 
-        displayOptions={displayOptions} 
+      <Listing
+        key={`feed-${followingDataLoaded}-${hasFollowing}-${userInfo?.user_id}-${JSON.stringify(listingConfig.postsParams)}`} // Force re-render when config changes
+        config={listingConfig}
+        displayOptions={displayOptions}
         HeaderComponent={HeaderComponent}
         showFilters={true}
         filterTypes={['postType']}

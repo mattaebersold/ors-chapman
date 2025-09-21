@@ -9,7 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import { colors, getPostTypeColor, getCategoryColor } from '../constants/colors';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 
 const HeaderFilterButton = ({
   showFilters = false,

@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import FAIcon from '../components/FAIcon';
+import FAIcon from '../components/ui/FAIcon';
 import { useAuth } from '../utils/AuthContext';
 import { colors } from '../constants/colors';
 import {
@@ -143,7 +143,7 @@ const TabNavigator = ({ navigation }) => (
             onPress={() => navigation.navigate('MyGarage')}
           >
             <FAIcon name="car" size={16} color={colors.WHITE} />
-            <Text style={styles.garageButtonText}>My Garage</Text>
+            <Text style={styles.garageButtonText}>Garage</Text>
           </TouchableOpacity>
           <ProfileButton onPress={() => navigation.navigate('Profile')} />
         </View>
@@ -226,7 +226,7 @@ const AppNavigator = () => (
       component={MyGarageScreen}
       options={{
         headerShown: true,
-        title: 'My Garage',
+        title: 'Garage',
         headerStyle: {
           backgroundColor: colors.BRG,
           height: 100,
@@ -277,9 +277,9 @@ const AppNavigator = () => (
         },
       })}
     />
-    <AppStack.Screen 
-      name="PostDetail" 
-      component={require('../components/PostDetailModal').default}
+    <AppStack.Screen
+      name="PostDetail"
+      component={require('../screens/PostDetailScreen').default}
       options={{
         headerShown: false,
         presentation: 'modal',

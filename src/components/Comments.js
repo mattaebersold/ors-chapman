@@ -17,10 +17,10 @@ import {
   useDeleteCommentMutation,
   useGetUserDetailsQuery
 } from '../services/apiService';
-import UserBadge from './UserBadge';
-import LoadingIndicator from './LoadingIndicator';
-import ErrorMessage from './ErrorMessage';
-import FAIcon from './FAIcon';
+import UserBadge from './overlays/UserBadge';
+import LoadingIndicator from './ui/LoadingIndicator';
+import ErrorMessage from './ui/ErrorMessage';
+import FAIcon from './ui/FAIcon';
 
 const Comments = ({ document_id, document_type = 'post' }) => {
   const { userInfo } = useSelector(state => state.auth);

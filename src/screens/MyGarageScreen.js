@@ -8,9 +8,9 @@ import {
 import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import Listing from '../components/Listing';
-import CarCard from '../components/CarCard';
-import FAIcon from '../components/FAIcon';
-import CarFormModal from '../components/CarFormModal';
+import CarCard from '../components/cards/CarCard';
+import FAIcon from '../components/ui/FAIcon';
+import CarFormModal from '../components/modals/CarFormModal';
 
 const MyGarageScreen = () => {
   const { userInfo } = useSelector(state => state.auth);

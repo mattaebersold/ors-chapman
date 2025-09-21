@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../constants/colors';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 
 const ImageUploader = ({ images = [], onImagesChange, maxImages = 10 }) => {
   const [uploading, setUploading] = useState(false);
@@ -41,7 +41,7 @@ const ImageUploader = ({ images = [], onImagesChange, maxImages = 10 }) => {
     try {
       setUploading(true);
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images,
         allowsMultipleSelection: true,
         quality: 0.8,
         aspect: [4, 3],
@@ -105,7 +105,7 @@ const ImageUploader = ({ images = [], onImagesChange, maxImages = 10 }) => {
     try {
       setUploading(true);
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images,
         quality: 0.8,
         aspect: [4, 3],
         allowsEditing: false,

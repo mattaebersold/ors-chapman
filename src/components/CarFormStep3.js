@@ -47,13 +47,11 @@ const CarFormStep3 = ({ data, onUpdate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 8,
   },
   section: {
-    backgroundColor: colors.WHITE,
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    padding: 16,
+    marginTop: 12,
+    paddingHorizontal: 8,
   },
   sectionTitle: {
     fontSize: 18,
@@ -73,6 +71,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderLeftWidth: 4,
     borderLeftColor: colors.BRG,
+    marginHorizontal: 8,
   },
   helpTitle: {
     fontSize: 14,

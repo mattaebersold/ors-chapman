@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import { useGetLikeInfoQuery, useLikePostMutation, useUnlikePostMutation } from '../services/apiService';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 
 const Likes = ({ document_id, document_type = 'post' }) => {
   const { userInfo } = useSelector(state => state.auth);

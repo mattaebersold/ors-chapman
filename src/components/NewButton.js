@@ -25,8 +25,6 @@ const NewButton = () => {
       // Close modal and navigate back to Feed tab
       setModalVisible(false);
       navigation.navigate('Feed');
-      
-      Alert.alert('Success', 'Post created successfully!');
     } catch (error) {
       console.error('Error creating post:', error);
       

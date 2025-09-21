@@ -19,11 +19,13 @@ import {
 	useGetUsersQuery,
 	useGetArticlesQuery,
 	useGetEventsQuery,
+	useGetProjectsQuery,
+	useGetModsQuery,
 } from '../services/apiService';
-import Card from './Card';
-import LoadingIndicator from './LoadingIndicator';
+import Card from './cards/Card';
+import LoadingIndicator from './ui/LoadingIndicator';
 import { colors, getPostTypeColor, getCategoryColor } from '../constants/colors';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 import FilterBar from './FilterBar';
 
 
@@ -155,16 +157,12 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 					skip: !!customEvents
 				});
 			case 'events':
-				const eventType = extractTypeFromUrl(config?.apiUrl);
-				return useGetPostsQuery({ 
+				// Use the dedicated /api/events endpoint
+				return useGetEventsQuery({ 
 					page: currentPage, 
 					limit: POSTS_PER_PAGE,
-					type: eventType,
-					make,
-					model,
 					user_id,
-					// Add support for additional params from config
-					...(config?.postsParams || {})
+					...(config?.eventParams || {})
 				}, {
 					skip: !!customEvents
 				});
@@ -173,6 +171,27 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 				return useGetEventsQuery({ 
 					page: currentPage, 
 					limit: POSTS_PER_PAGE 
+				}, {
+					skip: !!customEvents
+				});
+			case 'projects':
+				// Use the dedicated /api/project endpoint
+				return useGetProjectsQuery({ 
+					page: currentPage, 
+					limit: POSTS_PER_PAGE,
+					car_id: extractTypeFromUrl(config?.apiUrl), // Support filtering by car_id
+					user_id,
+					...(config?.projectParams || {})
+				}, {
+					skip: !!customEvents
+				});
+			case 'mods':
+				// Use the dedicated /api/mods endpoint
+				return useGetModsQuery({ 
+					page: currentPage, 
+					limit: POSTS_PER_PAGE,
+					car_id: extractTypeFromUrl(config?.apiUrl), // Support filtering by car_id
+					...(config?.modParams || {})
 				}, {
 					skip: !!customEvents
 				});
@@ -379,22 +398,22 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: '#f5f5f5',
+		backgroundColor: colors.BACKGROUND_LIGHT,
 	},
 	header: {
 		padding: 16,
 		borderBottomWidth: 1,
-		borderBottomColor: '#eee',
+		borderBottomColor: colors.BORDER,
 	},
 	welcomeText: {
 		fontSize: 18,
 		fontWeight: '600',
-		color: '#333',
+		color: colors.TEXT_PRIMARY,
 		textAlign: 'center',
 	},
 	loadingText: {
 		textAlign: 'center',
-		color: '#666',
+		color: colors.TEXT_SECONDARY,
 		fontStyle: 'italic',
 	},
 	listContainer: {

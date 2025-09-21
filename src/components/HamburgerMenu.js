@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 
 const HamburgerMenu = ({ navigation }) => {
   const [isVisible, setIsVisible] = useState(false);

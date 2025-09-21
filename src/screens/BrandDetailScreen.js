@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useGetBrandModelsQuery } from '../services/apiService';
 import { colors } from '../constants/colors';
-import FAIcon from '../components/FAIcon';
+import FAIcon from '../components/ui/FAIcon';
 import Listing from '../components/Listing';
 
 const BrandDetailScreen = ({ route, navigation }) => {

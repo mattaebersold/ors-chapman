@@ -5,7 +5,7 @@ import { useCreatePostMutation, useUpdatePostMutation } from '../services/apiSer
 import PostCreationModal from './PostCreationModal';
 import { createFormData, preparePostData } from '../utils/formUtils';
 import { colors } from '../constants/colors';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 
 const NewButtonFAB = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -30,15 +30,13 @@ const NewButtonFAB = () => {
         });
         const updateForm = createFormData(updateData);
         
-        await updatePost({ 
-          postId: editPost.internal_id || editPost._id, 
-          formData: updateForm 
+        await updatePost({
+          postId: editPost.internal_id || editPost._id,
+          formData: updateForm
         }).unwrap();
-        Alert.alert('Success', 'Post updated successfully!');
       } else {
         // Create new post
         await createPost(form).unwrap();
-        Alert.alert('Success', 'Post created successfully!');
       }
       
       // Close modal and reset state

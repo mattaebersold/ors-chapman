@@ -11,7 +11,7 @@ import {
 import { useRoute } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
-import FAIcon from '../components/FAIcon';
+import FAIcon from '../components/ui/FAIcon';
 import Listing from '../components/Listing';
 import { useGetUserDetailsQuery, useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery, useGetPostsQuery, useGetCarsQuery } from '../services/apiService';
 import EventCarousel from '../components/EventCarousel';
@@ -98,7 +98,7 @@ const UserDetailScreen = () => {
   const tabs = [
     { key: 'posts', label: 'Posts', type: 'posts', apiUrl: `/api/post?user_id=${actualUserId}`, heading: 'User Posts' },
     { key: 'cars', label: 'Cars', type: 'cars', apiUrl: `/api/garage?user_id=${actualUserId}`, heading: 'User Cars' },
-    { key: 'events', label: 'Events', type: 'events', apiUrl: `/api/post?type=event&user_id=${actualUserId}`, heading: 'User Events' },
+    { key: 'events', label: 'Events', type: 'posts', apiUrl: `/api/post?type=event&user_id=${actualUserId}`, heading: 'User Events' }, // NOTE: Using posts until Events API supports user_id filtering
   ];
   
   console.log('UserDetailScreen - tab URLs:', tabs.map(tab => ({ key: tab.key, url: tab.apiUrl })));

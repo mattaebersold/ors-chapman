@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { colors, getPostTypeColor, getCategoryColor } from '../constants/colors';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 
 const FilterBar = ({
   showFilters = false,

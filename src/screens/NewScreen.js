@@ -8,7 +8,7 @@ import {
 import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { useCreatePostMutation } from '../services/apiService';
-import PostCreationModal from '../components/PostCreationModal';
+import PostCreationModal from '../components/modals/PostCreationModal';
 import { createFormData, preparePostData } from '../utils/formUtils';
 
 const NewScreen = () => {
@@ -33,8 +33,6 @@ const NewScreen = () => {
       // Close modal and navigate back to Feed tab
       setModalVisible(false);
       navigation.navigate('Feed');
-      
-      Alert.alert('Success', 'Post created successfully!');
     } catch (error) {
       console.error('Error creating post:', error);
       

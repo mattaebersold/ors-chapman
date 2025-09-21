@@ -22,7 +22,7 @@ const baseQuery = fetchBaseQuery({
 export const apiService = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Mods', 'CarGallery', 'CarTask'],
+  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Projects', 'Mods', 'CarGallery', 'CarTask'],
   endpoints: (builder) => ({
     // User authentication endpoints
     getUserDetails: builder.query({
@@ -189,7 +189,7 @@ export const apiService = createApi({
     // Posts endpoints
     getPosts: builder.query({
       query: ({ page = 1, limit = 10, type = null, make = null, model = null, user_id = null, filter = null, username = null, omit = null }) => {
-        const params = { 
+        const params = {
           page: page - 1, // Backend uses 0-based indexing
           limit,
           sort: 'created_at',
@@ -202,6 +202,12 @@ export const apiService = createApi({
           ...(username && { username }), // Add username parameter (needed for 'following' filter)
           ...(omit && { omit }) // Add omit parameter to exclude specific user's posts
         };
+
+        // Debug logging for home feed posts
+        if (!type && !make && !model && !user_id) {
+          console.log('📡 API getPosts called with params:', params);
+        }
+
         return {
           url: '/api/post',
           method: 'GET',
@@ -230,6 +236,66 @@ export const apiService = createApi({
       providesTags: ['UserEntries'],
     }),
 
+    // Get all projects (public listings)
+    getProjects: builder.query({
+      query: ({ page = 1, limit = 20, car_id, user_id }) => {
+        const params = {
+          page: page - 1, // Backend uses 0-based indexing
+          limit,
+          sort: 'created_at',
+          order: 'desc'
+        };
+        
+        let url = `/api/project/${page - 1}/none/${limit}`;
+        
+        // Add query parameters if needed
+        const queryParams = new URLSearchParams();
+        if (car_id) queryParams.append('car_id', car_id);
+        if (user_id) queryParams.append('user_id', user_id);
+        
+        if (queryParams.toString()) {
+          url += `?${queryParams.toString()}`;
+        }
+        
+        return {
+          url,
+          method: 'GET',
+        };
+      },
+      providesTags: ['Projects'],
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
+    // Create new project
+    createProject: builder.mutation({
+      query: (projectData) => ({
+        url: '/api/project/create',
+        method: 'POST',
+        body: projectData,
+      }),
+      invalidatesTags: ['UserEntries', 'Projects'],
+    }),
+
+    // Update existing project
+    updateProject: builder.mutation({
+      query: (projectData) => ({
+        url: '/api/project/update',
+        method: 'POST',
+        body: projectData,
+      }),
+      invalidatesTags: ['UserEntries', 'Projects'],
+    }),
+
+    // Delete project
+    deleteProject: builder.mutation({
+      query: (projectId) => ({
+        url: '/api/project/delete',
+        method: 'POST',
+        body: { internal_id: projectId },
+      }),
+      invalidatesTags: ['UserEntries', 'Projects'],
+    }),
+
     getUserEvents: builder.query({
       query: ({ page = 1, limit = 6 }) => ({
         url: `/api/protected/events/${page}/none/${limit}`,
@@ -246,12 +312,36 @@ export const apiService = createApi({
       providesTags: ['UserEntries'],
     }),
 
-    // User settings update endpoints
-    updateUserProfile: builder.mutation({
-      query: (userData) => ({
-        url: '/api/users/update',
-        method: 'PUT',
-        body: userData,
+    // User settings update endpoints - individual field updates
+    updateUserBio: builder.mutation({
+      query: ({ bio, userid }) => ({
+        url: '/api/users/settings/update/bio',
+        method: 'POST',
+        body: { bio, userid },
+      }),
+      invalidatesTags: ['User'],
+    }),
+    updateUserName: builder.mutation({
+      query: ({ name, userid }) => ({
+        url: '/api/users/settings/update/name',
+        method: 'POST',
+        body: { name, userid },
+      }),
+      invalidatesTags: ['User'],
+    }),
+    updateUserUsername: builder.mutation({
+      query: ({ username, userid }) => ({
+        url: '/api/users/settings/update/username',
+        method: 'POST',
+        body: { username, userid },
+      }),
+      invalidatesTags: ['User'],
+    }),
+    updateUserEmail: builder.mutation({
+      query: ({ email, userid }) => ({
+        url: '/api/users/settings/update/email',
+        method: 'POST',
+        body: { email, userid },
       }),
       invalidatesTags: ['User'],
     }),
@@ -261,6 +351,15 @@ export const apiService = createApi({
         url: '/api/users/password',
         method: 'PUT',
         body: passwordData,
+      }),
+    }),
+
+    // Google authentication
+    googleAuth: builder.mutation({
+      query: ({ idToken }) => ({
+        url: '/api/users/google-auth',
+        method: 'POST',
+        body: { idToken },
       }),
     }),
 
@@ -293,8 +392,9 @@ export const apiService = createApi({
     // Delete post
     deletePost: builder.mutation({
       query: (postId) => ({
-        url: `/api/post/delete/${postId}`,
-        method: 'DELETE',
+        url: `/api/post/delete`,
+        method: 'POST',
+        body: { internal_id: postId },
       }),
       invalidatesTags: (result, error, postId) => [
         'Post',
@@ -591,6 +691,36 @@ export const apiService = createApi({
       keepUnusedDataFor: 0, // Don't cache for debugging
     }),
 
+    // Create new event
+    createEvent: builder.mutation({
+      query: (eventData) => ({
+        url: '/api/event/create',
+        method: 'POST',
+        body: eventData,
+      }),
+      invalidatesTags: ['Events', 'UserEntries'],
+    }),
+
+    // Update existing event
+    updateEvent: builder.mutation({
+      query: (eventData) => ({
+        url: '/api/event/update',
+        method: 'POST',
+        body: eventData,
+      }),
+      invalidatesTags: ['Events', 'UserEntries'],
+    }),
+
+    // Delete event
+    deleteEvent: builder.mutation({
+      query: (eventId) => ({
+        url: '/api/event/delete',
+        method: 'POST',
+        body: { internal_id: eventId },
+      }),
+      invalidatesTags: ['Events', 'UserEntries'],
+    }),
+
     // Mods endpoints
     getMods: builder.query({
       query: ({ car_id, page = 1, limit = 20 }) => {
@@ -828,10 +958,18 @@ export const {
   useGetPostsQuery,
   useGetUserPostsQuery,
   useGetUserProjectsQuery,
+  useGetProjectsQuery,
+  useCreateProjectMutation,
+  useUpdateProjectMutation,
+  useDeleteProjectMutation,
   useGetUserEventsQuery,
   useGetUserGarageQuery,
-  useUpdateUserProfileMutation,
+  useUpdateUserBioMutation,
+  useUpdateUserNameMutation,
+  useUpdateUserUsernameMutation,
+  useUpdateUserEmailMutation,
   useUpdateUserPasswordMutation,
+  useGoogleAuthMutation,
   useCreatePostMutation,
   useUpdatePostMutation,
   useDeletePostMutation,
@@ -851,6 +989,9 @@ export const {
   useDeleteCommentMutation,
   useGetArticlesQuery,
   useGetEventsQuery,
+  useCreateEventMutation,
+  useUpdateEventMutation,
+  useDeleteEventMutation,
   useGetModsQuery,
   useGetModQuery,
   useCreateModMutation,

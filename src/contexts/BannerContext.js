@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import FloatingBanner from '../components/FloatingBanner';
+import FloatingBanner from '../components/overlays/FloatingBanner';
 
 const BannerContext = createContext();
 

@@ -16,6 +16,7 @@ import {
 import { VideoView } from 'expo-video';
 import { useDispatch, useSelector } from 'react-redux';
 import { userLogin, clearError } from '../store/authSlice';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -100,6 +101,14 @@ const LoginScreen = () => {
               <Text style={styles.buttonText}>Sign In</Text>
             )}
           </TouchableOpacity>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <GoogleSignInButton loading={loading} />
 
           {error && (
             <Text style={styles.errorText}>{error}</Text>
@@ -208,6 +217,22 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     overflow: 'hidden',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  dividerText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    paddingHorizontal: 16,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

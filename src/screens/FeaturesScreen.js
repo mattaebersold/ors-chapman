@@ -7,7 +7,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import FAIcon from '../components/FAIcon';
+import FAIcon from '../components/ui/FAIcon';
 
 const FeaturesScreen = () => {
   const features = [

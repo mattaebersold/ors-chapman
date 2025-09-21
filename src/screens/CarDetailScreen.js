@@ -9,21 +9,22 @@ import {
   FlatList,
   Modal,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useGetUserDetailsQuery, useGetPostsQuery } from '../services/apiService';
-import LoadingIndicator from '../components/LoadingIndicator';
-import ErrorMessage from '../components/ErrorMessage';
-import EmptyState from '../components/EmptyState';
-import FAIcon from '../components/FAIcon';
-import UserBadge from '../components/UserBadge';
-import ImageGalleryModal from '../components/ImageGalleryModal';
-import CarTaskModal from '../components/CarTaskModal';
-import CarFormModal from '../components/CarFormModal';
-import ModFormModal from '../components/ModFormModal';
-import GalleryFormModal from '../components/GalleryFormModal';
+import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useDeleteGarageCarMutation, useGetUserDetailsQuery, useGetPostsQuery } from '../services/apiService';
+import LoadingIndicator from '../components/ui/LoadingIndicator';
+import ErrorMessage from '../components/ui/ErrorMessage';
+import EmptyState from '../components/ui/EmptyState';
+import FAIcon from '../components/ui/FAIcon';
+import UserBadge from '../components/overlays/UserBadge';
+import ImageGalleryModal from '../components/modals/ImageGalleryModal';
+import CarTaskModal from '../components/modals/CarTaskModal';
+import CarFormModal from '../components/modals/CarFormModal';
+import ModFormModal from '../components/modals/ModFormModal';
+import GalleryFormModal from '../components/modals/GalleryFormModal';
 import Listing from '../components/Listing';
-import GradientPlaceholder from '../components/GradientPlaceholder';
+import GradientPlaceholder from '../components/ui/GradientPlaceholder';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -139,6 +140,7 @@ const CarDetailScreen = ({ route, navigation }) => {
   // Mod and Gallery mutations
   const [deleteMod] = useDeleteModMutation();
   const [deleteCarGallery] = useDeleteCarGalleryMutation();
+  const [deleteGarageCar] = useDeleteGarageCarMutation();
 
   // Posts will be handled by the Listing component in renderFeedTab()
 
@@ -375,21 +377,8 @@ const CarDetailScreen = ({ route, navigation }) => {
       }
     })();
 
-    // For feed tab, don't wrap in ScrollView to avoid VirtualizedList nesting
-    if (activeTab === 'feed') {
-      return content;
-    }
-
-    // For other tabs, wrap in ScrollView for scrollable content
-    return (
-      <ScrollView 
-        style={styles.tabContentScrollView} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.tabContentScrollViewContent}
-      >
-        {content}
-      </ScrollView>
-    );
+    // Return content directly since we now have a main ScrollView
+    return content;
   };
 
   const renderFeedTab = () => {
@@ -408,16 +397,21 @@ const CarDetailScreen = ({ route, navigation }) => {
       badgeCar: false, // Hide car badge - we're already on the car page
     };
 
-    return (
-      <View style={styles.tabContent}>
+    // Header component for the FlatList
+    const HeaderComponent = () => (
+      <View style={styles.feedHeader}>
         <Text style={styles.sectionTitle}>Posts featuring this car</Text>
-        <Listing 
-          config={listingConfig} 
-          displayOptions={displayOptions}
-          showFilters={false} 
-          filterTypes={['postType']} 
-        />
       </View>
+    );
+
+    return (
+      <Listing
+        config={listingConfig}
+        displayOptions={displayOptions}
+        showFilters={false}
+        filterTypes={['postType']}
+        HeaderComponent={HeaderComponent}
+      />
     );
   };
 
@@ -1007,6 +1001,33 @@ const CarDetailScreen = ({ route, navigation }) => {
     setEditingGallery(null);
   };
 
+  const handleDeleteCar = async () => {
+    const carTitle = [carData.year, carData.make, carData.model].filter(Boolean).join(' ') || carData.title || 'this car';
+    
+    Alert.alert(
+      'Delete Car',
+      `Are you sure you want to delete "${carTitle}" from your garage? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteGarageCar(carData.internal_id).unwrap();
+              // Navigate back after successful deletion
+              navigation.goBack();
+              Alert.alert('Success', 'Car deleted successfully from your garage.');
+            } catch (error) {
+              console.error('Error deleting car:', error);
+              Alert.alert('Error', 'Failed to delete car. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleDeleteMod = async (mod) => {
     Alert.alert(
       'Delete Modification',
@@ -1216,9 +1237,31 @@ const CarDetailScreen = ({ route, navigation }) => {
     );
   };
 
+  const renderContent = () => {
+    // For feed tab, don't use ScrollView to avoid VirtualizedList nesting
+    if (activeTab === 'feed') {
+      return (
+        <View style={styles.feedContainer}>
+          {renderTabContent()}
+        </View>
+      );
+    }
+
+    // For other tabs, use ScrollView as normal
+    return (
+      <ScrollView
+        style={styles.mainScrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.mainScrollViewContent}
+      >
+        {renderTabContent()}
+      </ScrollView>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      {/* Car Header */}
+      {/* Car Header - Always visible */}
       <View style={styles.header}>
         <View style={styles.imageContainer}>
           {carData?.gallery?.length > 0 ? (
@@ -1273,15 +1316,24 @@ const CarDetailScreen = ({ route, navigation }) => {
           <View style={styles.carTitleRow}>
             <Text style={styles.carTitle}>{getDisplayName()}</Text>
             
-            {/* Edit Button - only show for car owner */}
+            {/* Edit and Delete Buttons - only show for car owner */}
             {isCarOwner && (
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => setEditCarModalVisible(true)}
-              >
-                <FAIcon name="edit" size={16} color={colors.BRG} />
-                <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
+              <View style={styles.carActionButtons}>
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => setEditCarModalVisible(true)}
+                >
+                  <FAIcon name="edit" size={16} color={colors.BRG} />
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.deleteButton}
+                  onPress={handleDeleteCar}
+                >
+                  <FAIcon name="trash" size={16} color={colors.ERROR} />
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
           
@@ -1350,10 +1402,10 @@ const CarDetailScreen = ({ route, navigation }) => {
               onPress={() => setActiveTab(tab.key)}
             >
               <View style={styles.tabButtonContent}>
-                <FAIcon 
-                  name={tab.icon} 
-                  size={16} 
-                  color={activeTab === tab.key ? colors.WHITE : colors.TEXT_SECONDARY} 
+                <FAIcon
+                  name={tab.icon}
+                  size={16}
+                  color={activeTab === tab.key ? colors.WHITE : colors.TEXT_SECONDARY}
                   style={styles.tabIcon}
                 />
                 <Text style={[
@@ -1370,7 +1422,7 @@ const CarDetailScreen = ({ route, navigation }) => {
       </View>
 
       {/* Tab Content */}
-      {renderTabContent()}
+      {renderContent()}
 
       {/* Image Gallery Modal */}
       <ImageGalleryModal
@@ -1498,6 +1550,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.BACKGROUND,
   },
+  mainScrollView: {
+    flex: 1,
+  },
+  mainScrollViewContent: {
+    flexGrow: 1,
+  },
   header: {
     backgroundColor: colors.WHITE,
     marginBottom: 8,
@@ -1603,6 +1661,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: colors.BRG,
+  },
+  carActionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.LIGHT_GRAY,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.ERROR,
+    gap: 6,
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.ERROR,
   },
   userBadgeContainer: {
     alignSelf: 'flex-start',
@@ -2149,11 +2227,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
   },
-  tabContentScrollView: {
-    flex: 1,
+
+  feedListingContainer: {
+    height: 600, // Fixed height to prevent nested scroll issues
+    marginTop: 8,
   },
-  tabContentScrollViewContent: {
-    flexGrow: 1,
+
+  feedHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    backgroundColor: colors.BACKGROUND,
+  },
+
+  feedContainer: {
+    flex: 1,
   },
 
   // Tasks Section (above tabs)

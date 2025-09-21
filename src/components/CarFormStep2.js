@@ -6,8 +6,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import FormInput from './FormInput';
-import FormTextArea from './FormTextArea';
+import FormInput from './forms/FormInput';
+import FormTextArea from './forms/FormTextArea';
 
 const CarFormStep2 = ({ data, onUpdate }) => {
   return (
@@ -109,13 +109,11 @@ const CarFormStep2 = ({ data, onUpdate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 8,
   },
   section: {
-    backgroundColor: colors.WHITE,
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    padding: 16,
+    marginTop: 12,
+    paddingHorizontal: 8,
   },
   sectionTitle: {
     fontSize: 18,
@@ -135,6 +133,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderLeftWidth: 4,
     borderLeftColor: colors.BRG,
+    marginHorizontal: 8,
   },
   helpTitle: {
     fontSize: 14,

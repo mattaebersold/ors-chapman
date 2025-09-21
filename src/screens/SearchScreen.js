@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import { colors } from '../constants/colors';
 import { useSearchQuery } from '../services/apiService';
-import Card from '../components/Card';
+import Card from '../components/cards/Card';
 import UserRow from '../components/UserRow';
-import FAIcon from '../components/FAIcon';
+import FAIcon from '../components/ui/FAIcon';
 
 const SearchScreen = ({ navigation, route }) => {
   const [searchTerm, setSearchTerm] = useState(route?.params?.query || '');

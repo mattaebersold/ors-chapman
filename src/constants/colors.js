@@ -27,10 +27,33 @@ export const colors = {
   LIGHT_BRG: '#3A5A5C',
   BACKGROUND: '#F8F9FA',
   BORDER: '#E9ECEF',
-  
+
+  // Extended color palette for components
+  CARD_DARK: '#202020',
+  BUTTON_SECONDARY: '#505050',
+  GOOGLE_BLUE: '#4285F4',
+  BACKGROUND_LIGHT: '#f5f5f5',
+
+  // Status color variants
+  SUCCESS_LIGHT: '#10b981',
+  ERROR_LIGHT: '#ef4444',
+  INFO_LIGHT: '#3b82f6',
+
+  // Priority colors for tasks
+  PRIORITY_HIGH: '#FF4444',
+  PRIORITY_MEDIUM: '#FF8800',
+  PRIORITY_LOW: '#FFBB33',
+  PRIORITY_COMPLETED: '#00C851',
+
+  // Special background colors
+  WARNING_BACKGROUND: '#FFF8DC', // Light yellow background
+
   // Text colors
   TEXT_PRIMARY: '#333333',
   TEXT_SECONDARY: '#666666',
+  TEXT_LIGHT: '#f0f0f0',
+  TEXT_MUTED: '#aaa',
+  TEXT_SUBTLE: '#bbb',
 };
 
 // Post type color mapping

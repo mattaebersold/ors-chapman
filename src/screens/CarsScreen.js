@@ -9,11 +9,11 @@ import {
 import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import Listing from '../components/Listing';
-import CarCard from '../components/CarCard';
+import CarCard from '../components/cards/CarCard';
 import BrandsScreen from './BrandsScreen';
 import UsernameSearch from '../components/UsernameSearch';
 import { useGetAllBrandsQuery, useGetUsersQuery } from '../services/apiService';
-import FAIcon from '../components/FAIcon';
+import FAIcon from '../components/ui/FAIcon';
 
 const CarsScreen = ({ navigation }) => {
   const { userInfo } = useSelector(state => state.auth);

@@ -10,7 +10,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import FAIcon from './FAIcon';
+import FAIcon from './ui/FAIcon';
 import { useGetUsersQuery } from '../services/apiService';
 
 const UsernameSearch = ({ onUserSelect, style }) => {

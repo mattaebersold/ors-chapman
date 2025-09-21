@@ -3,6 +3,9 @@ import { Alert } from 'react-native';
 import { useUpdatePostMutation } from '../services/apiService';
 import { createFormData, preparePostData } from '../utils/formUtils';
 
+// Lazy load components to avoid circular dependencies
+const PostCreationModal = React.lazy(() => import('../components/modals/PostCreationModal'));
+
 const ModalContext = createContext();
 
 export const useModal = () => {
@@ -38,9 +41,6 @@ export const ModalProvider = ({ children }) => {
     });
   }, []);
 
-  const showPostModal = useCallback((post) => {
-    showModal('post', post);
-  }, [showModal]);
 
   const showEditPostModal = useCallback((post) => {
     showModal('editPost', post);
@@ -60,7 +60,6 @@ export const ModalProvider = ({ children }) => {
       }).unwrap();
       
       hideModal();
-      Alert.alert('Success', 'Post updated successfully!');
     } catch (error) {
       console.error('Error updating post:', error);
       
@@ -81,21 +80,7 @@ export const ModalProvider = ({ children }) => {
     if (!modalState.visible) return null;
 
     switch (modalState.type) {
-      case 'post':
-        // Use lazy loading to avoid circular dependency
-        const PostDetailModal = React.lazy(() => import('../components/PostDetailModal'));
-        return (
-          <React.Suspense fallback={null}>
-            <PostDetailModal
-              visible={modalState.visible}
-              post={modalState.data}
-              onClose={hideModal}
-            />
-          </React.Suspense>
-        );
       case 'editPost':
-        // Use lazy loading to avoid circular dependency
-        const PostCreationModal = React.lazy(() => import('../components/PostCreationModal'));
         return (
           <React.Suspense fallback={null}>
             <PostCreationModal
@@ -115,7 +100,6 @@ export const ModalProvider = ({ children }) => {
   const value = {
     showModal,
     hideModal,
-    showPostModal,
     showEditPostModal,
     modalState,
   };

@@ -6,9 +6,10 @@ import {
   ScrollView,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import FormInput from './FormInput';
-import FormPicker from './FormPicker';
-import FormSwitch from './FormSwitch';
+import { spacing } from '../constants/layout';
+import FormInput from './forms/FormInput';
+import FormPicker from './forms/FormPicker';
+import FormSwitch from './forms/FormSwitch';
 
 const CarFormStep1 = ({ data, onUpdate }) => {
   const carTypes = [
@@ -126,38 +127,37 @@ const CarFormStep1 = ({ data, onUpdate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: spacing.sm,
   },
   section: {
-    backgroundColor: colors.WHITE,
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    padding: 16,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.TEXT_PRIMARY,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   sectionDescription: {
     fontSize: 14,
     color: colors.TEXT_SECONDARY,
-    marginBottom: 20,
+    marginBottom: spacing.xl,
     lineHeight: 20,
   },
   helpBox: {
     backgroundColor: colors.LIGHT_GRAY,
     borderRadius: 8,
-    padding: 12,
+    padding: spacing.md,
     borderLeftWidth: 4,
     borderLeftColor: colors.BRG,
+    marginHorizontal: spacing.sm,
   },
   helpTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.TEXT_PRIMARY,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   helpText: {
     fontSize: 13,

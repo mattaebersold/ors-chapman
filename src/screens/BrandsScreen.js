@@ -10,7 +10,7 @@ import {
 import { useGetAllBrandsQuery } from '../services/apiService';
 import { colors } from '../constants/colors';
 import { LoadingIndicator, ErrorMessage, EmptyState, spacing, layout } from '../components/common';
-import FAIcon from '../components/FAIcon';
+import FAIcon from '../components/ui/FAIcon';
 
 const BrandsScreen = ({ navigation }) => {
   const { data: brandsData, isLoading, error } = useGetAllBrandsQuery();
