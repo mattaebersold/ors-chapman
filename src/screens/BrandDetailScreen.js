@@ -34,13 +34,25 @@ const BrandDetailScreen = ({ route, navigation }) => {
   };
 
   const tabs = [
-    { 
-      key: 'models', 
+    {
+      key: 'models',
       label: 'Models',
       icon: 'car'
     },
-    { 
-      key: 'cars', 
+    {
+      key: 'posts',
+      label: 'Posts',
+      icon: 'feed',
+      config: {
+        type: 'posts',
+        heading: `${brandName} Posts`,
+        postsParams: {
+          car_make_handle: brand
+        }
+      }
+    },
+    {
+      key: 'cars',
       label: 'Cars',
       icon: 'car',
       config: {
@@ -49,8 +61,8 @@ const BrandDetailScreen = ({ route, navigation }) => {
         heading: `${brandName} Cars`
       }
     },
-    { 
-      key: 'parts', 
+    {
+      key: 'parts',
       label: 'Parts',
       icon: 'plus',
       config: {
@@ -59,8 +71,8 @@ const BrandDetailScreen = ({ route, navigation }) => {
         heading: `${brandName} Parts`
       }
     },
-    { 
-      key: 'wanted', 
+    {
+      key: 'wanted',
       label: 'Wanted',
       icon: 'search',
       config: {
@@ -69,8 +81,8 @@ const BrandDetailScreen = ({ route, navigation }) => {
         heading: `${brandName} Want-Ads`
       }
     },
-    { 
-      key: 'spots', 
+    {
+      key: 'spots',
       label: 'Spotted',
       icon: 'users',
       config: {

@@ -1237,31 +1237,9 @@ const CarDetailScreen = ({ route, navigation }) => {
     );
   };
 
-  const renderContent = () => {
-    // For feed tab, don't use ScrollView to avoid VirtualizedList nesting
-    if (activeTab === 'feed') {
-      return (
-        <View style={styles.feedContainer}>
-          {renderTabContent()}
-        </View>
-      );
-    }
-
-    // For other tabs, use ScrollView as normal
-    return (
-      <ScrollView
-        style={styles.mainScrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.mainScrollViewContent}
-      >
-        {renderTabContent()}
-      </ScrollView>
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      {/* Car Header - Always visible */}
+  const renderHeader = () => (
+    <>
+      {/* Car Header */}
       <View style={styles.header}>
         <View style={styles.imageContainer}>
           {carData?.gallery?.length > 0 ? (
@@ -1277,7 +1255,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                 onScroll={handleHeaderScroll}
                 scrollEventThrottle={16}
               />
-              
+
               {/* Pagination dots */}
               {carData.gallery.length > 1 && (
                 <View style={styles.paginationContainer}>
@@ -1292,7 +1270,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                   ))}
                 </View>
               )}
-              
+
               {/* Image counter */}
               {carData.gallery.length > 1 && (
                 <View style={styles.imageCounter}>
@@ -1311,22 +1289,22 @@ const CarDetailScreen = ({ route, navigation }) => {
             />
           )}
         </View>
-        
+
         <View style={styles.carInfo}>
           <View style={styles.carTitleRow}>
             <Text style={styles.carTitle}>{getDisplayName()}</Text>
-            
+
             {/* Edit and Delete Buttons - only show for car owner */}
             {isCarOwner && (
               <View style={styles.carActionButtons}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.editButton}
                   onPress={() => setEditCarModalVisible(true)}
                 >
                   <FAIcon name="edit" size={16} color={colors.BRG} />
                   <Text style={styles.editButtonText}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={handleDeleteCar}
                 >
@@ -1336,7 +1314,7 @@ const CarDetailScreen = ({ route, navigation }) => {
               </View>
             )}
           </View>
-          
+
           {/* User Badge */}
           {carData.user_id && (
             <View style={styles.userBadgeContainer}>
@@ -1356,7 +1334,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                 Tasks ({carTasksData?.entries?.length || 0})
               </Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.addTaskButton}
               onPress={() => setTaskModalVisible(true)}
             >
@@ -1369,12 +1347,12 @@ const CarDetailScreen = ({ route, navigation }) => {
               <Text style={styles.tasksLoadingText}>Loading...</Text>
             </View>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.tasksPreview}
               onPress={() => setTasksViewModalVisible(true)}
             >
               <Text style={styles.tasksPreviewText}>
-                {carTasksData?.entries?.length > 0 
+                {carTasksData?.entries?.length > 0
                   ? `View all tasks`
                   : 'No tasks yet. Add your first task!'
                 }
@@ -1420,8 +1398,37 @@ const CarDetailScreen = ({ route, navigation }) => {
           ))}
         </ScrollView>
       </View>
+    </>
+  );
 
-      {/* Tab Content */}
+  const renderContent = () => {
+    // For feed tab, don't use ScrollView to avoid VirtualizedList nesting
+    if (activeTab === 'feed') {
+      return (
+        <View style={styles.container}>
+          {renderHeader()}
+          <View style={styles.feedContainer}>
+            {renderTabContent()}
+          </View>
+        </View>
+      );
+    }
+
+    // For other tabs, use ScrollView with header included
+    return (
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollableContent}
+      >
+        {renderHeader()}
+        {renderTabContent()}
+      </ScrollView>
+    );
+  };
+
+  return (
+    <>
       {renderContent()}
 
       {/* Image Gallery Modal */}
@@ -1541,7 +1548,7 @@ const CarDetailScreen = ({ route, navigation }) => {
         carId={carData?.internal_id}
         onSuccess={handleGalleryFormSuccess}
       />
-    </View>
+    </>
   );
 };
 
@@ -1549,6 +1556,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.BACKGROUND,
+  },
+  scrollableContent: {
+    flexGrow: 1,
   },
   mainScrollView: {
     flex: 1,

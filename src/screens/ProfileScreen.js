@@ -32,7 +32,7 @@ import ProjectFormModal from '../components/modals/ProjectFormModal';
 import EventFormModal from '../components/modals/EventFormModal';
 import FAIcon from '../components/ui/FAIcon';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { userInfo } = useSelector(state => state.auth);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -58,13 +58,22 @@ const ProfileScreen = () => {
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
+        {
+          text: 'Logout',
           style: 'destructive',
           onPress: () => dispatch(logout())
         },
       ]
     );
+  };
+
+  const handleViewPublicProfile = () => {
+    if (navigation && user) {
+      navigation.navigate('UserDetail', {
+        user: user,
+        userId: user.user_id || user._id
+      });
+    }
   };
 
   const tabs = [
@@ -300,8 +309,15 @@ const ProfileScreen = () => {
                 
                 {/* Action Buttons */}
                 <View style={styles.actionButtons}>
-                  <TouchableOpacity 
-                    style={styles.settingsButton} 
+                  <TouchableOpacity
+                    style={styles.publicProfileButton}
+                    onPress={handleViewPublicProfile}
+                  >
+                    <Text style={styles.publicProfileText}>Public Profile</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.settingsButton}
                     onPress={() => setSettingsVisible(true)}
                   >
                     <Text style={styles.settingsText}>Settings</Text>
@@ -530,31 +546,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 12,
+    gap: 8,
+  },
+  publicProfileButton: {
+    backgroundColor: colors.BRG,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    flex: 1,
+    alignItems: 'center',
+  },
+  publicProfileText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '600',
   },
   settingsButton: {
     backgroundColor: colors.BRG,
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    flex: 0.45,
+    flex: 1,
     alignItems: 'center',
   },
   settingsText: {
     color: colors.WHITE,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   logoutButton: {
     backgroundColor: colors.ERROR,
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    flex: 0.45,
+    flex: 1,
     alignItems: 'center',
   },
   logoutText: {
     color: colors.WHITE,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   

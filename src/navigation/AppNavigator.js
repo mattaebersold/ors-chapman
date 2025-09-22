@@ -189,12 +189,12 @@ const TabNavigator = ({ navigation }) => (
 const AppNavigator = () => (
   <AppStack.Navigator screenOptions={{ headerShown: false }}>
     <AppStack.Screen name="Home" component={TabNavigator} />
-    <AppStack.Screen 
-      name="Profile" 
+    <AppStack.Screen
+      name="Profile"
       component={ProfileScreen}
       options={{
         headerShown: true,
-        title: 'Profile',
+        title: 'Your Dashboard',
         headerStyle: {
           backgroundColor: colors.BRG,
           height: 100, // Increased height for better spacing

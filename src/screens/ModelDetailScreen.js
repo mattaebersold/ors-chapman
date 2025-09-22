@@ -13,11 +13,24 @@ import Listing from '../components/Listing';
 
 const ModelDetailScreen = ({ route }) => {
   const { brand, brandName, model, modelName } = route.params;
-  const [activeTab, setActiveTab] = useState('cars');
+  const [activeTab, setActiveTab] = useState('posts');
 
   const tabs = [
-    { 
-      key: 'cars', 
+    {
+      key: 'posts',
+      label: 'Posts',
+      icon: 'feed',
+      config: {
+        type: 'posts',
+        heading: `${brandName} ${modelName} Posts`,
+        postsParams: {
+          car_make_handle: brand,
+          car_model_handle: model
+        }
+      }
+    },
+    {
+      key: 'cars',
       label: 'Cars',
       icon: 'car',
       config: {
@@ -26,8 +39,8 @@ const ModelDetailScreen = ({ route }) => {
         heading: `${brandName} ${modelName} Cars`
       }
     },
-    { 
-      key: 'parts', 
+    {
+      key: 'parts',
       label: 'Parts',
       icon: 'plus',
       config: {
@@ -36,8 +49,8 @@ const ModelDetailScreen = ({ route }) => {
         heading: `${brandName} ${modelName} Parts`
       }
     },
-    { 
-      key: 'wanted', 
+    {
+      key: 'wanted',
       label: 'Wanted',
       icon: 'search',
       config: {
@@ -46,8 +59,8 @@ const ModelDetailScreen = ({ route }) => {
         heading: `${brandName} ${modelName} Want-Ads`
       }
     },
-    { 
-      key: 'spotted', 
+    {
+      key: 'spotted',
       label: 'Spotted',
       icon: 'users',
       config: {

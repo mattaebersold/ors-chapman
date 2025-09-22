@@ -42,18 +42,27 @@ const HamburgerMenu = ({ navigation }) => {
       <Modal
         visible={isVisible}
         animationType="slide"
-        transparent={false}
+        transparent={true}
         onRequestClose={() => setIsVisible(false)}
-        presentationStyle="fullScreen"
+        presentationStyle="overFullScreen"
       >
-        <View style={styles.menuContainer}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.menuContainer}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
           <SafeAreaView style={styles.safeArea}>
             {/* Header */}
             <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>Open Road Society</Text>
               <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
                 <FAIcon name="times" size={24} color={colors.WHITE} />
               </TouchableOpacity>
+              <Text style={styles.menuTitle}>Open Road Society</Text>
             </View>
 
             {/* Menu Items */}
@@ -80,7 +89,8 @@ const HamburgerMenu = ({ navigation }) => {
               </View>
             </ScrollView>
           </SafeAreaView>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </>
   );
@@ -99,17 +109,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.WHITE,
     borderRadius: 1,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flexDirection: 'row',
+  },
   menuContainer: {
     flex: 1,
     backgroundColor: colors.BRG,
-    width: '100%',
+    width: '80%',
+    maxWidth: 300,
   },
   safeArea: {
     flex: 1,
   },
   menuHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
@@ -119,6 +135,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: colors.WHITE,
+    marginLeft: 16,
   },
   closeButton: {
     padding: 4,
