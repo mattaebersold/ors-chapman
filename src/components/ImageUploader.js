@@ -176,7 +176,7 @@ const ImageUploader = ({ images = [], onImagesChange, maxImages = 10 }) => {
           contentContainerStyle={styles.imageScrollContent}
         >
           {images.map((image, index) => (
-            <View key={image.id} style={styles.imageContainer}>
+            <View key={image.id || `image-${index}`} style={styles.imageContainer}>
               <Image source={{ uri: image.uri }} style={styles.image} />
               
               {/* Remove button */}

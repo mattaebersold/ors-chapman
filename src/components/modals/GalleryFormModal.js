@@ -208,9 +208,9 @@ const GalleryFormModal = ({
               numberOfLines={3}
             />
 
-            <Text style={styles.sectionTitle}>Photos *</Text>
+            <Text style={styles.sectionTitle}>Photos</Text>
             <Text style={styles.sectionDescription}>
-              Add photos to your gallery. The first photo will be used as the gallery thumbnail.
+              Add photos to your gallery (optional). The first photo will be used as the gallery thumbnail.
             </Text>
             
             <ImageUploader
@@ -218,7 +218,7 @@ const GalleryFormModal = ({
               onImagesChange={(images) => updateGalleryData('gallery', images)}
               maxImages={20}
               title="Upload Gallery Photos"
-              required
+              required={false}
             />
           </View>
 
@@ -243,6 +243,7 @@ const GalleryFormModal = ({
             style={styles.footerButton}
             disabled={loading}
           >
+            <FAIcon name="times" size={16} color={colors.TEXT_SECONDARY} style={{ marginRight: 6 }} />
             <Text style={styles.buttonText}>Cancel</Text>
           </Button>
           
@@ -257,9 +258,17 @@ const GalleryFormModal = ({
             {loading ? (
               <LoadingIndicator size="small" color={colors.WHITE} />
             ) : (
-              <Text style={[styles.buttonText, { color: colors.WHITE }]}>
-                {editMode ? 'Update' : 'Create'}
-              </Text>
+              <>
+                <FAIcon
+                  name={editMode ? "save" : "plus"}
+                  size={16}
+                  color={colors.WHITE}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.buttonText, { color: colors.WHITE }]}>
+                  {editMode ? 'Update' : 'Create'}
+                </Text>
+              </>
             )}
           </Button>
         </View>

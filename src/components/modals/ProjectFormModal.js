@@ -16,6 +16,7 @@ import FormOptionButtons from '../forms/FormOptionButtons';
 import ImageUploader from '../ImageUploader';
 import MakeModelPicker from '../forms/MakeModelPicker';
 import FAIcon from '../ui/FAIcon';
+import FadeScrollView from '../ui/FadeScrollView';
 import { 
   useGetUserGarageQuery,
   useCreateProjectMutation,
@@ -252,7 +253,7 @@ const ProjectFormModal = ({ visible, onClose, onSubmit, editMode = false, existi
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Associated Car</Text>
             {garageData?.entries && garageData.entries.length > 0 ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carsScroll}>
+              <FadeScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carsScroll} fadeColor="#ffffff" fadeWidth={15}>
                 <TouchableOpacity
                   style={[
                     styles.carOption,
@@ -284,7 +285,7 @@ const ProjectFormModal = ({ visible, onClose, onSubmit, editMode = false, existi
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </FadeScrollView>
             ) : (
               <Text style={styles.noDataText}>No cars in garage</Text>
             )}

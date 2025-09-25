@@ -24,8 +24,8 @@ const ModelDetailScreen = ({ route }) => {
         type: 'posts',
         heading: `${brandName} ${modelName} Posts`,
         postsParams: {
-          car_make_handle: brand,
-          car_model_handle: model
+          make: brand.toLowerCase(),
+          model: model.toLowerCase()
         }
       }
     },
@@ -93,32 +93,35 @@ const ModelDetailScreen = ({ route }) => {
       </View>
 
       {/* Tab Navigation */}
-      <View style={styles.tabBar}>
-        <ScrollView 
-          horizontal 
+      <View style={styles.tabsContainer}>
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabScrollContainer}
+          contentContainerStyle={styles.tabsContent}
         >
           {tabs.map((tab) => (
             <TouchableOpacity
               key={tab.key}
               style={[
-                styles.tab,
-                activeTab === tab.key && styles.activeTab
+                styles.tabButton,
+                activeTab === tab.key && styles.activeTabButton
               ]}
               onPress={() => setActiveTab(tab.key)}
             >
-              <FAIcon 
-                name={tab.icon} 
-                size={16} 
-                color={activeTab === tab.key ? colors.SPEED : colors.WHITE} 
-              />
-              <Text style={[
-                styles.tabText,
-                activeTab === tab.key && styles.activeTabText
-              ]}>
-                {tab.label}
-              </Text>
+              <View style={styles.tabButtonContent}>
+                <FAIcon
+                  name={tab.icon}
+                  size={16}
+                  color={activeTab === tab.key ? colors.WHITE : colors.TEXT_SECONDARY}
+                  style={styles.tabIcon}
+                />
+                <Text style={[
+                  styles.tabButtonText,
+                  activeTab === tab.key && styles.activeTabButtonText
+                ]}>
+                  {tab.label}
+                </Text>
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -174,34 +177,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-  tabBar: {
-    backgroundColor: colors.BRG,
+  tabsContainer: {
+    backgroundColor: colors.WHITE,
     borderBottomWidth: 1,
-    borderBottomColor: colors.LIGHT_BRG,
+    borderBottomColor: colors.BORDER,
   },
-  tabScrollContainer: {
-    paddingHorizontal: 8,
-  },
-  tab: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  tabsContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginHorizontal: 4,
-    minWidth: 90,
-    justifyContent: 'center',
   },
-  activeTab: {
-    backgroundColor: colors.LIGHT_BRG,
+  tabButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    backgroundColor: colors.BACKGROUND,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
   },
-  tabText: {
+  activeTabButton: {
+    backgroundColor: colors.BRG,
+    borderColor: colors.BRG,
+  },
+  tabButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tabIcon: {
+    marginRight: 6,
+  },
+  tabButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.WHITE,
-    marginLeft: 6,
+    color: colors.TEXT_SECONDARY,
   },
-  activeTabText: {
-    color: colors.SPEED,
+  activeTabButtonText: {
+    color: colors.WHITE,
     fontWeight: '600',
   },
   tabContent: {

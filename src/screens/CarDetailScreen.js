@@ -18,6 +18,7 @@ import ErrorMessage from '../components/ui/ErrorMessage';
 import EmptyState from '../components/ui/EmptyState';
 import FAIcon from '../components/ui/FAIcon';
 import UserBadge from '../components/overlays/UserBadge';
+import CarCard from '../components/cards/CarCard';
 import ImageGalleryModal from '../components/modals/ImageGalleryModal';
 import CarTaskModal from '../components/modals/CarTaskModal';
 import CarFormModal from '../components/modals/CarFormModal';
@@ -47,6 +48,9 @@ const CarDetailScreen = ({ route, navigation }) => {
   const [galleryFormModalVisible, setGalleryFormModalVisible] = useState(false);
   const [editingMod, setEditingMod] = useState(null);
   const [editingGallery, setEditingGallery] = useState(null);
+  const [feedModalVisible, setFeedModalVisible] = useState(false);
+  const [relatedMakeModalVisible, setRelatedMakeModalVisible] = useState(false);
+  const [relatedModelModalVisible, setRelatedModelModalVisible] = useState(false);
 
   if (!carId) {
     return (
@@ -67,19 +71,6 @@ const CarDetailScreen = ({ route, navigation }) => {
   const carData = carsList?.entries?.find(c => c._id === carId || c.id === carId);
   
   // Debug logging for car data
-  React.useEffect(() => {
-    if (carData) {
-      console.log('CarDetailScreen - Car Data:', {
-        _id: carData._id,
-        internal_id: carData.internal_id,
-        make: carData.make,
-        model: carData.model,
-        make_handle: carData.make_handle,
-        model_handle: carData.model_handle,
-        year: carData.year
-      });
-    }
-  }, [carData]);
 
   // Fetch related content - try different strategies to get more results
   const makeParam = carData?.make_handle || carData?.make;
@@ -382,36 +373,23 @@ const CarDetailScreen = ({ route, navigation }) => {
   };
 
   const renderFeedTab = () => {
-    // Config for listing posts related to this car
-    const listingConfig = {
-      type: 'posts',
-      heading: '',
-      postsParams: {
-        car_id: carData?.internal_id
-      }
-    };
-
-    // Display options - hide car badge since we're on the car's page
-    const displayOptions = {
-      badgeProfile: true,
-      badgeCar: false, // Hide car badge - we're already on the car page
-    };
-
-    // Header component for the FlatList
-    const HeaderComponent = () => (
-      <View style={styles.feedHeader}>
-        <Text style={styles.sectionTitle}>Posts featuring this car</Text>
-      </View>
-    );
-
+    // Display a button that opens the feed modal
     return (
-      <Listing
-        config={listingConfig}
-        displayOptions={displayOptions}
-        showFilters={false}
-        filterTypes={['postType']}
-        HeaderComponent={HeaderComponent}
-      />
+      <View style={styles.feedTabContainer}>
+        <View style={styles.feedHeader}>
+          <Text style={styles.sectionTitle}>Posts featuring this car</Text>
+          <Text style={styles.sectionSubtitle}>
+            See posts related to this {carData?.year} {carData?.make} {carData?.model}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.openFeedModalButton}
+          onPress={() => setFeedModalVisible(true)}
+        >
+          <FAIcon name="rss" size={20} color={colors.WHITE} />
+          <Text style={styles.openFeedModalButtonText}>View Posts</Text>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -778,39 +756,69 @@ const CarDetailScreen = ({ route, navigation }) => {
   const renderRelatedTab = () => {
     return (
       <View style={styles.tabContent}>
-        {/* More from this Make */}
-        {relatedMakeCars.length > 0 && (
-          <View style={styles.relatedSection}>
-            <Text style={styles.sectionTitle}>
-              More {carData.make} Cars ({relatedMakeCars.length})
-            </Text>
-            <FlatList
-              data={relatedMakeCars}
-              renderItem={renderRelatedCarItem}
-              keyExtractor={(item) => item._id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.relatedCarsList}
-            />
-          </View>
-        )}
+        <View style={styles.relatedCategoriesContainer}>
+          {/* More from this Make */}
+          {relatedMakeCars.length > 0 && (
+            <TouchableOpacity
+              style={styles.relatedCategoryCard}
+              onPress={() => setRelatedMakeModalVisible(true)}
+            >
+              <View style={styles.relatedCategoryHeader}>
+                <FAIcon name="car" size={24} color={colors.BRG} />
+                <Text style={styles.relatedCategoryTitle}>
+                  More {carData.make} Cars
+                </Text>
+              </View>
+              <Text style={styles.relatedCategoryCount}>
+                {relatedMakeCars.length} cars found
+              </Text>
+              <View style={styles.relatedCategoryPreview}>
+                {relatedMakeCars.slice(0, 3).map((car, index) => (
+                  <View key={car._id} style={styles.previewCarItem}>
+                    <Text style={styles.previewCarText}>
+                      {car.year} {car.model}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.relatedCategoryAction}>
+                <Text style={styles.relatedCategoryActionText}>View All</Text>
+                <FAIcon name="chevron-right" size={16} color={colors.BRG} />
+              </View>
+            </TouchableOpacity>
+          )}
 
-        {/* More from this Model */}
-        {relatedModelCars.length > 0 && (
-          <View style={styles.relatedSection}>
-            <Text style={styles.sectionTitle}>
-              More {carData.make} {carData.model} Cars ({relatedModelCars.length})
-            </Text>
-            <FlatList
-              data={relatedModelCars}
-              renderItem={renderRelatedCarItem}
-              keyExtractor={(item) => item._id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.relatedCarsList}
-            />
-          </View>
-        )}
+          {/* More from this Model */}
+          {relatedModelCars.length > 0 && (
+            <TouchableOpacity
+              style={styles.relatedCategoryCard}
+              onPress={() => setRelatedModelModalVisible(true)}
+            >
+              <View style={styles.relatedCategoryHeader}>
+                <FAIcon name="car" size={24} color={colors.BRG} />
+                <Text style={styles.relatedCategoryTitle}>
+                  More {carData.make} {carData.model} Cars
+                </Text>
+              </View>
+              <Text style={styles.relatedCategoryCount}>
+                {relatedModelCars.length} cars found
+              </Text>
+              <View style={styles.relatedCategoryPreview}>
+                {relatedModelCars.slice(0, 3).map((car, index) => (
+                  <View key={car._id} style={styles.previewCarItem}>
+                    <Text style={styles.previewCarText}>
+                      {car.year} {car.owner_username || 'Unknown Owner'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.relatedCategoryAction}>
+                <Text style={styles.relatedCategoryActionText}>View All</Text>
+                <FAIcon name="chevron-right" size={16} color={colors.BRG} />
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {relatedMakeCars.length === 0 && relatedModelCars.length === 0 && (
           <EmptyState
@@ -1149,9 +1157,9 @@ const CarDetailScreen = ({ route, navigation }) => {
                           onPress={() => handleToggleTaskCompletion(task)}
                         >
                           <FAIcon 
-                            name={task.completed ? "check-square" : "square-o"} 
-                            size={20} 
-                            color={task.completed ? colors.BRG : colors.TEXT_SECONDARY}
+                            name={task.completed ? "check-square" : "square"} 
+                            size={24} 
+                            color={colors.WHITE}
                           />
                         </TouchableOpacity>
                         <Text style={[
@@ -1168,14 +1176,14 @@ const CarDetailScreen = ({ route, navigation }) => {
                             onPress={() => handleMoveTask(task.internal_id || task._id, 'up')}
                             disabled={index === 0}
                           >
-                            <FAIcon name="chevron-up" size={12} color={index === 0 ? colors.LIGHT_GRAY : colors.TEXT_SECONDARY} />
+                            <FAIcon name="chevron-up" size={12} color={index === 0 ? 'rgba(255,255,255,0.3)' : colors.WHITE} />
                           </TouchableOpacity>
                           <TouchableOpacity 
                             style={[styles.reorderButton, index === typeTasks.length - 1 && styles.disabledButton]}
                             onPress={() => handleMoveTask(task.internal_id || task._id, 'down')}
                             disabled={index === typeTasks.length - 1}
                           >
-                            <FAIcon name="chevron-down" size={12} color={index === typeTasks.length - 1 ? colors.LIGHT_GRAY : colors.TEXT_SECONDARY} />
+                            <FAIcon name="chevron-down" size={12} color={index === typeTasks.length - 1 ? 'rgba(255,255,255,0.3)' : colors.WHITE} />
                           </TouchableOpacity>
                         </View>
                         <TouchableOpacity 
@@ -1186,13 +1194,13 @@ const CarDetailScreen = ({ route, navigation }) => {
                             setTaskModalVisible(true);
                           }}
                         >
-                          <FAIcon name="edit" size={14} color={colors.TEXT_SECONDARY} />
+                          <FAIcon name="edit" size={14} color={colors.WHITE} />
                         </TouchableOpacity>
                         <TouchableOpacity 
                           style={styles.taskActionButton}
                           onPress={() => handleDeleteTask(task.internal_id || task._id)}
                         >
-                          <FAIcon name="trash" size={14} color={colors.ERROR} />
+                          <FAIcon name="trash" size={14} color={colors.WHITE} />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1329,10 +1337,15 @@ const CarDetailScreen = ({ route, navigation }) => {
         <View style={styles.tasksSection}>
           <View style={styles.tasksSectionHeader}>
             <View style={styles.tasksSectionTitle}>
-              <FAIcon name="check-square" size={18} color={colors.BRG} />
-              <Text style={styles.tasksSectionTitleText}>
-                Tasks ({carTasksData?.entries?.length || 0})
-              </Text>
+              <FAIcon name="check-square" size={18} color={colors.WHITE} />
+              <View>
+                <Text style={styles.tasksSectionTitleText}>
+                  Tasks ({carTasksData?.entries?.length || 0})
+                </Text>
+                <Text style={styles.tasksVisibilityText}>
+                  Tasks are visible to you only
+                </Text>
+              </View>
             </View>
             <TouchableOpacity
               style={styles.addTaskButton}
@@ -1548,6 +1561,113 @@ const CarDetailScreen = ({ route, navigation }) => {
         carId={carData?.internal_id}
         onSuccess={handleGalleryFormSuccess}
       />
+
+      {/* Car Feed Modal */}
+      <Modal
+        visible={feedModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setFeedModalVisible(false)}
+      >
+        <View style={styles.feedModalContainer}>
+          <View style={styles.feedModalHeader}>
+            <TouchableOpacity onPress={() => setFeedModalVisible(false)}>
+              <FAIcon name="times" size={24} color={colors.BRG} />
+            </TouchableOpacity>
+            <Text style={styles.feedModalTitle}>
+              Posts - {carData?.year} {carData?.make} {carData?.model}
+            </Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <View style={styles.feedModalContent}>
+            <Listing
+              config={{
+                type: 'posts',
+                heading: '',
+                params: {
+                  // Since car_id filtering isn't supported by the API,
+                  // filter by make and model as a fallback
+                  ...(carData?.make && { make: carData.make }),
+                  ...(carData?.model && carData?.make && { model: carData.model })
+                }
+              }}
+              displayOptions={{
+                badgeProfile: true,
+                badgeCar: true // Show car badge since we're in a modal
+              }}
+              showFilters={true}
+              filterTypes={['postType']}
+              nestedScrollEnabled={true}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Related Make Cars Modal */}
+      <Modal
+        visible={relatedMakeModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setRelatedMakeModalVisible(false)}
+      >
+        <View style={styles.relatedModalContainer}>
+          <View style={styles.relatedModalHeader}>
+            <TouchableOpacity onPress={() => setRelatedMakeModalVisible(false)}>
+              <FAIcon name="times" size={24} color={colors.BRG} />
+            </TouchableOpacity>
+            <Text style={styles.relatedModalTitle}>
+              More {carData?.make} Cars
+            </Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <View style={styles.relatedModalContent}>
+            <FlatList
+              data={relatedMakeCars}
+              renderItem={({ item }) => (
+                <CarCard
+                  user={item}
+                  displayOptions={{ hideUserBadge: false }}
+                />
+              )}
+              keyExtractor={(item) => item._id}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Related Model Cars Modal */}
+      <Modal
+        visible={relatedModelModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setRelatedModelModalVisible(false)}
+      >
+        <View style={styles.relatedModalContainer}>
+          <View style={styles.relatedModalHeader}>
+            <TouchableOpacity onPress={() => setRelatedModelModalVisible(false)}>
+              <FAIcon name="times" size={24} color={colors.BRG} />
+            </TouchableOpacity>
+            <Text style={styles.relatedModalTitle}>
+              More {carData?.make} {carData?.model} Cars
+            </Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <View style={styles.relatedModalContent}>
+            <FlatList
+              data={relatedModelCars}
+              renderItem={({ item }) => (
+                <CarCard
+                  user={item}
+                  displayOptions={{ hideUserBadge: false }}
+                />
+              )}
+              keyExtractor={(item) => item._id}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };
@@ -1797,26 +1917,27 @@ const styles = StyleSheet.create({
   galleryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 16,
   },
   galleryHeaderButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   viewAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.BACKGROUND,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.BRG,
+    gap: 6,
   },
   viewAllText: {
-    marginLeft: 6,
     fontSize: 14,
     fontWeight: '500',
     color: colors.BRG,
@@ -1831,15 +1952,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.LIGHT_GRAY,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.BRG,
-    gap: 4,
+    gap: 6,
   },
   addButtonText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     color: colors.BRG,
   },
@@ -2133,14 +2254,13 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.TEXT_PRIMARY,
+    color: colors.WHITE,
     marginBottom: 12,
     paddingBottom: 8,
     borderBottomWidth: 2,
     borderBottomColor: colors.BRG,
   },
   taskItem: {
-    backgroundColor: colors.WHITE,
     borderRadius: 8,
     padding: 16,
     marginBottom: 8,
@@ -2162,7 +2282,7 @@ const styles = StyleSheet.create({
   taskTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.TEXT_PRIMARY,
+    color: colors.WHITE,
     flex: 1,
     marginRight: 12,
   },
@@ -2173,13 +2293,13 @@ const styles = StyleSheet.create({
   taskActionButton: {
     padding: 8,
     borderRadius: 6,
-    backgroundColor: colors.LIGHT_GRAY,
   },
   taskDescription: {
     fontSize: 14,
-    color: colors.TEXT_SECONDARY,
+    color: colors.WHITE,
     lineHeight: 20,
     marginBottom: 8,
+    opacity: 0.9,
   },
   taskMeta: {
     flexDirection: 'row',
@@ -2198,7 +2318,16 @@ const styles = StyleSheet.create({
   },
   taskDate: {
     fontSize: 12,
-    color: colors.TEXT_SECONDARY,
+    color: colors.WHITE,
+    opacity: 0.8,
+  },
+  taskVisibilityTagline: {
+    fontSize: 11,
+    color: colors.WHITE,
+    opacity: 0.7,
+    fontStyle: 'italic',
+    marginBottom: 8,
+    textAlign: 'center',
   },
 
   // Related Cars
@@ -2256,7 +2385,7 @@ const styles = StyleSheet.create({
 
   // Tasks Section (above tabs)
   tasksSection: {
-    backgroundColor: colors.WHITE,
+    backgroundColor: '#161616',
     marginHorizontal: 8,
     marginBottom: 8,
     borderRadius: 12,
@@ -2278,7 +2407,14 @@ const styles = StyleSheet.create({
   tasksSectionTitleText: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.TEXT_PRIMARY,
+    color: colors.WHITE,
+  },
+  tasksVisibilityText: {
+    fontSize: 12,
+    color: colors.WHITE,
+    opacity: 0.7,
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   addTaskButton: {
     backgroundColor: colors.BRG,
@@ -2296,20 +2432,20 @@ const styles = StyleSheet.create({
   },
   tasksPreviewText: {
     fontSize: 14,
-    color: colors.TEXT_PRIMARY,
+    color: colors.WHITE,
     flex: 1,
     marginRight: 8,
   },
   tasksLoadingText: {
     fontSize: 14,
-    color: colors.TEXT_SECONDARY,
+    color: colors.WHITE,
     marginLeft: 8,
   },
 
   // Tasks Modal
   tasksModalContainer: {
     flex: 1,
-    backgroundColor: colors.WHITE,
+    backgroundColor: '#161616',
   },
   tasksModalHeader: {
     flexDirection: 'row',
@@ -2317,7 +2453,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: 50,
+    paddingTop: 16,
     backgroundColor: colors.BRG,
     borderBottomWidth: 1,
     borderBottomColor: colors.BORDER,
@@ -2363,11 +2499,11 @@ const styles = StyleSheet.create({
   tasksModalEmptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.TEXT_PRIMARY,
+    color: colors.WHITE,
   },
   tasksModalEmptyMessage: {
     fontSize: 14,
-    color: colors.TEXT_SECONDARY,
+    color: colors.WHITE,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -2383,12 +2519,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   completedTask: {
-    backgroundColor: colors.LIGHT_GRAY,
-    opacity: 0.7,
   },
   completedTaskTitle: {
     textDecorationLine: 'line-through',
-    color: colors.TEXT_SECONDARY,
   },
   completedTaskText: {
     color: colors.TEXT_SECONDARY,
@@ -2401,9 +2534,9 @@ const styles = StyleSheet.create({
   taskCategory: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.BRG,
+    color: colors.WHITE,
     textTransform: 'capitalize',
-    backgroundColor: colors.LIGHT_GRAY,
+    backgroundColor: colors.BRG,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -2444,6 +2577,176 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.3,
+  },
+
+  // Feed Tab and Modal Styles
+  feedTabContainer: {
+    padding: 20,
+    alignItems: 'center',
+    backgroundColor: colors.WHITE,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: colors.TEXT_SECONDARY,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  openFeedModalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.BRG,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginTop: 20,
+  },
+  openFeedModalButtonText: {
+    color: colors.WHITE,
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  feedModalContainer: {
+    flex: 1,
+    backgroundColor: colors.BACKGROUND,
+  },
+  feedModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: colors.WHITE,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  feedModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+    textAlign: 'center',
+    flex: 1,
+  },
+  feedModalContent: {
+    flex: 1,
+  },
+
+  // Related Tab and Modal Styles
+  relatedCategoriesContainer: {
+    padding: 16,
+  },
+  relatedCategoryCard: {
+    backgroundColor: colors.WHITE,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  relatedCategoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  relatedCategoryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+    marginLeft: 12,
+    flex: 1,
+  },
+  relatedCategoryCount: {
+    fontSize: 14,
+    color: colors.TEXT_SECONDARY,
+    marginBottom: 12,
+  },
+  relatedCategoryPreview: {
+    marginBottom: 12,
+  },
+  previewCarItem: {
+    backgroundColor: colors.LIGHT_GRAY,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  previewCarText: {
+    fontSize: 12,
+    color: colors.TEXT_SECONDARY,
+  },
+  relatedCategoryAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  relatedCategoryActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.BRG,
+    marginRight: 6,
+  },
+  relatedModalContainer: {
+    flex: 1,
+    backgroundColor: colors.BACKGROUND,
+  },
+  relatedModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: colors.WHITE,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  relatedModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+    textAlign: 'center',
+    flex: 1,
+  },
+  relatedModalContent: {
+    flex: 1,
+    padding: 16,
+  },
+  relatedCarCard: {
+    backgroundColor: colors.WHITE,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  relatedCarInfo: {
+    flex: 1,
+  },
+  relatedCarTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+    marginBottom: 4,
+  },
+  relatedCarOwner: {
+    fontSize: 14,
+    color: colors.TEXT_SECONDARY,
   },
 });
 

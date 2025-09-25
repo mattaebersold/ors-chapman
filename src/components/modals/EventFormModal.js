@@ -16,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { colors } from '../../constants/colors';
 import ImageUploader from '../ImageUploader';
 import FAIcon from '../ui/FAIcon';
+import FadeScrollView from '../ui/FadeScrollView';
 import { 
   useCreateEventMutation,
   useUpdateEventMutation
@@ -255,7 +256,7 @@ const EventFormModal = ({ visible, onClose, onSubmit, editMode = false, existing
           {/* Category */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Category</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsScroll}>
+            <FadeScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsScroll} fadeColor="#ffffff" fadeWidth={15}>
               {categoryOptions.map((option) => (
                 <TouchableOpacity
                   key={option.value}
@@ -273,13 +274,13 @@ const EventFormModal = ({ visible, onClose, onSubmit, editMode = false, existing
                   </Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </FadeScrollView>
           </View>
 
           {/* Event Type */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsScroll}>
+            <FadeScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsScroll} fadeColor="#ffffff" fadeWidth={15}>
               {eventTypeOptions.map((option) => (
                 <TouchableOpacity
                   key={option.value}
@@ -297,7 +298,7 @@ const EventFormModal = ({ visible, onClose, onSubmit, editMode = false, existing
                   </Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </FadeScrollView>
           </View>
 
           {/* Date and Time */}
@@ -380,7 +381,7 @@ const EventFormModal = ({ visible, onClose, onSubmit, editMode = false, existing
             <>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Recurring Frequency</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsScroll}>
+                <FadeScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsScroll} fadeColor="#ffffff" fadeWidth={15}>
                   {recurringOptions.map((option) => (
                     <TouchableOpacity
                       key={option.value}
@@ -398,7 +399,7 @@ const EventFormModal = ({ visible, onClose, onSubmit, editMode = false, existing
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
+                </FadeScrollView>
               </View>
 
               <View style={styles.inputGroup}>

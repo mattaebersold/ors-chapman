@@ -13,7 +13,7 @@ import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import FAIcon from '../components/ui/FAIcon';
 import Listing from '../components/Listing';
-import { useGetUserDetailsQuery, useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery, useGetPostsQuery, useGetCarsQuery } from '../services/apiService';
+import { useGetUserDetailsQuery, useGetUserQuery, useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery, useGetPostsQuery, useGetCarsQuery } from '../services/apiService';
 import EventCarousel from '../components/EventCarousel';
 
 const { width } = Dimensions.get('window');
@@ -24,8 +24,8 @@ const UserDetailScreen = () => {
   const { userInfo } = useSelector(state => state.auth);
   const [activeTab, setActiveTab] = useState('posts');
 
-  // Fetch detailed user data if not passed
-  const { data: userDetails, isLoading: userLoading } = useGetUserDetailsQuery(userId, {
+  // Fetch detailed user data if not passed - use getUser instead of getUserDetails
+  const { data: userDetails, isLoading: userLoading } = useGetUserQuery(userId, {
     skip: !userId || !!passedUser
   });
 

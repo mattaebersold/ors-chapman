@@ -14,6 +14,7 @@ import BrandsScreen from './BrandsScreen';
 import UsernameSearch from '../components/UsernameSearch';
 import { useGetAllBrandsQuery, useGetUsersQuery } from '../services/apiService';
 import FAIcon from '../components/ui/FAIcon';
+import FadeScrollView from '../components/ui/FadeScrollView';
 
 const CarsScreen = ({ navigation }) => {
   const { userInfo } = useSelector(state => state.auth);
@@ -202,10 +203,12 @@ const CarsScreen = ({ navigation }) => {
               ) : brandsError ? (
                 <Text style={styles.makeFiltersError}>Error loading makes</Text>
               ) : (
-                <ScrollView 
-                  horizontal 
+                <FadeScrollView
+                  horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.makeFiltersContainer}
+                  fadeColor="#ffffff"
+                  fadeWidth={15}
                 >
                   {brandsData?.brands?.map((brand) => (
                     <TouchableOpacity
@@ -224,7 +227,7 @@ const CarsScreen = ({ navigation }) => {
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
+                </FadeScrollView>
               )}
             </View>
           </View>

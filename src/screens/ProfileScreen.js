@@ -68,10 +68,11 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleViewPublicProfile = () => {
-    if (navigation && user) {
+    const currentUser = userDetails || userInfo;
+    if (navigation && currentUser) {
       navigation.navigate('UserDetail', {
-        user: user,
-        userId: user.user_id || user._id
+        user: currentUser,
+        userId: currentUser.user_id || currentUser._id
       });
     }
   };
@@ -102,11 +103,16 @@ const ProfileScreen = ({ navigation }) => {
         user_id: userDetails?.user_id,
       }
     },
-    { 
-      key: 'events', 
-      label: 'Events', 
-      type: 'userEntries',
-      apiUrl: '/api/protected/events/0/none/10'
+    {
+      key: 'events',
+      label: 'Events',
+      type: 'posts',
+      params: {
+        type: 'event',
+        filter: 'user',
+        user_id: userDetails?.user_id,
+        omit: 'none'
+      }
     },
   ];
 
@@ -313,6 +319,7 @@ const ProfileScreen = ({ navigation }) => {
                     style={styles.publicProfileButton}
                     onPress={handleViewPublicProfile}
                   >
+                    <FAIcon name="eye" size={18} color={colors.WHITE} />
                     <Text style={styles.publicProfileText}>Public Profile</Text>
                   </TouchableOpacity>
 
@@ -320,10 +327,12 @@ const ProfileScreen = ({ navigation }) => {
                     style={styles.settingsButton}
                     onPress={() => setSettingsVisible(true)}
                   >
+                    <FAIcon name="cog" size={18} color={colors.WHITE} />
                     <Text style={styles.settingsText}>Settings</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                    <FAIcon name="sign-out" size={18} color={colors.WHITE} />
                     <Text style={styles.logoutText}>Logout</Text>
                   </TouchableOpacity>
                 </View>
@@ -550,42 +559,45 @@ const styles = StyleSheet.create({
   },
   publicProfileButton: {
     backgroundColor: colors.BRG,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
     borderRadius: 20,
     flex: 1,
     alignItems: 'center',
+    gap: 4,
   },
   publicProfileText: {
     color: colors.WHITE,
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '500',
   },
   settingsButton: {
     backgroundColor: colors.BRG,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
     borderRadius: 20,
     flex: 1,
     alignItems: 'center',
+    gap: 4,
   },
   settingsText: {
     color: colors.WHITE,
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '500',
   },
   logoutButton: {
     backgroundColor: colors.ERROR,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
     borderRadius: 20,
     flex: 1,
     alignItems: 'center',
+    gap: 4,
   },
   logoutText: {
     color: colors.WHITE,
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '500',
   },
   
   // Tab Bar Styles

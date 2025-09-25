@@ -14,15 +14,27 @@ const MarketplaceScreen = () => {
   const [activeTab, setActiveTab] = useState('listings');
 
   const tabs = [
-    { key: 'listings', label: 'For Sale', type: 'listings', heading: 'Items for Sale' },
-    { key: 'wants', label: 'Want-Ads', type: 'wants', heading: 'Want-Ads' },
+    {
+      key: 'listings',
+      label: 'For Sale',
+      type: 'posts',
+      postsParams: { type: 'listing' },
+      heading: 'Items for Sale'
+    },
+    {
+      key: 'wants',
+      label: 'Want-Ads',
+      type: 'posts',
+      postsParams: { type: 'want' },
+      heading: 'Want-Ads'
+    },
   ];
 
   const getTabConfig = (tabKey) => {
     const tab = tabs.find(t => t.key === tabKey);
     return {
       type: tab.type,
-      apiUrl: tab.apiUrl,
+      postsParams: tab.postsParams,
       heading: tab.heading,
     };
   };
@@ -34,7 +46,7 @@ const MarketplaceScreen = () => {
 
   const renderTabContent = () => {
     const config = getTabConfig(activeTab);
-    return <Listing config={config} displayOptions={displayOptions} showFilters={true} />;
+    return <Listing key={activeTab} config={config} displayOptions={displayOptions} showFilters={true} />;
   };
 
   return (
