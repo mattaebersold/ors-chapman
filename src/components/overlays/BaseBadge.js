@@ -40,26 +40,23 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.BLACK,
-    borderRadius: 4,
     elevation: 2,
     overflow: 'hidden',
   },
   image: {
     width: 20,
     height: 20,
-    borderRadius: 0, // Square image, no border radius
+    borderRadius: 100,
     marginRight: 8,
   },
   placeholder: {
-    backgroundColor: colors.BLACK,
     justifyContent: 'center',
     alignItems: 'center',
   },
   text: {
     color: colors.WHITE,
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '600',
     paddingRight: 8, // Only right padding for text
   },
 });

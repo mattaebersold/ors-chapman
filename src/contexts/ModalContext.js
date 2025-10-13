@@ -61,7 +61,7 @@ export const ModalProvider = ({ children }) => {
       
       hideModal();
     } catch (error) {
-      console.error('Error updating post:', error);
+      // Error handled by throw below
       
       let errorMessage = 'Failed to update post';
       if (error.originalStatus === 502) {

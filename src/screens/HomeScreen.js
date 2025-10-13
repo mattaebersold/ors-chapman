@@ -50,23 +50,6 @@ const HomeScreen = () => {
     }
   };
 
-  // Debug logging - let's see what's actually in userInfo vs currentUser
-  // console.log('🏠 HomeScreen - Full userInfo object:', userInfo);
-  // console.log('🏠 HomeScreen - Full currentUser object:', currentUser);
-  // console.log('🏠 HomeScreen - Feed Configuration:', {
-  //   hasFollowing,
-  //   followingDataLoaded,
-  //   followingTotal: followingData?.total,
-  //   followingLoading,
-  //   userInfo_username: userInfo?.username,
-  //   userInfo_user_id: userInfo?.user_id,
-  //   currentUser_username: currentUser?.username,
-  //   currentUser_user_id: currentUser?.user_id,
-  //   postsParams: listingConfig.postsParams,
-  //   willShowFollowingOnly: followingDataLoaded && hasFollowing && currentUser,
-  //   timestamp: new Date().toISOString()
-  // });
-
   // display options for the listing
   const displayOptions = {
     badgeProfile: false,
@@ -107,7 +90,6 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   followMessageContainer: {
     paddingHorizontal: 16,

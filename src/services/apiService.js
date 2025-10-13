@@ -22,7 +22,7 @@ const baseQuery = fetchBaseQuery({
 export const apiService = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Projects', 'Mods', 'CarGallery', 'CarTask'],
+  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Projects', 'Mods', 'CarGallery', 'CarTask', 'Message'],
   endpoints: (builder) => ({
     // User authentication endpoints
     getUserDetails: builder.query({
@@ -940,6 +940,86 @@ export const apiService = createApi({
       ],
     }),
 
+    // Message endpoints
+    getMessages: builder.query({
+      query: ({ page = 0, limit = 20, unread_only = false } = {}) => ({
+        url: '/api/message',
+        method: 'GET',
+        params: { page, limit, unread_only },
+      }),
+      providesTags: ['Message'],
+      keepUnusedDataFor: 60, // Cache for 1 minute
+    }),
+
+    getMessageThread: builder.query({
+      query: (threadId) => ({
+        url: `/api/message/thread/${threadId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, threadId) => [
+        'Message',
+        { type: 'Message', id: `thread-${threadId}` }
+      ],
+      keepUnusedDataFor: 60,
+    }),
+
+    createMessage: builder.mutation({
+      query: (messageData) => ({
+        url: '/api/message/create',
+        method: 'POST',
+        body: messageData,
+      }),
+      invalidatesTags: ['Message'],
+    }),
+
+    markMessageAsRead: builder.mutation({
+      query: (messageId) => ({
+        url: `/api/message/${messageId}/read`,
+        method: 'PUT',
+      }),
+      invalidatesTags: (result, error, messageId) => [
+        'Message',
+        { type: 'Message', id: messageId }
+      ],
+    }),
+
+    markMessageAsUnread: builder.mutation({
+      query: (messageId) => ({
+        url: `/api/message/${messageId}/unread`,
+        method: 'PUT',
+      }),
+      invalidatesTags: (result, error, messageId) => [
+        'Message',
+        { type: 'Message', id: messageId }
+      ],
+    }),
+
+    deleteMessage: builder.mutation({
+      query: (messageId) => ({
+        url: `/api/message/${messageId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Message'],
+    }),
+
+    getUnreadMessageCount: builder.query({
+      query: () => ({
+        url: '/api/message/unread/count',
+        method: 'GET',
+      }),
+      providesTags: ['Message'],
+      keepUnusedDataFor: 30, // Cache for 30 seconds
+    }),
+
+    searchUsers: builder.query({
+      query: ({ q, limit = 10 }) => ({
+        url: '/api/message/users/search',
+        method: 'GET',
+        params: { q, limit },
+      }),
+      keepUnusedDataFor: 60,
+    }),
+
   }),
 });
 
@@ -1013,4 +1093,12 @@ export const {
   useCreateGarageCarMutation,
   useUpdateGarageCarMutation,
   useDeleteGarageCarMutation,
+  useGetMessagesQuery,
+  useGetMessageThreadQuery,
+  useCreateMessageMutation,
+  useMarkMessageAsReadMutation,
+  useMarkMessageAsUnreadMutation,
+  useDeleteMessageMutation,
+  useGetUnreadMessageCountQuery,
+  useSearchUsersQuery,
 } = apiService;

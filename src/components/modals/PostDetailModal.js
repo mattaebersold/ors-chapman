@@ -107,7 +107,7 @@ const PostDetailModal = ({ visible, post, onClose }) => {
     created_at: post.created_at,
     user_id: post.user_id,
     car_id: post.car_id,
-    internal_id: post.internal_id,
+    internal_id: post._id || post.internal_id,
     // Event-specific fields
     event_date: post.event_date,
     event_time: post.event_time,
@@ -476,6 +476,12 @@ const PostDetailModal = ({ visible, post, onClose }) => {
               <View style={styles.socialContainer}>
                 <Likes document_id={normalizedData.internal_id} document_type={isEvent ? "event" : "post"} />
                 <Comments document_id={normalizedData.internal_id} document_type={isEvent ? "event" : "post"} />
+                {/* Temporary debug view */}
+                <View style={{ backgroundColor: 'blue', padding: 4, marginTop: 4 }}>
+                  <Text style={{ color: 'white', fontSize: 10 }}>
+                    Using ID: {normalizedData.internal_id} | _id: {post._id} | internal_id: {post.internal_id} | Type: {isEvent ? "event" : "post"}
+                  </Text>
+                </View>
               </View>
 
             </View>

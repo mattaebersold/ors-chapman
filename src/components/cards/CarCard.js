@@ -127,7 +127,11 @@ const CarCard = ({ user: car, displayOptions = {} }) => {
     // Add stats
     const statsComponent = renderStats();
     if (statsComponent) {
-      components.push(statsComponent);
+      components.push(
+        <View key="stats" style={styles.statsWrapper}>
+          {statsComponent}
+        </View>
+      );
     }
 
     // Add user badge
@@ -193,6 +197,9 @@ const styles = StyleSheet.create({
   // Footer components
   footerContainer: {
     gap: 8,
+  },
+  statsWrapper: {
+    flex: 1,
   },
   statsContainer: {
     flexDirection: 'row',

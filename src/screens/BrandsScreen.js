@@ -5,8 +5,8 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGetAllBrandsQuery } from '../services/apiService';
 import { colors } from '../constants/colors';
 import { LoadingIndicator, ErrorMessage, EmptyState, spacing, layout } from '../components/common';

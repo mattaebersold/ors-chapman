@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
-import { 
+import {
   useGetUserDetailsQuery,
   useGetUserPostsQuery,
   useGetUserProjectsQuery,
@@ -20,6 +20,7 @@ import {
   useCreatePostMutation,
   useCreateProjectMutation,
   useCreateEventMutation,
+  useGetUnreadMessageCountQuery,
 } from '../services/apiService';
 import { colors } from '../constants/colors';
 import { createFormData } from '../utils/formUtils';
@@ -43,10 +44,12 @@ const ProfileScreen = ({ navigation }) => {
   const [eventModalVisible, setEventModalVisible] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   
-  const { 
-    data: userDetails, 
-    isLoading: userLoading 
+  const {
+    data: userDetails,
+    isLoading: userLoading
   } = useGetUserDetailsQuery();
+
+  const { data: unreadCount } = useGetUnreadMessageCountQuery();
   
   const [createPost] = useCreatePostMutation();
   const [createProject] = useCreateProjectMutation();
@@ -316,10 +319,27 @@ const ProfileScreen = ({ navigation }) => {
                 {/* Action Buttons */}
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
+                    style={styles.messagesButton}
+                    onPress={() => navigation.navigate('Messages')}
+                  >
+                    <View style={styles.messagesIconContainer}>
+                      <FAIcon name="envelope" size={16} color={colors.WHITE} />
+                      {unreadCount > 0 && (
+                        <View style={styles.messageBadge}>
+                          <Text style={styles.messageBadgeText}>
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.messagesText}>Messages</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
                     style={styles.publicProfileButton}
                     onPress={handleViewPublicProfile}
                   >
-                    <FAIcon name="eye" size={18} color={colors.WHITE} />
+                    <FAIcon name="eye" size={16} color={colors.WHITE} />
                     <Text style={styles.publicProfileText}>Public Profile</Text>
                   </TouchableOpacity>
 
@@ -327,12 +347,12 @@ const ProfileScreen = ({ navigation }) => {
                     style={styles.settingsButton}
                     onPress={() => setSettingsVisible(true)}
                   >
-                    <FAIcon name="cog" size={18} color={colors.WHITE} />
+                    <FAIcon name="cog" size={16} color={colors.WHITE} />
                     <Text style={styles.settingsText}>Settings</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                    <FAIcon name="sign-out" size={18} color={colors.WHITE} />
+                    <FAIcon name="sign-out" size={16} color={colors.WHITE} />
                     <Text style={styles.logoutText}>Logout</Text>
                   </TouchableOpacity>
                 </View>
@@ -555,11 +575,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 12,
-    gap: 8,
+    gap: 6,
+  },
+  messagesButton: {
+    backgroundColor: colors.BRG,
+    paddingHorizontal: 6,
+    paddingVertical: 10,
+    borderRadius: 20,
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  messagesIconContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  messageBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: colors.ERROR,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.WHITE,
+  },
+  messageBadgeText: {
+    color: colors.WHITE,
+    fontSize: 8,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  messagesText: {
+    color: colors.WHITE,
+    fontSize: 10,
+    fontWeight: '500',
   },
   publicProfileButton: {
     backgroundColor: colors.BRG,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 10,
     borderRadius: 20,
     flex: 1,
@@ -573,7 +631,7 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     backgroundColor: colors.BRG,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 10,
     borderRadius: 20,
     flex: 1,
@@ -587,7 +645,7 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: colors.ERROR,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 10,
     borderRadius: 20,
     flex: 1,

@@ -9,11 +9,6 @@ const EventCard = ({ event, displayOptions = {} }) => {
   const navigation = useNavigation();
   if (!event) return null;
 
-  const handlePress = () => {
-    // Navigate to event detail (if such screen exists)
-    // navigation.navigate('EventDetail', { eventId: event._id || event.id });
-    console.log('Event pressed:', event.title);
-  };
 
   const getEventImageSource = () => {
     if (event?.gallery?.[0]?.filename) {

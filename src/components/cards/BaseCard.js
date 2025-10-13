@@ -6,35 +6,37 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient'; // or 'react-native-linear-gradient'
 import { colors } from '../../constants/colors';
-import FAIcon from '../ui/FAIcon';
-import GradientPlaceholder from '../ui/GradientPlaceholder';
+import { spacing } from '../../constants/layout';
+
 
 const BaseCard = ({
   // Image props
   imageSource,
-  imageHeight = 200,
-  placeholderIcon = 'camera',
-  placeholderText = 'No Image',
+  // placeholderIcon = 'camera',
+  // placeholderText = 'No Image',
   
   // Content props
   title,
-  subtitle,
-  description,
+  // subtitle,
+  // description,
   
   // Action props
   onPress,
-  
-  // Style props
-  cardStyle,
-  imageContainerStyle,
-  contentStyle,
-  
+    
   // Layout props
-  children,
   headerComponent,
   footerComponent,
-  overlayComponent,
+  badges,
+
+  topRight,
+  topLeft,
+  bottomRight,
+  bottomLeft,
+  topCenter,
+  bottomCenter,
+
 }) => {
   
   const getImageSource = () => {
@@ -45,55 +47,54 @@ const BaseCard = ({
   };
 
   const renderImageContainer = () => (
-    <View style={[styles.imageContainer, { height: imageHeight }, imageContainerStyle]}>
+    <View style={styles.imageContainer}>
       {imageSource ? (
         <Image 
           source={getImageSource()} 
-          style={[styles.image, { height: imageHeight }]}
+          style={styles.image}
           resizeMode="cover"
         />
       ) : (
-        <GradientPlaceholder
-          height={imageHeight}
-          icon={placeholderIcon}
-          text={placeholderText}
-        />
+        <></>
       )}
       
-      {/* Overlay component (badges, buttons, etc.) */}
-      {overlayComponent}
+      {/* Gradient overlay */}
+      <LinearGradient
+        colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, .5)']}
+        style={styles.gradient}
+      />
+      
+
     </View>
   );
 
   const renderContent = () => (
-    <View style={[styles.content, contentStyle]}>
-      {/* Header component (custom header content) */}
-      {headerComponent}
-      
-      {/* Default content */}
-      {title && (
-        <Text style={styles.title} numberOfLines={2}>
-          {title}
-        </Text>
+    <View style={styles.content}>
+
+      {topLeft && (
+        <View style={styles.topLeft}>{topLeft}</View>
       )}
-      
-      {subtitle && (
-        <Text style={styles.subtitle} numberOfLines={1}>
-          {subtitle}
-        </Text>
+
+      {topRight && (
+        <View style={styles.topRight}>{topRight}</View>
       )}
-      
-      {description && (
-        <Text style={styles.description} numberOfLines={2}>
-          {description}
-        </Text>
+
+      {bottomLeft && (
+        <View style={styles.bottomLeft}>{bottomLeft}</View>
       )}
-      
-      {/* Custom children content */}
-      {children}
-      
-      {/* Footer component (badges, stats, actions, etc.) */}
-      {footerComponent}
+
+      {bottomRight && (
+        <View style={styles.bottomRight}>{bottomRight}</View>
+      )}
+
+      {topCenter && (
+        <View style={styles.topCenter}>{topCenter}</View>
+      )}
+
+      {bottomCenter && (
+        <View style={styles.bottomCenter}>{bottomCenter}</View>
+      )}
+
     </View>
   );
 
@@ -101,7 +102,7 @@ const BaseCard = ({
   const containerProps = onPress ? { onPress, activeOpacity: 0.8 } : {};
 
   return (
-    <CardContainer style={[styles.card, cardStyle]} {...containerProps}>
+    <CardContainer style={styles.card} {...containerProps}>
       {renderImageContainer()}
       {renderContent()}
     </CardContainer>
@@ -110,26 +111,35 @@ const BaseCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.WHITE,
-    borderRadius: 8,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    aspectRatio: 85/60,
+    width: '100%',
     elevation: 3,
     overflow: 'hidden',
     marginTop: 4,
+    backgroundColor: colors.CARD_DARK,
+    borderRadius: 24,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
   imageContainer: {
-    position: 'relative',
+    position: 'absolute',
+    inset: '0',
     width: '100%',
+    height: '100%',
   },
   image: {
+    position: 'absolute',
+    inset: '0',
     width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  gradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   placeholderContainer: {
     width: '100%',
@@ -137,32 +147,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  placeholderText: {
-    fontSize: 12,
-    color: colors.GRAY,
-    marginTop: 8,
-    fontWeight: '500',
-  },
   content: {
-    padding: 16,
+    flex: 1,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.TEXT_PRIMARY,
-    marginBottom: 4,
+
+  topLeft: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
   },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.TEXT_SECONDARY,
-    marginBottom: 4,
+  topRight: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
   },
-  description: {
-    fontSize: 14,
-    color: colors.TEXT_SECONDARY,
-    lineHeight: 20,
-    marginBottom: 8,
+  bottomLeft: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+  },
+  bottomRight: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
   },
 });
 

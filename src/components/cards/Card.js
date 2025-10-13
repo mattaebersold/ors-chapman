@@ -3,17 +3,15 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import EditButton from '../atoms/EditButton';
+import Title from '../atoms/Title';
 import { useNavigation } from '@react-navigation/native';
-import { useModal } from '../../contexts/ModalContext';
-import { useDeletePostMutation, useGetUserDetailsQuery, useGetPostCountsQuery, useGetLikeInfoQuery, useGetCommentsQuery } from '../../services/apiService';
+import { useGetPostCountsQuery, useGetLikeInfoQuery, useGetCommentsQuery } from '../../services/apiService';
 import BaseCard from './BaseCard';
 import Badge from '../overlays/Badge';
 import UserBadge from '../overlays/UserBadge';
 import CarBadge from '../overlays/CarBadge';
-import FAIcon from '../ui/FAIcon';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/layout';
 import Likes from '../Likes';
@@ -21,10 +19,8 @@ import Likes from '../Likes';
 // Post item component - now using BaseCard composition
 const Card = ({ post, onPress, displayOptions = {} }) => {
   const navigation = useNavigation();
-  const { showEditPostModal } = useModal();
-  const { userInfo } = useSelector(state => state.auth);
-  const { data: currentUser } = useGetUserDetailsQuery();
-  const [deletePost] = useDeletePostMutation();
+  // const { userInfo } = useSelector(state => state.auth);
+  // const [deletePost] = useDeletePostMutation();
 
   // Get likes and comments counts using existing endpoints
   const documentId = post.internal_id || post._id || post.id;
@@ -52,9 +48,7 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
   const commentsCount = countsData?.comments ?? commentsData?.total ?? 0;
 
   // Check if current user owns this post
-  const isOwner = currentUser && post && (
-    currentUser.user_id === post.user_id
-  );
+
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -65,9 +59,6 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
     }
   }, [navigation, onPress, post]);
 
-  const handleEdit = useCallback(() => {
-    showEditPostModal(post);
-  }, [showEditPostModal, post]);
 
   // Get image source from gallery
   const getImageSource = () => {
@@ -105,43 +96,60 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
   // Render overlay components (badges, price, etc.)
   const renderOverlay = () => (
     <View style={styles.overlayContainer}>
-      {/* Type/Category Badge */}
-      <Badge type={post.type} category={post.category} style="overlay" />
+
+      <Badge 
+        type={post.type} 
+        category={post.category} 
+        style={styles.postBadge}
+      />
 
       {/* Price Overlay - Top Right */}
       {renderPriceOverlay()}
 
       {/* User and Car Badges - Bottom Left Overlay */}
-      <View style={styles.badgeOverlay}>
+      <View style={styles.badges}>
         {post.user_id && <UserBadge userId={post.user_id} />}
         {post.car_id && <CarBadge carId={post.car_id} />}
       </View>
     </View>
   );
 
+  // badges
+  const renderBadges = () => (
+    <Badge 
+      type={post.type} 
+      category={post.category} 
+      specificStyles={styles.postBadge}
+    />
+  )
+
+  // main post card content
+  const renderMainContent = () => (
+    <>
+      <Text style={styles.title} numberOfLines={2}>
+        {post.title}
+      </Text>
+
+      <View style={styles.badges}>
+        {post.user_id && <UserBadge userId={post.user_id} />}
+        {post.car_id && <CarBadge carId={post.car_id} />}
+      </View>
+
+    </>
+  )
+  
+  // user actions
+  const renderUserActions = () => (
+    <EditButton post={post} />
+  )
+
   // Render content below the image
   const renderContent = () => (
     <View style={styles.postContent}>
-      {/* First Row: Title and Edit Button/Likes */}
       <View style={styles.tableRow}>
-        <View style={styles.titleCell}>
-          <Text style={styles.itemTitle} numberOfLines={2}>{post.title}</Text>
-        </View>
-        {isOwner ? (
-          <View style={styles.editCell}>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={handleEdit}
-            >
-              <FAIcon name="edit" size={12} color={colors.LIGHT_GRAY} />
-              <Text style={styles.editText}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.likesCell}>
-            <Likes document_id={documentId} document_type="post" />
-          </View>
-        )}
+      <View style={styles.likesCell}>
+        <Likes document_id={documentId} document_type="post" />
+      </View>
       </View>
 
       {/* Second Row: Date and Stats */}
@@ -174,27 +182,17 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
   return (
     <BaseCard
       imageSource={getImageSource()}
-      imageHeight={200}
-      placeholderIcon="camera"
-      placeholderText=""
       onPress={handlePress}
-      cardStyle={styles.itemCard}
-      overlayComponent={renderOverlay()}
-      children={renderContent()}
+      topLeft={renderBadges()}
+      topRight={renderUserActions()}
+      bottomLeft={renderMainContent()}
     />
   );
 };
 
 const styles = StyleSheet.create({
-  itemCard: {
-    backgroundColor: colors.CARD_DARK,
-    borderRadius: 8,
-    marginBottom: spacing.sm,
-    elevation: 3,
-    overflow: 'hidden',
-    marginTop: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.CARD_DARK,
+  badges: {
+    flexDirection: 'row',
   },
   overlayContainer: {
     position: 'absolute',
@@ -203,12 +201,10 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  badgeOverlay: {
+  postBadge: {
     position: 'absolute',
-    bottom: spacing.sm,
-    left: spacing.sm,
-    flexDirection: 'row',
-    gap: spacing.sm,
+    top: 0,
+    left: 0,
   },
   priceOverlay: {
     position: 'absolute',
@@ -283,6 +279,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.TEXT_LIGHT,
   },
+  title: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.WHITE,
+  },
   dateText: {
     fontSize: 10,
     fontWeight: '800',
@@ -294,20 +295,7 @@ const styles = StyleSheet.create({
     color: colors.TEXT_SUBTLE,
     marginTop: 2,
   },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'end',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 4,
-    backgroundColor: colors.BUTTON_SECONDARY,
-  },
-  editText: {
-    fontSize: 11,
-    color: colors.WHITE,
-    marginLeft: spacing.xs,
-    fontWeight: '700',
-  },
+  
 });
 
 export default Card;

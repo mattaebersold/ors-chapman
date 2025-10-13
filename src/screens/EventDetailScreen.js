@@ -11,6 +11,7 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import FAIcon from '../components/ui/FAIcon';
+import Likes from '../components/Likes';
 
 const { width } = Dimensions.get('window');
 
@@ -76,7 +77,19 @@ const EventDetailScreen = () => {
       {/* Event Content */}
       <View style={styles.content}>
         {/* Event Title */}
-        <Text style={styles.title}>{event.title || 'Untitled Event'}</Text>
+        <View style={styles.titleSection}>
+          <Text style={styles.title}>{event.title || 'Untitled Event'}</Text>
+
+          {/* Like Button */}
+          <View style={styles.eventActionsContainer}>
+            <Likes
+              document_id={event._id || event.internal_id}
+              document_type="event"
+              variant="pill"
+              size="medium"
+            />
+          </View>
+        </View>
 
         {/* Event Date */}
         <View style={styles.detailRow}>
@@ -181,12 +194,22 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
   },
+  titleSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: colors.TEXT_PRIMARY,
-    marginBottom: 20,
     lineHeight: 34,
+    flex: 1,
+    marginRight: 12,
+  },
+  eventActionsContainer: {
+    marginTop: 4,
   },
   detailRow: {
     flexDirection: 'row',

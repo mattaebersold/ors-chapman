@@ -24,8 +24,6 @@ const GoogleSignInButton = ({ onSuccess, loading: externalLoading = false }) => 
   const [googleAuth, { isLoading }] = useGoogleAuthMutation();
   const dispatch = useDispatch();
 
-  console.log('GoogleSignInButton rendered');
-
   const signInWithGoogle = async () => {
     // Temporary test with a mock Google token for development
     Alert.alert(
@@ -70,9 +68,6 @@ const GoogleSignInButton = ({ onSuccess, loading: externalLoading = false }) => 
       // Use Expo Go's standard redirect URI
       const redirectUri = 'https://auth.expo.io/@anonymous/google-auth-expo';
       
-      console.log('Client ID:', clientId);
-      console.log('Redirect URI:', redirectUri);
-      
       // Create the authorization request for implicit flow (gets token directly)
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${encodeURIComponent(clientId)}&` +
@@ -81,17 +76,12 @@ const GoogleSignInButton = ({ onSuccess, loading: externalLoading = false }) => 
         `scope=${encodeURIComponent('openid profile email')}&` +
         `nonce=${Math.random().toString(36)}&` +
         `prompt=select_account`;
-
-      console.log('Auth URL:', authUrl);
-      console.log('Starting OAuth request...');
       
       // Use WebBrowser for OAuth flow
       const result = await WebBrowser.openAuthSessionAsync(
         authUrl,
         redirectUri
       );
-
-      console.log('OAuth result:', result);
       
       if (result.type === 'success' && result.url) {
         // Parse the ID token directly from the URL fragment (implicit flow)
@@ -106,7 +96,6 @@ const GoogleSignInButton = ({ onSuccess, loading: externalLoading = false }) => 
         
         if (fragmentMatch) {
           const idToken = decodeURIComponent(fragmentMatch[1]);
-          console.log('ID Token received:', idToken ? 'Yes' : 'No');
           
           if (idToken) {
             // Send token to backend for verification and user creation/login

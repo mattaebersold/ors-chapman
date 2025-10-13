@@ -2,11 +2,11 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 
 // Import icon sets as needed
-import { 
-  faHome, 
-  faSearch, 
-  faPlus, 
-  faUser, 
+import {
+  faHome,
+  faSearch,
+  faPlus,
+  faUser,
   faCar,
   faTimes,
   faHeart,
@@ -42,7 +42,12 @@ import {
   faTachometerAlt,
   faBolt,
   faRoad,
-  faCheckCircle
+  faCheckCircle,
+  faEnvelope,
+  faEye,
+  faSignOutAlt,
+  faExclamationTriangle,
+  faPaperPlane
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -113,6 +118,13 @@ const iconMap = {
   // Fix missing icon mappings
   image: faImages, // Map "image" to faImages
   'check-circle': faCheckCircle, // Add check-circle mapping
+  // Message system icons
+  envelope: faEnvelope,
+  eye: faEye,
+  cog: faCogs,
+  'sign-out': faSignOutAlt,
+  'exclamation-triangle': faExclamationTriangle,
+  'paper-plane': faPaperPlane,
 };
 
 const FAIcon = ({ name, size = 20, color = '#000', style, ...props }) => {

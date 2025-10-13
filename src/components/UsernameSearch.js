@@ -36,10 +36,6 @@ const UsernameSearch = ({ onUserSelect, style }) => {
       refetchOnMountOrArgChange: false // Don't refetch on search term change
     }
   );
-  
-  console.log('API Query params:', { page: 1, limit: 500 });
-  console.log('Skip condition:', debouncedSearchTerm.length < 2);
-  console.log('Full API response:', usersResponse);
 
   // Extract users from the response (getUsers returns { entries: [...], total: ... })
   const searchResults = usersResponse?.entries || [];

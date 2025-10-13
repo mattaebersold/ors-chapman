@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { useGetUserDetailsQuery } from '../services/apiService';
+import { useGetUserDetailsQuery, useGetUnreadMessageCountQuery } from '../services/apiService';
 
 // Import screens
 import LoginScreen from '../screens/LoginScreen';
@@ -29,6 +29,9 @@ import EventDetailScreen from '../screens/EventDetailScreen';
 import CarDetailScreen from '../screens/CarDetailScreen';
 import LoadingScreen from '../screens/LoadingScreen';
 import CreateScreen from '../screens/CreateScreen';
+import MessagesScreen from '../screens/MessagesScreen';
+import MessageThreadScreen from '../screens/MessageThreadScreen';
+import ComposeMessageScreen from '../screens/ComposeMessageScreen';
 
 // Import marketing screens
 import AboutScreen from '../screens/AboutScreen';
@@ -61,21 +64,27 @@ const AuthNavigator = () => (
 // Profile button component
 const ProfileButton = ({ onPress }) => {
   const { data: userDetails } = useGetUserDetailsQuery();
-  const profileImageUrl = userDetails?.gallery?.[0]?.filename 
+  const { data: unreadCount } = useGetUnreadMessageCountQuery();
+  const profileImageUrl = userDetails?.gallery?.[0]?.filename
     ? `https://d2481n2uw7a0p.cloudfront.net/${userDetails.gallery[0].filename}`
     : null;
 
   return (
     <TouchableOpacity style={styles.profileButton} onPress={onPress}>
       {profileImageUrl ? (
-        <Image 
-          source={{ uri: profileImageUrl }} 
+        <Image
+          source={{ uri: profileImageUrl }}
           style={styles.profileButtonImage}
           resizeMode="cover"
         />
       ) : (
         <View style={styles.profileButtonPlaceholder}>
           <FAIcon name="user" size={16} color={colors.WHITE} />
+        </View>
+      )}
+      {unreadCount > 0 && (
+        <View style={styles.unreadIndicator}>
+          <Text style={styles.unreadText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -285,6 +294,36 @@ const AppNavigator = () => (
         presentation: 'modal',
       }}
     />
+    <AppStack.Screen
+      name="Messages"
+      component={MessagesScreen}
+      options={{
+        headerShown: true,
+        title: 'Messages',
+        headerStyle: {
+          backgroundColor: colors.BRG,
+          height: 100,
+        },
+        headerTintColor: colors.WHITE,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    />
+    <AppStack.Screen
+      name="MessageThread"
+      component={MessageThreadScreen}
+      options={{
+        headerShown: false,
+      }}
+    />
+    <AppStack.Screen
+      name="ComposeMessage"
+      component={ComposeMessageScreen}
+      options={{
+        headerShown: false,
+      }}
+    />
     
     {/* Brand/Model Detail Pages */}
     <AppStack.Screen 
@@ -446,7 +485,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   profileButton: {
-    // marginRight: 16, // removed since it's now inside headerRight
+    position: 'relative',
   },
   profileButtonImage: {
     width: 36,
@@ -462,6 +501,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: colors.WHITE,
+  },
+  unreadIndicator: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: colors.ERROR,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.WHITE,
+  },
+  unreadText: {
+    color: colors.WHITE,
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   createButton: {
     width: 40,

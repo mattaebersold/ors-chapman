@@ -1,22 +1,44 @@
 {
   "expo": {
-    "name": "ChapmanExpo",
-    "slug": "ChapmanExpo",
+    "name": "Open Road Society",
+    "slug": "open-road-society",
     "version": "1.0.0",
+    "description": "Connect with car enthusiasts, share your builds, and discover amazing automotive content",
+    "keywords": ["cars", "automotive", "social", "community", "builds", "garage", "modifications"],
+    "privacy": "unlisted",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "scheme": "chapmanexpo",
+    "scheme": "openroadsociety",
+    "primaryColor": "#2E7D32",
+    "backgroundColor": "#ffffff",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.openroadsociety.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses camera to upload photos of your car builds and modifications",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload images of your cars and modifications",
+        "NSMicrophoneUsageDescription": "This app uses microphone for video recording"
+      }
     },
     "android": {
+      "package": "com.openroadsociety.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECORD_AUDIO",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

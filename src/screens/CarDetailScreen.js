@@ -20,6 +20,7 @@ import FAIcon from '../components/ui/FAIcon';
 import UserBadge from '../components/overlays/UserBadge';
 import CarCard from '../components/cards/CarCard';
 import ImageGalleryModal from '../components/modals/ImageGalleryModal';
+import Likes from '../components/Likes';
 import CarTaskModal from '../components/modals/CarTaskModal';
 import CarFormModal from '../components/modals/CarFormModal';
 import ModFormModal from '../components/modals/ModFormModal';
@@ -881,7 +882,6 @@ const CarDetailScreen = ({ route, navigation }) => {
       await createCarTask({ carId: carData.internal_id, formData: form }).unwrap();
       refetchTasks();
     } catch (error) {
-      console.error('Error creating task:', error);
       throw new Error(error.data?.message || error.message || 'Failed to create task');
     }
   };
@@ -1323,12 +1323,30 @@ const CarDetailScreen = ({ route, navigation }) => {
             )}
           </View>
 
-          {/* User Badge */}
-          {carData.user_id && (
-            <View style={styles.userBadgeContainer}>
-              <UserBadge userId={carData.user_id} />
+          {/* User Badge and Actions Row */}
+          <View style={styles.carMetaRow}>
+            {carData.user_id && (
+              <View style={styles.userBadgeContainer}>
+                <UserBadge userId={carData.user_id} />
+              </View>
+            )}
+
+            {/* Like Button */}
+            <View style={styles.carActionsContainer}>
+              <Likes
+                document_id={carData.internal_id || carData._id}
+                document_type="car"
+                variant="pill"
+                size="medium"
+              />
+              {/* Temporary debug view */}
+              <View style={{ backgroundColor: 'red', padding: 4, marginTop: 4 }}>
+                <Text style={{ color: 'white', fontSize: 10 }}>
+                  Like button should be above - ID: {carData.internal_id || carData._id}
+                </Text>
+              </View>
             </View>
-          )}
+          </View>
         </View>
       </View>
 
@@ -1812,8 +1830,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.ERROR,
   },
+  carMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
   userBadgeContainer: {
+    flex: 1,
     alignSelf: 'flex-start',
+  },
+  carActionsContainer: {
+    marginLeft: 12,
   },
   
   // Tabs

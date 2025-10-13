@@ -40,6 +40,12 @@ const ImageUploader = ({ images = [], onImagesChange, maxImages = 10 }) => {
 
     try {
       setUploading(true);
+
+      // Check if ImagePicker is properly imported
+      if (!ImagePicker || !ImagePicker.MediaType || !ImagePicker.MediaType.Images) {
+        throw new Error('ImagePicker not properly imported or MediaType.Images not available');
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaType.Images,
         allowsMultipleSelection: true,
@@ -76,7 +82,6 @@ const ImageUploader = ({ images = [], onImagesChange, maxImages = 10 }) => {
         }
       }
     } catch (error) {
-      console.error('Error picking images:', error);
       Alert.alert('Error', 'Failed to pick images. Please try again.');
     } finally {
       setUploading(false);

@@ -5,9 +5,6 @@ import {
 	StyleSheet,
 	FlatList,
 	RefreshControl,
-	TouchableOpacity,
-	ScrollView,
-	Animated,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { 
@@ -24,13 +21,12 @@ import {
 } from '../services/apiService';
 import Card from './cards/Card';
 import LoadingIndicator from './ui/LoadingIndicator';
-import { colors, getPostTypeColor, getCategoryColor } from '../constants/colors';
-import FAIcon from './ui/FAIcon';
+import { colors } from '../constants/colors';
 import FilterBar from './FilterBar';
 
 
-const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false }) => {
-	const { userInfo } = useSelector(state => state.auth);
+const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false }) => {
+	// const { userInfo } = useSelector(state => state.auth);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [allPosts, setAllPosts] = useState([]);
 	const [hasMore, setHasMore] = useState(true);
@@ -39,19 +35,11 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 	
 	const POSTS_PER_PAGE = 10;
 
-	// Filter options
-	const postTypes = ['listing', 'record', 'spot', 'project', 'event', 'post', 'article'];
-	const categories = [
-		'engine', 'suspension', 'wheels', 'interior', 'exterior', 'electrical',
-		'performance', 'maintenance', 'restoration', 'modification', 'tuning',
-		'racing', 'drift', 'street', 'track', 'show', 'daily', 'vintage', 'jdm', 'euro', 'american'
-	];
-	
 	// Extract type parameter from apiUrl if present
 	const extractTypeFromUrl = (url) => {
 		if (!url) return null;
 		try {
-			const urlObj = new URL(url, 'http://example.com'); // Create URL object for parsing
+			const urlObj = new URL(url);
 			const type = urlObj.searchParams.get('type');
 			return type;
 		} catch (error) {
@@ -63,7 +51,7 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 	const extractMakeFromUrl = (url) => {
 		if (!url) return null;
 		try {
-			const urlObj = new URL(url, 'http://example.com'); // Create URL object for parsing
+			const urlObj = new URL(url);
 			const make = urlObj.searchParams.get('make');
 			return make;
 		} catch (error) {
@@ -76,7 +64,7 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 	const extractModelFromUrl = (url) => {
 		if (!url) return null;
 		try {
-			const urlObj = new URL(url, 'http://example.com'); // Create URL object for parsing
+			const urlObj = new URL(url);
 			const model = urlObj.searchParams.get('model');
 			return model;
 		} catch (error) {
@@ -89,7 +77,7 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 	const extractUserIdFromUrl = (url) => {
 		if (!url) return null;
 		try {
-			const urlObj = new URL(url, 'http://example.com'); // Create URL object for parsing
+			const urlObj = new URL(url);
 			const user_id = urlObj.searchParams.get('user_id');
 			return user_id;
 		} catch (error) {
@@ -114,7 +102,6 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 					make,
 					model,
 					user_id,
-					// Add support for additional params from config
 					...(config?.postsParams || {})
 				}, {
 					skip: !!customEvents
@@ -294,11 +281,8 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 	}, [postsLoading, hasMore]);
 
 	const renderPost = useCallback(({ item }) => {
-		if (CustomComponent) {
-			return <CustomComponent user={item} displayOptions={displayOptions} />;
-		}
 		return <Card post={item} displayOptions={displayOptions} />;
-	}, [displayOptions, CustomComponent]);
+	}, [displayOptions]);
 
 	const renderFooter = () => {
 		if (!hasMore) return null;
@@ -370,7 +354,7 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 	};
 
 	return (
-		<View style={styles.container}>
+		<View>
 			<FlatList
 				data={filteredPosts}
 				renderItem={renderPost}
@@ -396,10 +380,6 @@ const Listing = ({ config, displayOptions = {}, CustomComponent, HeaderComponent
 };
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: colors.BACKGROUND_LIGHT,
-	},
 	header: {
 		padding: 16,
 		borderBottomWidth: 1,

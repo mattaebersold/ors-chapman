@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { getPostTypeColor, getCategoryColor, getContrastTextColor } from '../../constants/colors';
 
-const Badge = ({ type, category, style = 'overlay' }) => {
+const Badge = ({ type, category, specificStyles }) => {
   const badges = [];
 
   // Add type badge if provided
@@ -13,13 +13,11 @@ const Badge = ({ type, category, style = 'overlay' }) => {
         key="type"
         style={[
           styles.badge,
-          style === 'inline' ? styles.inlineBadge : styles.overlayBadge,
           { backgroundColor }
         ]}
       >
         <Text style={[
           styles.badgeText,
-          style === 'inline' ? styles.inlineText : styles.overlayText,
           { color: getContrastTextColor(backgroundColor) }
         ]}>
           {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -36,13 +34,11 @@ const Badge = ({ type, category, style = 'overlay' }) => {
         key="category"
         style={[
           styles.badge,
-          style === 'inline' ? styles.inlineBadge : styles.overlayBadge,
           { backgroundColor }
         ]}
       >
         <Text style={[
           styles.badgeText,
-          style === 'inline' ? styles.inlineText : styles.overlayText,
           { color: getContrastTextColor(backgroundColor) }
         ]}>
           {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -55,8 +51,8 @@ const Badge = ({ type, category, style = 'overlay' }) => {
 
   return (
     <View style={[
-      styles.badgeContainer,
-      style === 'inline' ? styles.inlineContainer : styles.overlayContainer
+      styles.container,
+      specificStyles
     ]}>
       {badges}
     </View>
@@ -64,45 +60,23 @@ const Badge = ({ type, category, style = 'overlay' }) => {
 };
 
 const styles = StyleSheet.create({
-  badgeContainer: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'flex-start',
-  },
-  overlayContainer: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-  },
-  inlineContainer: {
-    flexDirection: 'row',
-    marginBottom: 8,
-    gap: 8,
+  container: {
+    flexDirection: 'column',
+    gap: 0,
   },
   badge: {
-    borderRadius: 6,
+    borderRadius: 30,
     elevation: 5,
-  },
-  overlayBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     marginBottom: 6,
-  },
-  inlineBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    alignSelf: 'flex-start',
   },
   badgeText: {
-    fontWeight: '800',
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    fontSize: 10,
-  },
-  overlayText: {
-    fontSize: 10,
-  },
-  inlineText: {
-    fontSize: 10,
+    letterSpacing: 1,
+    fontSize: 9,
   },
 });
 

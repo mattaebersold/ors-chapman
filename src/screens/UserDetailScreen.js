@@ -3,20 +3,17 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Image,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import FAIcon from '../components/ui/FAIcon';
 import Listing from '../components/Listing';
-import { useGetUserDetailsQuery, useGetUserQuery, useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery, useGetPostsQuery, useGetCarsQuery } from '../services/apiService';
+import { useGetUserQuery, useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery, useGetPostsQuery, useGetCarsQuery } from '../services/apiService';
 import EventCarousel from '../components/EventCarousel';
 
-const { width } = Dimensions.get('window');
 
 const UserDetailScreen = () => {
   const route = useRoute();
