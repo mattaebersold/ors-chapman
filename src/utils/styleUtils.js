@@ -174,6 +174,12 @@ export const createStyles = (styleObject) => {
   return StyleSheet.create(styleObject);
 };
 
+const truncateText = (text, maxLength = 8) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+};
+
+
 export default {
   createComponentStyles,
   createTextStyle,
@@ -190,4 +196,5 @@ export default {
   responsive,
   composeStyles,
   createStyles,
+  truncateText,
 };

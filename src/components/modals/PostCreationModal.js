@@ -23,6 +23,7 @@ import {
   useGetUserEventsQuery 
 } from '../../services/apiService';
 import { useBanner } from '../../contexts/BannerContext';
+import { postTypes, postCategories } from '../../constants/categories'
 
 const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, existingPost = null }) => {
   // Try to use banner context, fallback to Alert if not available
@@ -116,60 +117,6 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
     }
   }, [editMode, existingPost, visible]);
 
-  const postTypes = [
-    { key: 'general', label: 'General' },
-    { key: 'record', label: 'Car Record' },
-    { key: 'listing', label: 'Listing (for sale)' },
-    { key: 'want', label: 'Want-ad' },
-    { key: 'spot', label: 'Spotted' },
-  ];
-
-  const categoryData = [
-    {
-      type: "general",
-      items: [
-        { key: "show", label: "Show" },
-        { key: "misc", label: "Misc." },
-      ],
-    },
-    {
-      type: "listing",
-      items: [
-        { key: "new", label: "New Part" },
-        { key: "used", label: "Used Part" },
-        { key: "car", label: "Car" },
-        { key: "accessories", label: "Accessories" },
-        { key: "other", label: "Other" },
-      ],
-    },
-    {
-      type: "want",
-      items: [
-        { key: "part", label: "Part" },
-        { key: "car", label: "Car" },
-        { key: "other", label: "Other" },
-      ],
-    },
-    {
-      type: "spot",
-      items: [
-        { key: "show", label: "Show" },
-        { key: "museum", label: "Museum" },
-        { key: "wild", label: "In the wild" },
-      ],
-    },
-    {
-      type: "record",
-      items: [
-        { key: "general", label: "General" },
-        { key: "mod", label: "Mod" },
-        { key: "restoration", label: "Restoration" },
-        { key: "maintenance", label: "Maintenance" },
-        { key: "detailing", label: "Detailing" },
-      ],
-    },
-  ];
-
   const updateFormData = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -180,7 +127,7 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
   const handleTypeChange = (newType) => {
     updateFormData('type', newType);
     // Reset category to first available for new type
-    const categoryGroup = categoryData.find(cat => cat.type === newType);
+    const categoryGroup = postCategories.find(cat => cat.type === newType);
     if (categoryGroup && categoryGroup.items.length > 0) {
       updateFormData('category', categoryGroup.items[0].key);
     }
@@ -269,7 +216,7 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
     onClose();
   };
 
-  const availableCategories = categoryData.find(cat => cat.type === formData.type)?.items || [];
+  const availableCategories = postCategories.find(cat => cat.type === formData.type)?.items || [];
 
   return (
     <Modal

@@ -4,20 +4,16 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
 } from 'react-native';
-import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import Listing from '../components/Listing';
-import CarCard from '../components/cards/CarCard';
 import BrandsScreen from './BrandsScreen';
 import UsernameSearch from '../components/UsernameSearch';
-import { useGetAllBrandsQuery, useGetUsersQuery } from '../services/apiService';
+import { useGetAllBrandsQuery } from '../services/apiService';
 import FAIcon from '../components/ui/FAIcon';
 import FadeScrollView from '../components/ui/FadeScrollView';
 
 const CarsScreen = ({ navigation }) => {
-  const { userInfo } = useSelector(state => state.auth);
   const [activeTab, setActiveTab] = useState('member-cars');
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedMake, setSelectedMake] = useState(null);
@@ -28,14 +24,14 @@ const CarsScreen = ({ navigation }) => {
   const { data: brandsData, isLoading: brandsLoading, error: brandsError } = useGetAllBrandsQuery();
   
   // Debug brands data
-  useEffect(() => {
-    console.log('CarsScreen brandsData:', {
-      brandsData,
-      brandsLoading,
-      brandsError,
-      brandsCount: brandsData?.brands?.length
-    });
-  }, [brandsData, brandsLoading, brandsError]);
+  // useEffect(() => {
+  //   console.log('CarsScreen brandsData:', {
+  //     brandsData,
+  //     brandsLoading,
+  //     brandsError,
+  //     brandsCount: brandsData?.brands?.length
+  //   });
+  // }, [brandsData, brandsLoading, brandsError]);
 
   const tabs = [
     { key: 'member-cars', label: 'Member Cars', type: 'cars', heading: 'Community Cars' },
@@ -69,12 +65,12 @@ const CarsScreen = ({ navigation }) => {
       }
       
       // Debug logging
-      console.log('CarsScreen getTabConfig:', {
-        selectedUser: selectedUser?.username,
-        selectedMake,
-        queryString,
-        finalApiUrl: apiUrl
-      });
+      // console.log('CarsScreen getTabConfig:', {
+      //   selectedUser: selectedUser?.username,
+      //   selectedMake,
+      //   queryString,
+      //   finalApiUrl: apiUrl
+      // });
     }
     
     return {
@@ -251,7 +247,6 @@ const CarsScreen = ({ navigation }) => {
           <Listing 
             config={config} 
             displayOptions={displayOptions} 
-            CustomComponent={CarCard}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             key={`${selectedUser?._id || 'no-user'}-${selectedMake || 'no-make'}`}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import { useGetLikeInfoQuery, useLikePostMutation, useUnlikePostMutation } from '../services/apiService';
@@ -7,10 +7,7 @@ import FAIcon from './ui/FAIcon';
 
 const Likes = ({
   document_id,
-  document_type = 'post',
-  variant = 'default',
-  showCount = true,
-  size = 'medium'
+  forceLikeNumber
 }) => {
   const { userInfo } = useSelector(state => state.auth);
   
@@ -35,7 +32,7 @@ const Likes = ({
   if (isLoading) {
     return (
       <TouchableOpacity style={[styles.likesContainer, styles.defaultContainer]}>
-        <FAIcon name="heart-o" size={16} color={colors.TEXT_SECONDARY} />
+        <FAIcon name="heart-o" color={colors.WHITE} />
         <Text style={styles.likeCount}>...</Text>
       </TouchableOpacity>
     );
@@ -79,85 +76,28 @@ const Likes = ({
     return count.toString();
   };
 
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'minimal':
-        return {
-          container: styles.minimalContainer,
-          text: styles.minimalText,
-        };
-      case 'outlined':
-        return {
-          container: styles.outlinedContainer,
-          text: styles.outlinedText,
-        };
-      case 'pill':
-        return {
-          container: styles.pillContainer,
-          text: styles.pillText,
-        };
-      default:
-        return {
-          container: styles.defaultContainer,
-          text: styles.defaultText,
-        };
-    }
-  };
-
-  const getSizeStyles = () => {
-    switch (size) {
-      case 'small':
-        return {
-          iconSize: 12,
-          fontSize: 12,
-          padding: 4,
-        };
-      case 'large':
-        return {
-          iconSize: 20,
-          fontSize: 16,
-          padding: 8,
-        };
-      default: // medium
-        return {
-          iconSize: 16,
-          fontSize: 14,
-          padding: 6,
-        };
-    }
-  };
-
-  const variantStyles = getVariantStyles();
-  const sizeStyles = getSizeStyles();
-
   return (
     <TouchableOpacity
       style={[
         styles.likesContainer,
-        variantStyles.container,
-        { padding: sizeStyles.padding },
-        !userInfo && styles.disabledContainer,
-        { backgroundColor: 'rgba(255, 0, 0, 0.2)', borderWidth: 2, borderColor: 'red' } // Temporary debug styling
       ]}
       onPress={handleLikeToggle}
       activeOpacity={0.7}
-      disabled={false} // Temporarily enable for all for testing
+      disabled={false}
     >
       <FAIcon
+        size="14"
         name={isLiked ? "heart" : "heart-o"}
-        size={sizeStyles.iconSize}
-        color={isLiked ? colors.ERROR : colors.TEXT_SECONDARY}
+        color={isLiked ? colors.ERROR : colors.WHITE}
       />
-      {showCount && (
-        <Text style={[
-          styles.likeCount,
-          variantStyles.text,
-          { fontSize: sizeStyles.fontSize },
-          isLiked && styles.likedCount
-        ]}>
-          {formatLikeCount(likeCount)}
-        </Text>
-      )}
+
+      <Text style={[
+        styles.likeCount,
+        isLiked
+      ]}>
+        {formatLikeCount(likeCount)}
+      </Text>
+
     </TouchableOpacity>
   );
 };
@@ -166,50 +106,15 @@ const styles = StyleSheet.create({
   likesContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    borderRadius: 20,
+    borderRadius: 50,
     minHeight: 32,
-  },
-  defaultContainer: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  minimalContainer: {
-    backgroundColor: 'transparent',
-    paddingHorizontal: 4,
-  },
-  outlinedContainer: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.BORDER,
-    paddingHorizontal: 8,
-  },
-  pillContainer: {
-    backgroundColor: colors.LIGHT_GRAY,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0, 0.4)',
+    paddingHorizontal: 12
   },
   likeCount: {
-    fontWeight: '500',
-  },
-  defaultText: {
-    color: colors.TEXT_SECONDARY,
-  },
-  minimalText: {
-    color: colors.TEXT_SECONDARY,
-  },
-  outlinedText: {
-    color: colors.TEXT_PRIMARY,
-  },
-  pillText: {
-    color: colors.TEXT_PRIMARY,
-  },
-  likedCount: {
-    color: colors.ERROR,
     fontWeight: '600',
-  },
-  disabledContainer: {
-    opacity: 0.6,
+    marginLeft: 4,
+    color: colors.WHITE,
   },
 });
 

@@ -6,7 +6,6 @@ import {
 	FlatList,
 	RefreshControl,
 } from 'react-native';
-import { useSelector } from 'react-redux';
 import { 
 	useGetPostsQuery,
 	useGetCarsQuery,
@@ -19,13 +18,14 @@ import {
 	useGetProjectsQuery,
 	useGetModsQuery,
 } from '../services/apiService';
-import Card from './cards/Card';
+import PostCard from './cards/PostCard';
+import CarCard from './cards/CarCard';
 import LoadingIndicator from './ui/LoadingIndicator';
 import { colors } from '../constants/colors';
 import FilterBar from './FilterBar';
 
 
-const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false }) => {
+const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false, numColumns = 1 }) => {
 	// const { userInfo } = useSelector(state => state.auth);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [allPosts, setAllPosts] = useState([]);
@@ -281,7 +281,20 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 	}, [postsLoading, hasMore]);
 
 	const renderPost = useCallback(({ item }) => {
-		return <Card post={item} displayOptions={displayOptions} />;
+
+		const cardDisplayOptions = {
+			...displayOptions,
+			numColumns,
+		};
+		
+		switch(item.entry_type) {
+			case 'post': 
+				return <PostCard post={item} displayOptions={cardDisplayOptions} />;
+			case 'garagecar':
+				return <CarCard post={item} displayOptions={cardDisplayOptions} />;
+		}
+
+		
 	}, [displayOptions]);
 
 	const renderFooter = () => {
@@ -359,6 +372,8 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 				data={filteredPosts}
 				renderItem={renderPost}
 				keyExtractor={(item, index) => item._id ? `post-${item._id}` : `post-${index}`}
+				numColumns={numColumns}
+        key={numColumns}
 				refreshControl={
 					<RefreshControl 
 						refreshing={postsLoading && currentPage === 1} 
@@ -374,6 +389,7 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 				onScroll={onScroll}
 				scrollEventThrottle={scrollEventThrottle}
 				nestedScrollEnabled={nestedScrollEnabled}
+				columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
 			/>
 		</View>
 	);
@@ -426,6 +442,9 @@ const styles = StyleSheet.create({
 		fontSize: 12,
 		color: colors.TEXT_SECONDARY,
 		fontWeight: '500',
+	},
+	columnWrapper: {
+    gap: 8,
 	},
 });
 

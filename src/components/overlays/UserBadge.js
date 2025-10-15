@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGetUserQuery } from '../../services/apiService';
 import BaseBadge from './BaseBadge';
 
-const UserBadge = ({ userId, style = {} }) => {
+const UserBadge = ({ userId, style = {}, name = true }) => {
   // Safely get navigation - might not be available in modals
   let navigation;
   try {
@@ -26,6 +26,7 @@ const UserBadge = ({ userId, style = {} }) => {
   };
 
   const getDisplayName = () => {
+    if(!name) { return ''; }
     if (user.username) return user.username;
     if (user.firstName || user.lastName) {
       return [user.firstName, user.lastName].filter(Boolean).join(' ');

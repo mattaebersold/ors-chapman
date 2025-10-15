@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
 
-import FAIcon from '../ui/FAIcon';
 import { colors } from '../../constants/colors';
 import { useModal } from '../../contexts/ModalContext';
 import {
@@ -44,14 +43,13 @@ const EditButton = ({post}) => {
 }
 
 const styles = StyleSheet.create({
-editButton: {
+	editButton: {
 		width: 32,
 		height: 32,
     borderRadius: 16,
-    backgroundColor: colors.BLACK,
+		backgroundColor: 'rgba(0,0,0, 0.4)',
 		justifyContent: 'center',
 		alignItems: 'center',
-		opacity: 0.6,
   },
 
 });

@@ -9,7 +9,7 @@ import {
 import { colors } from '../constants/colors';
 import EventCarousel from './EventCarousel';
 import Listing from './Listing';
-import Card from './cards/Card';
+import Card from './cards/PostCard';
 import LoadingIndicator from './ui/LoadingIndicator';
 import ErrorMessage from './ui/ErrorMessage';
 import EmptyState from './ui/EmptyState';

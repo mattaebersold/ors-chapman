@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { colors } from '../constants/colors';
 import { useSearchQuery } from '../services/apiService';
-import Card from '../components/cards/Card';
+import Card from '../components/cards/PostCard';
 import UserRow from '../components/UserRow';
 import FAIcon from '../components/ui/FAIcon';
 

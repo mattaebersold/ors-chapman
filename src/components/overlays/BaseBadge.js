@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { colors } from '../../constants/colors';
 import FAIcon from '../ui/FAIcon';
+// import { truncateText } from '../../utils/styleUtils';
 
 const BaseBadge = ({ 
   imageSource, 
@@ -11,6 +12,10 @@ const BaseBadge = ({
   style = {},
   disabled = false 
 }) => {
+  const truncateText = (text, maxLength = 8) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
   return (
     <TouchableOpacity 
       style={[styles.badge, style]} 
@@ -30,7 +35,7 @@ const BaseBadge = ({
         </View>
       )}
       <Text style={styles.text} numberOfLines={1}>
-        {displayName}
+        {truncateText(displayName, 8)}
       </Text>
     </TouchableOpacity>
   );
@@ -42,12 +47,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
     overflow: 'hidden',
+    marginRight: 2,
+    marginLeft: 2,
   },
   image: {
-    width: 20,
-    height: 20,
+    width: 26,
+    height: 26,
     borderRadius: 100,
     marginRight: 8,
+    backgroundColor: colors.BLACK
   },
   placeholder: {
     justifyContent: 'center',
@@ -55,9 +63,9 @@ const styles = StyleSheet.create({
   },
   text: {
     color: colors.WHITE,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    paddingRight: 8, // Only right padding for text
+    paddingRight: 8,
   },
 });
 

@@ -1,224 +1,124 @@
-import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+} from 'react-native';
+import EditButton from '../atoms/EditButton';
+import CardTitle from '../atoms/CardTitle';
 import { useNavigation } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
 import BaseCard from './BaseCard';
+import Badge from '../overlays/Badge';
 import UserBadge from '../overlays/UserBadge';
+import Likes from '../Likes';
 import { colors } from '../../constants/colors';
 import FAIcon from '../ui/FAIcon';
-import { useGetCarModsByInternalIdQuery, useGetCarTasksQuery } from '../../services/apiService';
 
-const CarCard = ({ user: car, displayOptions = {} }) => {
+// Post item component - now using BaseCard composition
+const Card = ({ post, onPress, displayOptions = {} }) => {
   const navigation = useNavigation();
-  const { userInfo } = useSelector(state => state.auth);
-  if (!car) return null;
 
-  const isOwner = userInfo?.user_id === car.user_id;
+  // Get likes and comments counts using existing endpoints
+  const documentId = post.internal_id || post._id || post.id;
 
-  // Fetch mods and tasks data for counts
-  const { data: modsData } = useGetCarModsByInternalIdQuery(
-    car.internal_id,
-    { skip: !car.internal_id }
-  );
+  const handlePress = useCallback(() => {
+    if (onPress) {
+      onPress(post);
+    } else {
+      // Navigate to PostDetail screen instead of using modal
+      navigation.navigate('PostDetail', { post });
+    }
+  }, [navigation, onPress, post]);
 
-  const { data: tasksData } = useGetCarTasksQuery(
-    { carId: car.internal_id },
-    { skip: !car.internal_id || !isOwner }
-  );
 
-  const handlePress = () => {
-    const carId = car._id || car.id;
-    navigation.navigate('CarDetail', { carId });
-  };
-
-  const getCarImageSource = () => {
-    if (car?.gallery?.[0]?.filename) {
-      return `https://d2481n2uw7a0p.cloudfront.net/${car.gallery[0].filename}`;
+  // Get image source from gallery
+  const getImageSource = () => {
+    if (post.gallery && post.gallery.length > 0) {
+      return `https://d2481n2uw7a0p.cloudfront.net/${post.gallery[0].filename}`;
     }
     return null;
   };
 
-  const getDisplayName = () => {
-    const parts = [car.year, car.make, car.model].filter(Boolean);
-    if (parts.length > 0) {
-      return parts.join(' ');
-    }
-    if (car.title) return car.title;
-    return 'Car';
-  };
+  // main post card content
+  const renderMainContent = () => (
+    <>
+      <FAIcon
+        size="24"
+        name="car"
+        color={colors.WHITE}
+      />
+      <CardTitle title={post.title} />
+       <Badge 
+        entryType={post.entry_type}
+        type={post.type} 
+        category={post.category}
+      />
+    </>
+  )
+  
+  // user actions
+  const renderUserActions = () => (
+    <View style={styles.userActions}>
+      <Likes 
+        document_id={documentId} 
+        document_type="post"
+      />
+    </View>
+  )
 
-  const renderOverlay = () => {
-    const badges = [];
+  const renderUserBadge = () => (
+    <View style={styles.badges}>
+      {post.user_id && <UserBadge name={false} userId={post.user_id} />}
+    </View>
+  )
 
-    // Add category badge if available
-    if (car.category) {
-      badges.push(
-        <View key="category" style={styles.categoryBadge}>
-          <Text style={styles.badgeText}>{car.category}</Text>
-        </View>
-      );
-    }
+  const renderEditButton = () => (
+    <EditButton post={post} />
+  )
 
-    // Add type badge if available
-    if (car.type && car.type !== car.category) {
-      badges.push(
-        <View key="type" style={styles.typeBadge}>
-          <Text style={styles.badgeText}>{car.type}</Text>
-        </View>
-      );
-    }
-
-    if (badges.length === 0) return null;
-
-    return (
-      <View style={styles.badgeContainer}>
-        {badges}
-      </View>
-    );
-  };
-
-  const renderStats = () => {
-    const stats = [];
-
-    // Gallery count
-    if (car.gallery && car.gallery.length > 0) {
-      stats.push(
-        <View key="gallery" style={styles.statItem}>
-          <FAIcon name="image" size={12} color={colors.TEXT_SECONDARY} />
-          <Text style={styles.statText}>{car.gallery.length}</Text>
-        </View>
-      );
-    }
-
-    // Mods count (from fetched data)
-    const modCount = modsData?.entries?.length || 0;
-    if (modCount > 0) {
-      stats.push(
-        <View key="mods" style={styles.statItem}>
-          <FAIcon name="wrench" size={12} color={colors.TEXT_SECONDARY} />
-          <Text style={styles.statText}>{modCount}</Text>
-        </View>
-      );
-    }
-
-    // Tasks count (only for owner, from fetched data)
-    const taskCount = tasksData?.entries?.length || 0;
-    if (isOwner && taskCount > 0) {
-      stats.push(
-        <View key="tasks" style={styles.statItem}>
-          <FAIcon name="check-square" size={12} color={colors.TEXT_SECONDARY} />
-          <Text style={styles.statText}>{taskCount}</Text>
-        </View>
-      );
-    }
-
-    if (stats.length === 0) return null;
-
-    return (
-      <View style={styles.statsContainer}>
-        {stats}
-      </View>
-    );
-  };
-
-  const renderFooter = () => {
-    const components = [];
-
-    // Add stats
-    const statsComponent = renderStats();
-    if (statsComponent) {
-      components.push(
-        <View key="stats" style={styles.statsWrapper}>
-          {statsComponent}
-        </View>
-      );
-    }
-
-    // Add user badge
-    if (car.user_id && !displayOptions.hideUserBadge) {
-      components.push(
-        <View key="user" style={styles.userBadgeContainer}>
-          <UserBadge userId={car.user_id} />
-        </View>
-      );
-    }
-
-    if (components.length === 0) return null;
-
-    return <View style={styles.footerContainer}>{components}</View>;
-  };
+  const renderCarType = () => (
+    <Text style={styles.carTypeStyles} numberOfLines={1}>
+      {post.year} {post.make} {post.model} {post.trim}
+    </Text>
+  )
 
   return (
     <BaseCard
-      imageSource={getCarImageSource()}
-      imageHeight={200}
-      placeholderIcon="car"
-      placeholderText=""
-      title={getDisplayName()}
-      description={car.description}
+      imageSource={getImageSource()}
       onPress={handlePress}
-      cardStyle={styles.carCard}
-      overlayComponent={renderOverlay()}
-      footerComponent={renderFooter()}
+      topRight={renderEditButton()}
+      bottomCenter={renderMainContent()}
+      bottomRight={renderUserActions()}
+      bottomLeft={renderUserBadge()}
+      topCenter={renderCarType()}
     />
   );
 };
 
 const styles = StyleSheet.create({
-  carCard: {
-    marginTop: 12,
-  },
-  // Overlay badges
-  badgeContainer: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
+  badges: {
     flexDirection: 'row',
-    gap: 4,
   },
-  categoryBadge: {
-    backgroundColor: colors.BRG,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  userActions: {
+    flexDirection: 'row',
+    gap: 6
   },
-  typeBadge: {
-    backgroundColor: colors.SPEED,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+
+  stats: {
+    flexDirection: 'row',
   },
-  badgeText: {
+
+  carTypeStyles: {
     color: colors.WHITE,
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  // Footer components
-  footerContainer: {
-    gap: 8,
-  },
-  statsWrapper: {
-    flex: 1,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 8,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statText: {
+    opacity: 0.9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
     fontSize: 12,
-    color: colors.TEXT_SECONDARY,
-    fontWeight: '500',
-  },
-  userBadgeContainer: {
-    alignSelf: 'flex-start',
-  },
+    textShadowColor: 'rgba(0, 0, 0, 0.85)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,                       
+  }
+  
 });
 
-export default CarCard;
+export default Card;

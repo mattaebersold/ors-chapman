@@ -82,6 +82,7 @@ const HomeScreen = () => {
         HeaderComponent={HeaderComponent}
         showFilters={true}
         filterTypes={['postType']}
+        numColumns={2}
       />
     </View>
   );

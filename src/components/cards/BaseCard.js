@@ -17,11 +17,6 @@ const BaseCard = ({
   // placeholderIcon = 'camera',
   // placeholderText = 'No Image',
   
-  // Content props
-  title,
-  // subtitle,
-  // description,
-  
   // Action props
   onPress,
     
@@ -36,6 +31,8 @@ const BaseCard = ({
   bottomLeft,
   topCenter,
   bottomCenter,
+
+  small
 
 }) => {
   
@@ -60,7 +57,7 @@ const BaseCard = ({
       
       {/* Gradient overlay */}
       <LinearGradient
-        colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, .5)']}
+        colors={['rgba(0, 0, 0, .1)', 'rgba(0, 0, 0, .6)']}
         style={styles.gradient}
       />
       
@@ -72,27 +69,27 @@ const BaseCard = ({
     <View style={styles.content}>
 
       {topLeft && (
-        <View style={styles.topLeft}>{topLeft}</View>
+        <View style={small ? styles.topLeftSmall : styles.topLeft}>{topLeft}</View>
       )}
 
       {topRight && (
-        <View style={styles.topRight}>{topRight}</View>
+        <View style={small ? styles.topRightSmall : styles.topRight}>{topRight}</View>
       )}
 
       {bottomLeft && (
-        <View style={styles.bottomLeft}>{bottomLeft}</View>
+        <View style={small ? styles.bottomLeftSmall : styles.bottomLeft}>{bottomLeft}</View>
       )}
 
       {bottomRight && (
-        <View style={styles.bottomRight}>{bottomRight}</View>
+        <View style={small ? styles.bottomRightSmall : styles.bottomRight}>{bottomRight}</View>
       )}
 
       {topCenter && (
-        <View style={styles.topCenter}>{topCenter}</View>
+        <View style={small ? styles.topCenterSmall : styles.topCenter}>{topCenter}</View>
       )}
 
       {bottomCenter && (
-        <View style={styles.bottomCenter}>{bottomCenter}</View>
+        <View style={small ? styles.bottomCenterSmall : styles.bottomCenter}>{bottomCenter}</View>
       )}
 
     </View>
@@ -102,7 +99,7 @@ const BaseCard = ({
   const containerProps = onPress ? { onPress, activeOpacity: 0.8 } : {};
 
   return (
-    <CardContainer style={styles.card} {...containerProps}>
+    <CardContainer style={small ? styles.cardMultiColumn : styles.card} {...containerProps}>
       {renderImageContainer()}
       {renderContent()}
     </CardContainer>
@@ -120,6 +117,14 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     marginBottom: spacing.sm,
     marginTop: spacing.sm,
+  },
+  cardMultiColumn: {
+    aspectRatio: 1/1,
+    width: '49%',
+    marginBottom: 8,
+    borderRadius: 13,
+    overflow: 'hidden',
+    backgroundColor: colors.CARD_DARK,
   },
   imageContainer: {
     position: 'absolute',
@@ -150,26 +155,86 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-
   topLeft: {
     position: 'absolute',
     top: 12,
     left: 12,
+    width: '50%'
   },
   topRight: {
     position: 'absolute',
     top: 12,
     right: 12,
+    width: '50%',
+    alignItems: 'flex-end'
   },
   bottomLeft: {
     position: 'absolute',
-    bottom: 12,
+    bottom: 16,
     left: 12,
+    width: '50%',
   },
   bottomRight: {
     position: 'absolute',
-    bottom: 12,
+    bottom: 16,
     right: 12,
+    width: '50%',
+    alignItems: 'flex-end'
+  },
+  bottomCenter: {
+    position: 'absolute',
+    bottom: 16,
+    width: '50%',
+    alignItems: 'center',
+    alignSelf: 'center'
+  },
+  topCenter: {
+    position: 'absolute',
+    top: 16,
+    width: '50%',
+    alignItems: 'center',
+    alignSelf: 'center'
+  },
+
+  topLeftSmall: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: '50%'
+  },
+  topRightSmall: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: '50%',
+    alignItems: 'flex-end'
+  },
+  bottomLeftSmall: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    width: '75%',
+  },
+  bottomRightSmall: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    width: '25%',
+    alignItems: 'flex-end'
+  },
+  bottomCenterSmall: {
+    position: 'absolute',
+    bottom: 8,
+    width: '50%',
+    alignItems: 'center',
+    alignSelf: 'center'
+  },
+  topCenterSmall: {
+    position: 'absolute',
+    top: 10,
+    width: '50%',
+    alignItems: 'center',
+    alignSelf: 'center'
   },
 });
 
