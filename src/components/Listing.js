@@ -218,15 +218,23 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 	// Update posts when new data arrives
 	React.useEffect(() => {
 		if (postsData?.entries) {
+			// Normalize entries to ensure correct entry_type for rendering
+			const normalizedEntries = postsData.entries.map(entry => {
+				// If config type is 'users', ensure entry_type is 'user'
+				if (config?.type === 'users' && !entry.entry_type) {
+					return { ...entry, entry_type: 'user' };
+				}
+				return entry;
+			});
 
 			if (currentPage === 1) {
 				// Fresh data (pull to refresh)
-				setAllPosts(postsData.entries);
+				setAllPosts(normalizedEntries);
 			} else {
 				// Append new data (infinite scroll) - prevent duplicates
 				setAllPosts(prev => {
 					const existingIds = new Set(prev.map(post => post._id));
-					const newPosts = postsData.entries.filter(post => !existingIds.has(post._id));
+					const newPosts = normalizedEntries.filter(post => !existingIds.has(post._id));
 					return [...prev, ...newPosts];
 				});
 			}
@@ -235,7 +243,7 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 			const totalLoaded = currentPage * POSTS_PER_PAGE;
 			setHasMore(totalLoaded < postsData.total);
 		}
-	}, [postsData, currentPage]);
+	}, [postsData, currentPage, config?.type]);
 
 	// Filter posts based on selected filters
 	const filteredPosts = useMemo(() => {
@@ -298,7 +306,7 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 				case 'garagecar':
 					return <CarCard post={item} displayOptions={cardDisplayOptions} />;
 				case 'user':
-					return <UserCard post={item} displayOptions={cardDisplayOptions} />;
+					return <UserCard user={item} displayOptions={cardDisplayOptions} />;
 			}
 		})();
 
@@ -514,9 +522,10 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 	const renderCombinedHeader = () => {
 		return (
 			<>
+				{customHeaderSection && customHeaderSection()}
 				{renderHeader()}
 				{renderFilterBar()}
-				{customHeaderSection && customHeaderSection()}
+				
 			</>
 		);
 	};

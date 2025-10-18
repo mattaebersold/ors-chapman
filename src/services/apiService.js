@@ -194,6 +194,29 @@ export const apiService = createApi({
       keepUnusedDataFor: 0, // Don't cache so we get different random results
     }),
 
+    // Get featured users
+    getFeaturedUsers: builder.query({
+      query: ({ limit = 10 } = {}) => {
+        console.log('getFeaturedUsers query params:', {
+          featured: true,
+          limit,
+          page: 0
+        });
+        return {
+          url: '/api/users',
+          method: 'GET',
+          params: {
+            featured: true,
+            limit,
+            page: 0,
+            sort: 'random'
+          }
+        };
+      },
+      providesTags: ['User'],
+      keepUnusedDataFor: 0, // Don't cache so we get different random results
+    }),
+
     // Get single car by ID
     getCar: builder.query({
       query: (carId) => ({
@@ -1076,6 +1099,18 @@ export const apiService = createApi({
       ],
     }),
 
+    toggleUserFeatured: builder.mutation({
+      query: ({ user_id, featured }) => ({
+        url: '/api/user/toggle-featured',
+        method: 'POST',
+        body: { user_id, featured },
+      }),
+      invalidatesTags: (result, error, { user_id }) => [
+        'Users',
+        { type: 'User', id: user_id }
+      ],
+    }),
+
     // Message endpoints
     getMessages: builder.query({
       query: ({ page = 0, limit = 20, unread_only = false } = {}) => ({
@@ -1168,6 +1203,7 @@ export const {
   useGetFeaturedListingsQuery,
   useGetFeaturedWantAdsQuery,
   useGetFeaturedSpottedCarsQuery,
+  useGetFeaturedUsersQuery,
   useGetCarQuery,
   useGetAllBrandsQuery,
   useGetBrandModelsQuery,
@@ -1236,6 +1272,7 @@ export const {
   useToggleGarageCarFeaturedMutation,
   useTogglePostFeaturedMutation,
   useToggleEventFeaturedMutation,
+  useToggleUserFeaturedMutation,
   useGetMessagesQuery,
   useGetMessageThreadQuery,
   useCreateMessageMutation,

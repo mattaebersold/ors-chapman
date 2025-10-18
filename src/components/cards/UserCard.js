@@ -14,6 +14,10 @@ import { useGetCarsQuery } from '../../services/apiService';
 // User card component - displays user profile with stats
 const UserCard = ({ user, onPress, displayOptions = {} }) => {
   const navigation = useNavigation();
+	
+	let small = displayOptions.numColumns === 2 ? true : false; 
+
+  if(displayOptions.small) { small = true}
 
   // Fetch garage cars count for this user
   const { data: garageData } = useGetCarsQuery(
@@ -29,15 +33,15 @@ const UserCard = ({ user, onPress, displayOptions = {} }) => {
     if (onPress) {
       onPress(user);
     } else {
-      // Navigate to User profile screen
-      navigation.navigate('Profile', { userId: user.user_id });
+      // Navigate to UserDetail screen
+      navigation.navigate('UserDetail', { userId: user.user_id, user });
     }
   }, [navigation, onPress, user]);
 
   // Get image source from profile picture
   const getImageSource = () => {
-    if (user.profile_pic) {
-      return `https://d2481n2uw7a0p.cloudfront.net/${user.profile_pic}`;
+    if (user.gallery.length > 0) {
+      return `https://d2481n2uw7a0p.cloudfront.net/${user.gallery[0].filename}`;
     }
     return null;
   };
@@ -46,11 +50,11 @@ const UserCard = ({ user, onPress, displayOptions = {} }) => {
   const renderMainContent = () => (
     <>
       <FAIcon
-        size={24}
+        size={small ? 12 : 24}
         name="user"
         color={colors.WHITE}
       />
-      <CardTitle title={user.username || user.name} />
+      <CardTitle small={small} title={user.username || user.name} />
     </>
   );
 
@@ -68,6 +72,7 @@ const UserCard = ({ user, onPress, displayOptions = {} }) => {
       onPress={handlePress}
       bottomRight={renderStats()}
       bottomLeft={renderMainContent()}
+			small={small}
     />
   );
 };

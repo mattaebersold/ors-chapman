@@ -52,7 +52,11 @@ const BaseCard = ({
           resizeMode="cover"
         />
       ) : (
-        <></>
+        <Image
+          source={require('../../../assets/placeholder.jpg')}
+          style={styles.image}
+          resizeMode="cover"
+        />
       )}
       
       {/* Gradient overlay */}

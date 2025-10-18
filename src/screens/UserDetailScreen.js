@@ -5,13 +5,14 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import FAIcon from '../components/ui/FAIcon';
 import Listing from '../components/Listing';
-import { useGetUserQuery, useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery, useGetPostsQuery, useGetCarsQuery } from '../services/apiService';
+import { useGetUserQuery, useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery, useGetPostsQuery, useGetCarsQuery, useToggleUserFeaturedMutation, useGetUserDetailsQuery } from '../services/apiService';
 import EventCarousel from '../components/EventCarousel';
 
 
@@ -38,9 +39,14 @@ const UserDetailScreen = () => {
   });
   const [followUser, { isLoading: isFollowLoading }] = useFollowUserMutation();
   const [unfollowUser, { isLoading: isUnfollowLoading }] = useUnfollowUserMutation();
+  const [toggleUserFeatured] = useToggleUserFeaturedMutation();
 
   const followLoading = isFollowLoading || isUnfollowLoading;
   const isFollowing = user?.isFollowing || user?.is_following || followStatus?.isFollowing || false;
+
+  // Get current user details to check if admin
+  const { data: currentUser } = useGetUserDetailsQuery();
+  const isAdmin = currentUser && currentUser.accountType === 'admin';
 
   const handleFollowToggle = async () => {
     try {
@@ -52,6 +58,20 @@ const UserDetailScreen = () => {
       }
     } catch (error) {
       console.error('Error toggling follow status:', error);
+    }
+  };
+
+  const handleToggleFeatured = async () => {
+    try {
+      const newFeaturedStatus = !user.featured;
+      await toggleUserFeatured({
+        user_id: actualUserId,
+        featured: newFeaturedStatus
+      }).unwrap();
+      Alert.alert('Success', `User ${newFeaturedStatus ? 'featured' : 'unfeatured'} successfully.`);
+    } catch (error) {
+      console.error('Error toggling featured status:', error);
+      Alert.alert('Error', 'Failed to update featured status. Please try again.');
     }
   };
 
@@ -98,7 +118,7 @@ const UserDetailScreen = () => {
     { key: 'events', label: 'Events', type: 'posts', apiUrl: `/api/post?type=event&user_id=${actualUserId}`, heading: 'User Events' }, // NOTE: Using posts until Events API supports user_id filtering
   ];
   
-  console.log('UserDetailScreen - tab URLs:', tabs.map(tab => ({ key: tab.key, url: tab.apiUrl })));
+  // console.log('UserDetailScreen - tab URLs:', tabs.map(tab => ({ key: tab.key, url: tab.apiUrl })));
 
   const getTabConfig = (tabKey) => {
     const tab = tabs.find(t => t.key === tabKey);
@@ -158,34 +178,49 @@ const UserDetailScreen = () => {
             )}
           </View>
 
-          {/* Follow Button */}
-          {!isOwnProfile && (
-            <TouchableOpacity
-              style={[
-                styles.followButton,
-                isFollowing && styles.followingButton,
-                (followLoading || statusLoading) && styles.followButtonLoading
-              ]}
-              onPress={handleFollowToggle}
-              disabled={followLoading || statusLoading}
-            >
-              {(followLoading || statusLoading) ? (
-                <FAIcon name="spinner" size={16} color={colors.WHITE} />
-              ) : (
-                <>
-                  <FAIcon 
-                    name={isFollowing ? "check" : "plus"} 
-                    size={14} 
-                    color={colors.WHITE} 
-                    style={styles.followIcon}
-                  />
-                  <Text style={styles.followButtonText}>
-                    {isFollowing ? 'Following' : 'Follow'}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
+          <View style={styles.actionButtons}>
+            {/* Follow Button */}
+            {!isOwnProfile && (
+              <TouchableOpacity
+                style={[
+                  styles.followButton,
+                  isFollowing && styles.followingButton,
+                  (followLoading || statusLoading) && styles.followButtonLoading
+                ]}
+                onPress={handleFollowToggle}
+                disabled={followLoading || statusLoading}
+              >
+                {(followLoading || statusLoading) ? (
+                  <FAIcon name="spinner" size={16} color={colors.WHITE} />
+                ) : (
+                  <>
+                    <FAIcon
+                      name={isFollowing ? "check" : "plus"}
+                      size={14}
+                      color={colors.WHITE}
+                      style={styles.followIcon}
+                    />
+                    <Text style={styles.followButtonText}>
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {/* Featured Toggle - only show for admins */}
+            {isAdmin && (
+              <TouchableOpacity
+                style={[styles.featuredButton, user?.featured && styles.featuredButtonActive]}
+                onPress={handleToggleFeatured}
+              >
+                <FAIcon name="star" size={16} color={user?.featured ? colors.GOLD : colors.TEXT_SECONDARY} />
+                <Text style={[styles.featuredButtonText, user?.featured && styles.featuredButtonTextActive]}>
+                  {user?.featured ? 'Featured' : 'Feature'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Stats Row */}
@@ -397,6 +432,35 @@ const styles = StyleSheet.create({
     color: colors.WHITE,
     fontSize: 14,
     fontWeight: '600',
+  },
+  actionButtons: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  featuredButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.WHITE,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+    minWidth: 100,
+    justifyContent: 'center',
+  },
+  featuredButtonActive: {
+    backgroundColor: '#FFF8DC',
+    borderColor: colors.GOLD,
+  },
+  featuredButtonText: {
+    color: colors.TEXT_SECONDARY,
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  featuredButtonTextActive: {
+    color: colors.GOLD,
   },
   statsRow: {
     flexDirection: 'row',

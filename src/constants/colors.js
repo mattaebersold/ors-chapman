@@ -22,6 +22,7 @@ export const colors = {
   YELLOW: '#FFC107',
   ORANGE: '#FF6B35',
   BLUE: '#17A2B8',
+  GOLD: '#FFD700',
   
   // Additional brand colors (you can add more as needed)
   ACCENT: '#2E5E60',
