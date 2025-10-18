@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useDeleteGarageCarMutation, useGetUserDetailsQuery, useGetPostsQuery } from '../services/apiService';
+import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useDeleteGarageCarMutation, useGetUserDetailsQuery, useGetPostsQuery, useToggleGarageCarFeaturedMutation } from '../services/apiService';
 import LoadingIndicator from '../components/ui/LoadingIndicator';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import EmptyState from '../components/ui/EmptyState';
@@ -133,6 +133,7 @@ const CarDetailScreen = ({ route, navigation }) => {
   const [deleteMod] = useDeleteModMutation();
   const [deleteCarGallery] = useDeleteCarGalleryMutation();
   const [deleteGarageCar] = useDeleteGarageCarMutation();
+  const [toggleGarageCarFeatured] = useToggleGarageCarFeaturedMutation();
 
   // Posts will be handled by the Listing component in renderFeedTab()
 
@@ -342,6 +343,9 @@ const CarDetailScreen = ({ route, navigation }) => {
   const isCarOwner = currentUser && carData && (
     currentUser.user_id === carData.user_id
   );
+
+  // Check if current user is admin
+  const isAdmin = currentUser && currentUser.accountType === 'admin';
 
   const tabs = [
     { key: 'overview', label: 'Overview', icon: 'info-circle' },
@@ -1011,7 +1015,7 @@ const CarDetailScreen = ({ route, navigation }) => {
 
   const handleDeleteCar = async () => {
     const carTitle = [carData.year, carData.make, carData.model].filter(Boolean).join(' ') || carData.title || 'this car';
-    
+
     Alert.alert(
       'Delete Car',
       `Are you sure you want to delete "${carTitle}" from your garage? This action cannot be undone.`,
@@ -1034,6 +1038,20 @@ const CarDetailScreen = ({ route, navigation }) => {
         },
       ]
     );
+  };
+
+  const handleToggleFeatured = async () => {
+    try {
+      const newFeaturedStatus = !carData.featured;
+      await toggleGarageCarFeatured({
+        internal_id: carData.internal_id,
+        featured: newFeaturedStatus
+      }).unwrap();
+      Alert.alert('Success', `Car ${newFeaturedStatus ? 'featured' : 'unfeatured'} successfully.`);
+    } catch (error) {
+      console.error('Error toggling featured status:', error);
+      Alert.alert('Error', 'Failed to update featured status. Please try again.');
+    }
   };
 
   const handleDeleteMod = async (mod) => {
@@ -1302,25 +1320,40 @@ const CarDetailScreen = ({ route, navigation }) => {
           <View style={styles.carTitleRow}>
             <Text style={styles.carTitle}>{getDisplayName()}</Text>
 
-            {/* Edit and Delete Buttons - only show for car owner */}
-            {isCarOwner && (
-              <View style={styles.carActionButtons}>
+            <View style={styles.actionButtonsWrapper}>
+              {/* Featured Toggle - only show for admins */}
+              {isAdmin && (
                 <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => setEditCarModalVisible(true)}
+                  style={[styles.featuredButton, carData.featured && styles.featuredButtonActive]}
+                  onPress={handleToggleFeatured}
                 >
-                  <FAIcon name="edit" size={16} color={colors.BRG} />
-                  <Text style={styles.editButtonText}>Edit</Text>
+                  <FAIcon name="star" size={16} color={carData.featured ? colors.GOLD : colors.TEXT_SECONDARY} />
+                  <Text style={[styles.featuredButtonText, carData.featured && styles.featuredButtonTextActive]}>
+                    {carData.featured ? 'Featured' : 'Feature'}
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={handleDeleteCar}
-                >
-                  <FAIcon name="trash" size={16} color={colors.ERROR} />
-                  <Text style={styles.deleteButtonText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              )}
+
+              {/* Edit and Delete Buttons - only show for car owner */}
+              {isCarOwner && (
+                <View style={styles.carActionButtons}>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => setEditCarModalVisible(true)}
+                  >
+                    <FAIcon name="edit" size={16} color={colors.BRG} />
+                    <Text style={styles.editButtonText}>Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={handleDeleteCar}
+                  >
+                    <FAIcon name="trash" size={16} color={colors.ERROR} />
+                    <Text style={styles.deleteButtonText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* User Badge and Actions Row */}
@@ -1810,9 +1843,37 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.BRG,
   },
+  actionButtonsWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   carActionButtons: {
     flexDirection: 'row',
     gap: 8,
+  },
+  featuredButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.LIGHT_GRAY,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.TEXT_SECONDARY,
+    gap: 6,
+  },
+  featuredButtonActive: {
+    backgroundColor: colors.GOLD + '20',
+    borderColor: colors.GOLD,
+  },
+  featuredButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.TEXT_SECONDARY,
+  },
+  featuredButtonTextActive: {
+    color: colors.GOLD,
   },
   deleteButton: {
     flexDirection: 'row',

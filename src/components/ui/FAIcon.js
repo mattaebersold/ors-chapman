@@ -47,13 +47,15 @@ import {
   faEye,
   faSignOutAlt,
   faExclamationTriangle,
-  faPaperPlane
+  faPaperPlane,
+  faStar
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
   faUser as faUserRegular,
   faHeart as faHeartRegular,
-  faComment as faCommentRegular
+  faComment as faCommentRegular,
+  faStar as faStarRegular
 } from '@fortawesome/free-regular-svg-icons';
 
 import {
@@ -125,6 +127,8 @@ const iconMap = {
   'sign-out': faSignOutAlt,
   'exclamation-triangle': faExclamationTriangle,
   'paper-plane': faPaperPlane,
+  star: faStar,
+  'star-outline': faStarRegular,
 };
 
 const FAIcon = ({ name, size = 20, color = '#000', style, ...props }) => {

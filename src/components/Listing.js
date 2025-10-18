@@ -5,6 +5,9 @@ import {
 	StyleSheet,
 	FlatList,
 	RefreshControl,
+	TouchableOpacity,
+	Modal,
+	ScrollView,
 } from 'react-native';
 import { 
 	useGetPostsQuery,
@@ -20,70 +23,66 @@ import {
 } from '../services/apiService';
 import PostCard from './cards/PostCard';
 import CarCard from './cards/CarCard';
+import UserCard from './cards/UserCard';
 import LoadingIndicator from './ui/LoadingIndicator';
-import { colors } from '../constants/colors';
+import { colors, getPostTypeColor, getCategoryColor } from '../constants/colors';
 import FilterBar from './FilterBar';
+import FAIcon from './ui/FAIcon';
 
 
-const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false, numColumns = 1 }) => {
+const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false, numColumns = 1, heading, customHeaderButtons, customFilterBar, customHeaderSection }) => {
 	// const { userInfo } = useSelector(state => state.auth);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [allPosts, setAllPosts] = useState([]);
 	const [hasMore, setHasMore] = useState(true);
 	const [selectedPostType, setSelectedPostType] = useState(null);
 	const [selectedCategory, setSelectedCategory] = useState(null);
+	const [filterModalVisible, setFilterModalVisible] = useState(false);
 	
 	const POSTS_PER_PAGE = 10;
+
+	// Helper function to parse query parameters from relative or absolute URLs
+	const parseUrlParams = (url) => {
+		if (!url) return new URLSearchParams();
+		try {
+			// Check if URL has query parameters
+			const queryIndex = url.indexOf('?');
+			if (queryIndex === -1) return new URLSearchParams();
+
+			// Extract query string and parse it
+			const queryString = url.substring(queryIndex + 1);
+			return new URLSearchParams(queryString);
+		} catch (error) {
+			return new URLSearchParams();
+		}
+	};
 
 	// Extract type parameter from apiUrl if present
 	const extractTypeFromUrl = (url) => {
 		if (!url) return null;
-		try {
-			const urlObj = new URL(url);
-			const type = urlObj.searchParams.get('type');
-			return type;
-		} catch (error) {
-			return null;
-		}
+		const params = parseUrlParams(url);
+		return params.get('type');
 	};
 
 	// Extract make parameter from apiUrl if present
 	const extractMakeFromUrl = (url) => {
 		if (!url) return null;
-		try {
-			const urlObj = new URL(url);
-			const make = urlObj.searchParams.get('make');
-			return make;
-		} catch (error) {
-			console.log('Listing - Error parsing URL for make:', url, error);
-			return null;
-		}
+		const params = parseUrlParams(url);
+		return params.get('make');
 	};
 
 	// Extract model parameter from apiUrl if present
 	const extractModelFromUrl = (url) => {
 		if (!url) return null;
-		try {
-			const urlObj = new URL(url);
-			const model = urlObj.searchParams.get('model');
-			return model;
-		} catch (error) {
-			console.log('Listing - Error parsing URL for model:', url, error);
-			return null;
-		}
+		const params = parseUrlParams(url);
+		return params.get('model');
 	};
 
 	// Extract user_id parameter from apiUrl if present
 	const extractUserIdFromUrl = (url) => {
 		if (!url) return null;
-		try {
-			const urlObj = new URL(url);
-			const user_id = urlObj.searchParams.get('user_id');
-			return user_id;
-		} catch (error) {
-			console.log('Listing - Error parsing URL for user_id:', url, error);
-			return null;
-		}
+		const params = parseUrlParams(url);
+		return params.get('user_id');
 	};
 
 	// Dynamic API query based on config.type
@@ -231,7 +230,7 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 					return [...prev, ...newPosts];
 				});
 			}
-			
+
 			// Check if we have more data
 			const totalLoaded = currentPage * POSTS_PER_PAGE;
 			setHasMore(totalLoaded < postsData.total);
@@ -241,7 +240,7 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 	// Filter posts based on selected filters
 	const filteredPosts = useMemo(() => {
 		if (!allPosts.length) return [];
-		
+
 		return allPosts.filter(post => {
 			// For articles, don't apply post type filtering since articles have different type structure
 			if (post.entry_type === 'article') {
@@ -251,18 +250,23 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 				}
 				return true;
 			}
-			
+
+			// For cars/garage entries, don't apply post type filtering
+			if (post.entry_type === 'garagecar') {
+				return true;
+			}
+
 			// For regular posts, apply normal filtering
 			// Filter by post type
 			if (selectedPostType && post.type !== selectedPostType) {
 				return false;
 			}
-			
+
 			// Filter by category
 			if (selectedCategory && post.category !== selectedCategory) {
 				return false;
 			}
-			
+
 			return true;
 		});
 	}, [allPosts, selectedPostType, selectedCategory]);
@@ -286,16 +290,24 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 			...displayOptions,
 			numColumns,
 		};
-		
-		switch(item.entry_type) {
-			case 'post': 
-				return <PostCard post={item} displayOptions={cardDisplayOptions} />;
-			case 'garagecar':
-				return <CarCard post={item} displayOptions={cardDisplayOptions} />;
-		}
 
-		
-	}, [displayOptions]);
+		const card = (() => {
+			switch(item.entry_type) {
+				case 'post':
+					return <PostCard post={item} displayOptions={cardDisplayOptions} />;
+				case 'garagecar':
+					return <CarCard post={item} displayOptions={cardDisplayOptions} />;
+				case 'user':
+					return <UserCard post={item} displayOptions={cardDisplayOptions} />;
+			}
+		})();
+
+		return (
+			<View style={numColumns > 1 ? styles.cardWrapperGrid : styles.cardWrapper}>
+				{card}
+			</View>
+		);
+	}, [displayOptions, numColumns]);
 
 	const renderFooter = () => {
 		if (!hasMore) return null;
@@ -312,18 +324,25 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 
 	// dynamic header
 	const renderHeader = () => {
-		// If HeaderComponent is provided, use it instead
-		if (HeaderComponent) {
-			return <HeaderComponent />;
-		}
-		
-		if (!config?.heading) return null;
-		
 		return (
-			<View style={styles.header}>
+			<View style={[styles.header, styles.headerPadding]}>
 				<Text style={styles.welcomeText}>
-					{config.heading}
+					{heading}
 				</Text>
+				<View style={styles.headerButtons}>
+					{customHeaderButtons ? (
+						customHeaderButtons()
+					) : (
+						showFilters && (
+							<TouchableOpacity
+								style={styles.filterButton}
+								onPress={() => setFilterModalVisible(true)}
+							>
+								<FAIcon name="filter" size={16} color={colors.BLACK} />
+							</TouchableOpacity>
+						)
+					)}
+				</View>
 			</View>
 		);
 	};
@@ -339,22 +358,157 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 		}
 	};
 
-	// Render filter bar if filters are enabled
+	const handleClearAll = () => {
+		clearFilters();
+		setFilterModalVisible(false);
+	};
+
+	const handleRemoveFilter = (filterType) => {
+		if (filterType === 'postType') {
+			setSelectedPostType(null);
+		} else if (filterType === 'category') {
+			setSelectedCategory(null);
+		}
+	};
+
 	const renderFilterBar = () => {
+		// If custom filter bar is provided, use it
+		if (customFilterBar) {
+			return <View style={styles.headerPadding}>{customFilterBar()}</View>;
+		}
+
+		// Check if there are any active filters
+		const hasActiveFilters = (filterTypes.includes('postType') && selectedPostType) ||
+		                         (filterTypes.includes('category') && selectedCategory);
+
+		if (!showFilters || !hasActiveFilters) return null;
+
 		return (
-			<FilterBar
-				showFilters={showFilters}
-				filterTypes={filterTypes}
-				selectedPostType={selectedPostType}
-				setSelectedPostType={setSelectedPostType}
-				selectedCategory={selectedCategory}
-				setSelectedCategory={setSelectedCategory}
-				onClearFilters={clearFilters}
-			/>
+			<View style={styles.headerPadding}>
+				<FilterBar
+					showFilters={showFilters}
+					filterTypes={filterTypes}
+					selectedPostType={selectedPostType}
+					selectedCategory={selectedCategory}
+					onRemoveFilter={handleRemoveFilter}
+				/>
+			</View>
 		);
 	};
 
+	// Get active filters for display
+	const getActiveFilters = () => {
+		const activeFilters = [];
+		if (filterTypes.includes('postType') && selectedPostType) {
+			activeFilters.push({ type: 'postType', value: selectedPostType, label: selectedPostType.charAt(0).toUpperCase() + selectedPostType.slice(1) });
+		}
+		if (filterTypes.includes('category') && selectedCategory) {
+			activeFilters.push({ type: 'category', value: selectedCategory, label: selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1) });
+		}
+		return activeFilters;
+	};
 
+	const renderFilterChip = (label, value, selectedValue, onSelect, getColorFunc) => (
+		<TouchableOpacity
+			key={value}
+			style={[
+				styles.filterChip,
+				selectedValue === value && styles.filterChipActive,
+				selectedValue === value && getColorFunc && { backgroundColor: getColorFunc(value) },
+			]}
+			onPress={() => {
+				onSelect(selectedValue === value ? null : value);
+				setFilterModalVisible(false);
+			}}
+		>
+			<Text
+				style={[
+					styles.filterChipText,
+					selectedValue === value && styles.filterChipTextActive,
+				]}
+			>
+				{label}
+			</Text>
+		</TouchableOpacity>
+	);
+
+	const renderFilterModal = () => {
+		if (!showFilters) return null;
+
+		const postTypes = ['general', 'record', 'listing', 'want', 'spot'];
+		const categories = ['show', 'misc', 'new', 'used', 'car', 'accessories', 'other', 'part', 'museum', 'wild', 'general', 'mod', 'restoration', 'maintenance', 'detailing'];
+		const activeFilters = getActiveFilters();
+
+		return (
+			<Modal
+				visible={filterModalVisible}
+				animationType="slide"
+				presentationStyle="pageSheet"
+				onRequestClose={() => setFilterModalVisible(false)}
+			>
+				<View style={styles.modalContainer}>
+					{/* Modal Header */}
+					<View style={styles.modalHeader}>
+						<Text></Text>
+						<Text style={styles.modalTitle}>Filter Posts</Text>
+						<TouchableOpacity
+							onPress={() => setFilterModalVisible(false)}
+							style={styles.modalCloseButton}
+						>
+							<FAIcon name="times" size={18} color={colors.TEXT_SECONDARY} />
+						</TouchableOpacity>
+						
+					</View>
+
+					<ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+						{/* Post Type Filters */}
+						{filterTypes.includes('postType') && (
+							<View style={styles.modalSection}>
+								<Text style={styles.modalSectionTitle}>Type</Text>
+								<View style={styles.filterGrid}>
+									{postTypes.map(type =>
+										renderFilterChip(
+											type.charAt(0).toUpperCase() + type.slice(1),
+											type,
+											selectedPostType,
+											setSelectedPostType,
+											getPostTypeColor
+										)
+									)}
+								</View>
+							</View>
+						)}
+
+						{/* Category Filters */}
+						{filterTypes.includes('category') && (
+							<View style={styles.modalSection}>
+								<Text style={styles.modalSectionTitle}>Category</Text>
+								<View style={styles.filterGrid}>
+									{categories.map(category =>
+										renderFilterChip(
+											category.charAt(0).toUpperCase() + category.slice(1),
+											category,
+											selectedCategory,
+											setSelectedCategory,
+											getCategoryColor
+										)
+									)}
+								</View>
+							</View>
+						)}
+						<>
+						<TouchableOpacity
+							onPress={handleClearAll}
+							style={styles.modalClearButton}
+						>
+							<Text style={styles.modalClearText}>Clear All</Text>
+						</TouchableOpacity>
+						</>
+					</ScrollView>
+				</View>
+			</Modal>
+		);
+	};
 
 	// Combine header and filter bar into single header component
 	const renderCombinedHeader = () => {
@@ -362,6 +516,7 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 			<>
 				{renderHeader()}
 				{renderFilterBar()}
+				{customHeaderSection && customHeaderSection()}
 			</>
 		);
 	};
@@ -375,9 +530,9 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 				numColumns={numColumns}
         key={numColumns}
 				refreshControl={
-					<RefreshControl 
-						refreshing={postsLoading && currentPage === 1} 
-						onRefresh={handleRefresh} 
+					<RefreshControl
+						refreshing={postsLoading && currentPage === 1}
+						onRefresh={handleRefresh}
 					/>
 				}
 				onEndReached={handleLoadMore}
@@ -391,21 +546,36 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 				nestedScrollEnabled={nestedScrollEnabled}
 				columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
 			/>
+			{renderFilterModal()}
 		</View>
 	);
 };
 
 const styles = StyleSheet.create({
 	header: {
-		padding: 16,
-		borderBottomWidth: 1,
-		borderBottomColor: colors.BORDER,
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingVertical: 12,
 	},
 	welcomeText: {
-		fontSize: 18,
-		fontWeight: '600',
+		fontSize: 16,
+		fontWeight: '800',
 		color: colors.TEXT_PRIMARY,
-		textAlign: 'center',
+		textAlign: 'left',
+		flex: 1,
+	},
+	headerButtons: {
+		flexDirection: 'row',
+		alignItems: 'center',
+	},
+	filterButton: {
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		backgroundColor: 'rgba(0, 0, 0, 0.08)',
+		justifyContent: 'center',
+		alignItems: 'center',
 	},
 	loadingText: {
 		textAlign: 'center',
@@ -413,9 +583,17 @@ const styles = StyleSheet.create({
 		fontStyle: 'italic',
 	},
 	listContainer: {
-		paddingBottom: 20,
-		paddingLeft: 10,
-		paddingRight: 10,
+		paddingBottom: 80,
+	},
+	headerPadding: {
+		paddingHorizontal: 10,
+	},
+	cardWrapper: {
+		paddingHorizontal: 10,
+	},
+	cardWrapperGrid: {
+		flex: 1,
+		paddingHorizontal: 4,
 	},
 	footerLoader: {
 		paddingVertical: 20,
@@ -444,7 +622,99 @@ const styles = StyleSheet.create({
 		fontWeight: '500',
 	},
 	columnWrapper: {
-    gap: 8,
+		paddingHorizontal: 6,
+	},
+	// Modal styles
+	modalContainer: {
+		flex: 1,
+		backgroundColor: colors.BACKGROUND,
+	},
+	modalHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingHorizontal: 20,
+		paddingVertical: 16,
+		backgroundColor: colors.WHITE,
+		borderBottomWidth: 1,
+		borderBottomColor: colors.BORDER,
+	},
+	modalCloseButton: {
+		padding: 8,
+		borderRadius: 20,
+		backgroundColor: colors.LIGHT_GRAY,
+	},
+	modalTitle: {
+		fontSize: 18,
+		fontWeight: '700',
+		color: colors.TEXT_PRIMARY,
+	},
+	modalClearButton: {
+		padding: 8,
+	},
+	modalClearText: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: colors.BRG,
+	},
+	modalContent: {
+		flex: 1,
+		paddingHorizontal: 20,
+		paddingTop: 20,
+	},
+	modalSection: {
+		marginBottom: 32,
+	},
+	modalSectionTitle: {
+		fontSize: 16,
+		fontWeight: '700',
+		color: colors.TEXT_PRIMARY,
+		marginBottom: 16,
+	},
+	filterGrid: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 12,
+	},
+	filterChip: {
+		paddingHorizontal: 16,
+		paddingVertical: 10,
+		borderRadius: 20,
+		backgroundColor: colors.WHITE,
+		borderWidth: 1,
+		borderColor: colors.BORDER,
+		marginBottom: 8,
+	},
+	filterChipActive: {
+		backgroundColor: colors.BRG,
+		borderColor: colors.BRG,
+	},
+	filterChipText: {
+		fontSize: 14,
+		fontWeight: '500',
+		color: colors.TEXT_SECONDARY,
+	},
+	filterChipTextActive: {
+		color: colors.WHITE,
+		fontWeight: '600',
+	},
+	modalFooter: {
+		backgroundColor: colors.WHITE,
+		paddingHorizontal: 20,
+		paddingVertical: 16,
+		borderTopWidth: 1,
+		borderTopColor: colors.BORDER,
+	},
+	applyButton: {
+		backgroundColor: colors.BRG,
+		borderRadius: 12,
+		paddingVertical: 16,
+		alignItems: 'center',
+	},
+	applyButtonText: {
+		color: colors.WHITE,
+		fontSize: 16,
+		fontWeight: '700',
 	},
 });
 

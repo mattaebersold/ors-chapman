@@ -4,14 +4,21 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import Listing from '../components/Listing';
+import { useGetFeaturedListingsQuery, useGetFeaturedWantAdsQuery } from '../services/apiService';
+import PostCard from '../components/cards/PostCard';
 
 const MarketplaceScreen = () => {
   const { userInfo } = useSelector(state => state.auth);
   const [activeTab, setActiveTab] = useState('listings');
+
+  // Fetch featured listings and want ads
+  const { data: featuredListingsData, isLoading: featuredListingsLoading } = useGetFeaturedListingsQuery({ limit: 10 });
+  const { data: featuredWantAdsData, isLoading: featuredWantAdsLoading } = useGetFeaturedWantAdsQuery({ limit: 10 });
 
   const tabs = [
     {
@@ -44,9 +51,75 @@ const MarketplaceScreen = () => {
     badgeCar: false,
   };
 
+  // Render featured listings section
+  const renderFeaturedListings = () => {
+    if (!featuredListingsData?.entries || featuredListingsData.entries.length === 0) return null;
+
+    return (
+      <View style={styles.featuredSection}>
+        <View style={styles.featuredHeader}>
+          <Text style={styles.featuredTitle}>Featured</Text>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.featuredScrollContent}
+        >
+          {featuredListingsData.entries.map((post) => (
+            <View key={post._id || post.internal_id} style={styles.featuredPostCard}>
+              <PostCard
+                post={post}
+                displayOptions={{ badgeProfile: false, badgeCar: false, small: true }}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  // Render featured want ads section
+  const renderFeaturedWantAds = () => {
+    if (!featuredWantAdsData?.entries || featuredWantAdsData.entries.length === 0) return null;
+
+    return (
+      <View style={styles.featuredSection}>
+        <View style={styles.featuredHeader}>
+          <Text style={styles.featuredTitle}>Featured</Text>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.featuredScrollContent}
+        >
+          {featuredWantAdsData.entries.map((post) => (
+            <View key={post._id || post.internal_id} style={styles.featuredPostCard}>
+              <PostCard
+                post={post}
+                displayOptions={{ badgeProfile: false, badgeCar: false, small: true }}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
   const renderTabContent = () => {
     const config = getTabConfig(activeTab);
-    return <Listing key={activeTab} config={config} displayOptions={displayOptions} showFilters={true} />;
+    const customHeaderSection = activeTab === 'listings' ? renderFeaturedListings : renderFeaturedWantAds;
+    const label = activeTab === 'listings' ? 'Marketplace Listings' : 'Marketplace Want-Ads';
+
+    return (
+      <Listing
+        key={activeTab}
+        config={config}
+        displayOptions={displayOptions}
+        showFilters={true}
+        customHeaderSection={customHeaderSection}
+        heading={label}
+      />
+    );
   };
 
   return (
@@ -110,6 +183,32 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     flex: 1,
+  },
+  // Featured sections
+  featuredSection: {
+    backgroundColor: colors.OFF_BLACK,
+    paddingVertical: 24,
+    marginBottom: 12,
+  },
+  featuredHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  featuredTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.WHITE,
+    textTransform: 'uppercase',
+  },
+  featuredScrollContent: {
+    paddingHorizontal: 12,
+    gap: 12,
+  },
+  featuredPostCard: {
+    width: 200,
   },
 });
 

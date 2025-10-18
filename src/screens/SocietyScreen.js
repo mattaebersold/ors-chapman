@@ -9,7 +9,7 @@ import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import Listing from '../components/Listing';
-import UserRow from '../components/UserRow';
+import UserCard from '../components/cards/UserCard';
 import UsernameSearch from '../components/UsernameSearch';
 import EventsList from '../components/EventsList';
 
@@ -45,6 +45,22 @@ const SocietyScreen = () => {
 
   const renderTabContent = () => {
     const config = getTabConfig(activeTab);
+
+    let label;
+
+    switch(activeTab) {
+      case 'members':
+        label = 'Society Members';
+        break;
+      case 'posts':
+        label = 'All Member Posts';
+        break;
+      case 'events':
+        label = 'Society Events';
+        break;
+      default:
+        label = 'Feed';
+    }
     
     // Use UserRow component for members tab with navigation
     if (activeTab === 'members') {
@@ -55,8 +71,10 @@ const SocietyScreen = () => {
             config={config} 
             displayOptions={displayOptions} 
             CustomComponent={(props) => (
-              <UserRow {...props} onPress={handleUserSelect} />
+              <UserCard post={{ ...props }}
+              />
             )}
+            heading={label}
           />
         </View>
       );

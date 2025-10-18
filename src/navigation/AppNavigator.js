@@ -131,9 +131,13 @@ const TabNavigator = ({ navigation }) => (
         height: 100, // Increased height for better spacing
       },
       headerTintColor: colors.WHITE,
-      headerTitleStyle: {
-        fontWeight: 'bold',
-      },
+      headerTitle: () => (
+        <Image
+          source={require('../../assets/logo.png')}
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
+      ),
       headerLeft: () => (
         <View style={styles.headerLeft}>
           <HamburgerMenu navigation={navigation} />
@@ -540,6 +544,10 @@ const styles = StyleSheet.create({
   createButtonActive: {
     backgroundColor: colors.SPEED,
     transform: [{ scale: 1.1 }],
+  },
+  headerLogo: {
+    height: 30,
+    width: 60,
   },
 })
 

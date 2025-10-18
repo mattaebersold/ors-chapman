@@ -27,7 +27,7 @@ import ImageGalleryModal from './ImageGalleryModal';
 import GradientPlaceholder from '../ui/GradientPlaceholder';
 import { useModal } from '../../contexts/ModalContext';
 import { useBanner } from '../../contexts/BannerContext';
-import { useDeletePostMutation, useGetUserDetailsQuery } from '../../services/apiService';
+import { useDeletePostMutation, useGetUserDetailsQuery, useTogglePostFeaturedMutation, useToggleEventFeaturedMutation } from '../../services/apiService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -51,6 +51,8 @@ const PostDetailModal = ({ visible, post, onClose }) => {
     showError = (message) => Alert.alert('Error', message);
   }
   const [deletePost] = useDeletePostMutation();
+  const [togglePostFeatured] = useTogglePostFeaturedMutation();
+  const [toggleEventFeatured] = useToggleEventFeaturedMutation();
 
   if (!post) return null;
 
@@ -58,6 +60,9 @@ const PostDetailModal = ({ visible, post, onClose }) => {
   const isOwner = currentUser && post && (
     currentUser.user_id === post.user_id
   );
+
+  // Check if current user is admin
+  const isAdmin = currentUser && currentUser.accountType === 'admin';
 
 
   // Detect if this is an event and adapt the data structure
@@ -96,7 +101,34 @@ const PostDetailModal = ({ visible, post, onClose }) => {
       ]
     );
   };
-  
+
+  const handleToggleFeatured = async () => {
+    try {
+      const newFeaturedStatus = !post.featured;
+      const internal_id = post.internal_id || post._id;
+
+      // Detect if this is an event
+      const isEventItem = post.event_type || post.event_date || post.recurring_frequency;
+
+      if (isEventItem) {
+        await toggleEventFeatured({
+          internal_id,
+          featured: newFeaturedStatus
+        }).unwrap();
+      } else {
+        await togglePostFeatured({
+          internal_id,
+          featured: newFeaturedStatus
+        }).unwrap();
+      }
+
+      showSuccess(`${isEventItem ? 'Event' : 'Post'} ${newFeaturedStatus ? 'featured' : 'unfeatured'} successfully.`);
+    } catch (error) {
+      console.error('Error toggling featured status:', error);
+      showError('Failed to update featured status. Please try again.');
+    }
+  };
+
   // Create a normalized data structure for both posts and events
   const normalizedData = {
     title: post.title || 'Untitled',
@@ -339,6 +371,17 @@ const PostDetailModal = ({ visible, post, onClose }) => {
             <FAIcon name="times" size={18} color={colors.WHITE} />
           </TouchableOpacity>
           <View style={styles.headerActions}>
+            {isAdmin && (
+              <TouchableOpacity
+                style={[styles.featuredButton, post.featured && styles.featuredButtonActive]}
+                onPress={handleToggleFeatured}
+              >
+                <FAIcon name="star" size={14} color={post.featured ? colors.GOLD : colors.WHITE} />
+                <Text style={[styles.featuredButtonText, post.featured && styles.featuredButtonTextActive]}>
+                  {post.featured ? 'Featured' : 'Feature'}
+                </Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
               <FAIcon name="share" size={16} color={colors.WHITE} />
               <Text style={styles.shareText}>Share</Text>
@@ -527,6 +570,30 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
+  },
+  featuredButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  featuredButtonActive: {
+    backgroundColor: colors.GOLD + '30',
+    borderColor: colors.GOLD,
+  },
+  featuredButtonText: {
+    color: colors.WHITE,
+    fontSize: 11,
+    fontWeight: '800',
+    marginLeft: 6,
+  },
+  featuredButtonTextActive: {
+    color: colors.GOLD,
   },
   shareButton: {
     flexDirection: 'row',

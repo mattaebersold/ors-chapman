@@ -95,6 +95,105 @@ export const apiService = createApi({
       keepUnusedDataFor: 0,
     }),
 
+    // Get featured cars
+    getFeaturedCars: builder.query({
+      query: ({ limit = 10 } = {}) => {
+        console.log('getFeaturedCars query params:', {
+          featured: true,
+          limit,
+          page: 0
+        });
+        return {
+          url: '/api/garage',
+          method: 'GET',
+          params: {
+            featured: true,
+            limit,
+            page: 0,
+            sort: 'random',
+            order: 'desc'
+          }
+        };
+      },
+      providesTags: ['Cars'],
+      keepUnusedDataFor: 0, // Don't cache so we get different random results
+    }),
+
+    // Get featured marketplace listings
+    getFeaturedListings: builder.query({
+      query: ({ limit = 10 } = {}) => {
+        console.log('getFeaturedListings query params:', {
+          featured: true,
+          type: 'listing',
+          limit,
+          page: 0
+        });
+        return {
+          url: '/api/post',
+          method: 'GET',
+          params: {
+            featured: true,
+            type: 'listing',
+            limit,
+            page: 0,
+            sort: 'random'
+          }
+        };
+      },
+      providesTags: ['Post'],
+      keepUnusedDataFor: 0, // Don't cache so we get different random results
+    }),
+
+    // Get featured want ads
+    getFeaturedWantAds: builder.query({
+      query: ({ limit = 10 } = {}) => {
+        console.log('getFeaturedWantAds query params:', {
+          featured: true,
+          type: 'want',
+          limit,
+          page: 0
+        });
+        return {
+          url: '/api/post',
+          method: 'GET',
+          params: {
+            featured: true,
+            type: 'want',
+            limit,
+            page: 0,
+            sort: 'random'
+          }
+        };
+      },
+      providesTags: ['Post'],
+      keepUnusedDataFor: 0, // Don't cache so we get different random results
+    }),
+
+    // Get featured spotted cars
+    getFeaturedSpottedCars: builder.query({
+      query: ({ limit = 10 } = {}) => {
+        console.log('getFeaturedSpottedCars query params:', {
+          featured: true,
+          type: 'spot',
+          limit,
+          page: 0
+        });
+        return {
+          url: '/api/post',
+          method: 'GET',
+          params: {
+            featured: true,
+            type: 'spot',
+            limit,
+            page: 0,
+            sort: 'random'
+          }
+        };
+      },
+      providesTags: ['Post'],
+      keepUnusedDataFor: 0, // Don't cache so we get different random results
+    }),
+
     // Get single car by ID
     getCar: builder.query({
       query: (carId) => ({
@@ -940,6 +1039,43 @@ export const apiService = createApi({
       ],
     }),
 
+    // Admin toggle featured status endpoints
+    toggleGarageCarFeatured: builder.mutation({
+      query: ({ internal_id, featured }) => ({
+        url: '/api/car/toggle-featured',
+        method: 'POST',
+        body: { internal_id, featured },
+      }),
+      invalidatesTags: (result, error, { internal_id }) => [
+        'Cars',
+        { type: 'Cars', id: internal_id }
+      ],
+    }),
+
+    togglePostFeatured: builder.mutation({
+      query: ({ internal_id, featured }) => ({
+        url: '/api/post/toggle-featured',
+        method: 'POST',
+        body: { internal_id, featured },
+      }),
+      invalidatesTags: (result, error, { internal_id }) => [
+        'Post',
+        { type: 'Post', id: internal_id }
+      ],
+    }),
+
+    toggleEventFeatured: builder.mutation({
+      query: ({ internal_id, featured }) => ({
+        url: '/api/event/toggle-featured',
+        method: 'POST',
+        body: { internal_id, featured },
+      }),
+      invalidatesTags: (result, error, { internal_id }) => [
+        'Events',
+        { type: 'Events', id: internal_id }
+      ],
+    }),
+
     // Message endpoints
     getMessages: builder.query({
       query: ({ page = 0, limit = 20, unread_only = false } = {}) => ({
@@ -1028,6 +1164,10 @@ export const {
   useGetUserEntriesQuery,
   useGetUserEntryQuery,
   useGetCarsQuery,
+  useGetFeaturedCarsQuery,
+  useGetFeaturedListingsQuery,
+  useGetFeaturedWantAdsQuery,
+  useGetFeaturedSpottedCarsQuery,
   useGetCarQuery,
   useGetAllBrandsQuery,
   useGetBrandModelsQuery,
@@ -1093,6 +1233,9 @@ export const {
   useCreateGarageCarMutation,
   useUpdateGarageCarMutation,
   useDeleteGarageCarMutation,
+  useToggleGarageCarFeaturedMutation,
+  useTogglePostFeaturedMutation,
+  useToggleEventFeaturedMutation,
   useGetMessagesQuery,
   useGetMessageThreadQuery,
   useCreateMessageMutation,

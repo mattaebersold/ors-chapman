@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   },
   cardMultiColumn: {
     aspectRatio: 1/1,
-    width: '49%',
+    width: '100%',
     marginBottom: 8,
     borderRadius: 13,
     overflow: 'hidden',
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   bottomCenter: {
     position: 'absolute',
     bottom: 16,
-    width: '50%',
+    width: '75%',
     alignItems: 'center',
     alignSelf: 'center'
   },

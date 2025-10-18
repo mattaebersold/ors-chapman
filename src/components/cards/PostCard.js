@@ -19,7 +19,9 @@ import Likes from '../Likes';
 const Card = ({ post, onPress, displayOptions = {} }) => {
   const navigation = useNavigation();
 
-  const small = displayOptions.numColumns === 2 ? true : false; 
+  let small = displayOptions.numColumns === 2 ? true : false; 
+
+  if(displayOptions.small) { small = true}
 
   // Get likes and comments counts using existing endpoints
   const documentId = post.internal_id || post._id || post.id;

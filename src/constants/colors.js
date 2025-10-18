@@ -6,6 +6,7 @@ export const colors = {
   // Common colors
   WHITE: '#FFFFFF',
   BLACK: '#000000',
+  OFF_BLACK: '#1D1D1D',
   GRAY: '#808080',
   LIGHT_GRAY: '#F5F5F5',
   DARK_GRAY: '#333333',
