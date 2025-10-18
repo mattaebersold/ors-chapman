@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGetUserQuery } from '../../services/apiService';
 import BaseBadge from './BaseBadge';
 
-const UserBadge = ({ userId, style = {}, name = true }) => {
+const UserBadge = ({ userId, style = {}, name = true, small = false}) => {
   // Safely get navigation - might not be available in modals
   let navigation;
   try {
@@ -26,6 +26,7 @@ const UserBadge = ({ userId, style = {}, name = true }) => {
   };
 
   const getDisplayName = () => {
+    if(small) { return ''; }
     if(!name) { return ''; }
     if (user.username) return user.username;
     if (user.firstName || user.lastName) {
@@ -56,6 +57,7 @@ const UserBadge = ({ userId, style = {}, name = true }) => {
       onPress={handlePress}
       style={style}
       disabled={!navigation}
+      small={small}
     />
   );
 };

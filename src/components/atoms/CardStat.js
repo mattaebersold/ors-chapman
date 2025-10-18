@@ -24,8 +24,8 @@ const styles = StyleSheet.create({
     color: colors.WHITE,
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 6,
-		padding: 6
+    gap: 4,
+		padding: 4
   },
 
   statText:{

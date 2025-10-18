@@ -10,7 +10,8 @@ const BaseBadge = ({
   iconName, 
   onPress, 
   style = {},
-  disabled = false 
+  disabled = false,
+  small = false
 }) => {
   const truncateText = (text, maxLength = 8) => {
     if (text.length <= maxLength) return text;
@@ -18,25 +19,35 @@ const BaseBadge = ({
   };
   return (
     <TouchableOpacity 
-      style={[styles.badge, style]} 
+      style={[
+        styles.badge, 
+        small ? styles.badgeSmall : styles.badgeNormal,
+        style
+      ]} 
       onPress={onPress}
       activeOpacity={disabled ? 1 : 0.7}
       disabled={disabled}
     >
-      {imageSource ? (
-        <Image
-          source={imageSource}
-          style={styles.image}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[styles.image, styles.placeholder]}>
-          <FAIcon name={iconName} size={12} color={colors.WHITE} />
-        </View>
+      <View style={styles.imageContainer}>
+        {imageSource ? (
+          <Image
+            source={imageSource}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.image, styles.placeholder]}>
+            <FAIcon name={iconName} size={12} color={colors.WHITE} />
+          </View>
+        )}
+      </View>
+
+      {displayName.length > 0 && (
+        <Text style={styles.text} numberOfLines={1}>
+          {truncateText(displayName, 8)}
+        </Text>
       )}
-      <Text style={styles.text} numberOfLines={1}>
-        {truncateText(displayName, 8)}
-      </Text>
+
     </TouchableOpacity>
   );
 };
@@ -45,17 +56,33 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 2,
-    overflow: 'hidden',
-    marginRight: 2,
-    marginLeft: 2,
+    // Remove overflow: 'hidden' here
+  },
+  badgeNormal: {
+    marginLeft: 4,
+  },
+  badgeSmall: {
+    marginHorizontal: 3,
+  },
+  imageContainer: {
+    // Shadow container - no overflow hidden
   },
   image: {
     width: 26,
     height: 26,
     borderRadius: 100,
-    marginRight: 8,
-    backgroundColor: colors.BLACK
+    marginRight: 0,
+    backgroundColor: colors.BLACK,
+    // Shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    // Shadow for Android
+    elevation: 8,
   },
   placeholder: {
     justifyContent: 'center',
@@ -65,7 +92,7 @@ const styles = StyleSheet.create({
     color: colors.WHITE,
     fontSize: 11,
     fontWeight: '600',
-    paddingRight: 8,
+    paddingLeft: 3,
   },
 });
 

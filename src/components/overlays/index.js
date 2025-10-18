@@ -1,5 +1,5 @@
 // Overlay Components
-export { default as Badge } from './Badge';
+export { default as Tags } from './Tags';
 export { default as BaseBadge } from './BaseBadge';
 export { default as UserBadge } from './UserBadge';
 export { default as CarBadge } from './CarBadge';

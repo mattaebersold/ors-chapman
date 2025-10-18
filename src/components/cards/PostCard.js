@@ -10,7 +10,7 @@ import Price from '../atoms/Price';
 import { useNavigation } from '@react-navigation/native';
 import { useGetPostCountsQuery, useGetLikeInfoQuery, useGetCommentsQuery } from '../../services/apiService';
 import BaseCard from './BaseCard';
-import Badge from '../overlays/Badge';
+import Tags from '../overlays/Tags';
 import UserBadge from '../overlays/UserBadge';
 import CarBadge from '../overlays/CarBadge';
 import Likes from '../Likes';
@@ -66,9 +66,9 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
     return null;
   };
 
-  // badges
-  const renderBadges = () => (
-    <Badge 
+  // tags
+  const renderTags = () => (
+    <Tags 
       entryType={post.entry_type}
       type={post.type} 
       category={post.category}
@@ -76,10 +76,16 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
     />
   )
 
+  const UserAndCarBadges = () => (
+    <>
+      {post.user_id && <UserBadge userId={post.user_id} small={small} />}
+      {post.car_id && <CarBadge carId={post.car_id} small={small} />}
+    </>
+  )
+
   const renderSmallTopRight = () => (
     <View style={styles.badgesSmall}>
-      {post.user_id && <UserBadge userId={post.user_id} name={!small} />}
-      {post.car_id && <CarBadge carId={post.car_id} name={!small} />}
+      <UserAndCarBadges />
     </View>
   )
 
@@ -93,8 +99,7 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
 
       {!small && (
         <View style={styles.badges}>
-          {post.user_id && <UserBadge userId={post.user_id} name={!small} />}
-          {post.car_id && <CarBadge carId={post.car_id} name={!small} />}
+          <UserAndCarBadges />
         </View>
       )}
     </>
@@ -124,7 +129,7 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
     <BaseCard
       imageSource={getImageSource()}
       onPress={handlePress}
-      topLeft={renderBadges()}
+      topLeft={renderTags()}
       topRight={small ? renderSmallTopRight() : renderUserActions()}
       bottomLeft={renderMainContent()}
       bottomRight={renderStats()}
@@ -140,7 +145,7 @@ const styles = StyleSheet.create({
   badgesSmall: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'flex-end'
+    alignSelf: 'flex-end'
   },
   userActions: {
     flexDirection: 'row',

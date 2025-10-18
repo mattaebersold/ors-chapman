@@ -4,7 +4,7 @@ import { colors } from '../../constants/colors';
 import BaseCard from './BaseCard';
 import UserBadge from '../overlays/UserBadge';
 import CarBadge from '../overlays/CarBadge';
-import Badge from '../overlays/Badge';
+import Tags from '../overlays/Tags';
 
 const SimpleCard = ({ post, onPress, displayOptions = {} }) => {
   if (!post) return null;
@@ -25,8 +25,8 @@ const SimpleCard = ({ post, onPress, displayOptions = {} }) => {
 
   const renderOverlay = () => (
     <View style={styles.overlayContainer}>
-      {/* Type/Category Badge */}
-      <Badge type={post.type} category={post.category} style="overlay" />
+      {/* Type/Category Tags */}
+      <Tags type={post.type} category={post.category} style="overlay" />
       
       {/* Bottom badges */}
       <View style={styles.badgeOverlay}>

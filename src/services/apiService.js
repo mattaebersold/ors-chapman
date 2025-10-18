@@ -310,12 +310,12 @@ export const apiService = createApi({
 
     // Posts endpoints
     getPosts: builder.query({
-      query: ({ page = 1, limit = 10, type = null, make = null, model = null, user_id = null, filter = null, username = null, omit = null }) => {
+      query: ({ page = 1, limit = 10, type = null, make = null, model = null, user_id = null, filter = null, username = null, omit = null, sort = 'created_at', order = 'desc' }) => {
         const params = {
           page: page - 1, // Backend uses 0-based indexing
           limit,
-          sort: 'created_at',
-          order: 'desc',
+          sort,
+          order,
           ...(type && { type }), // Add type parameter if provided
           ...(make && { make }), // Add make parameter if provided
           ...(model && make && { model }), // Add model parameter if provided (requires make)
@@ -325,10 +325,8 @@ export const apiService = createApi({
           ...(omit && { omit }) // Add omit parameter to exclude specific user's posts
         };
 
-        // Debug logging for home feed posts
-        // if (!type && !make && !model && !user_id) {
-        //   console.log('📡 API getPosts called with params:', params);
-        // }
+        // Debug logging for posts API calls
+        console.log('📡 API getPosts called with params:', params);
 
         return {
           url: '/api/post',

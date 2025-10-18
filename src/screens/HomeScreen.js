@@ -31,9 +31,13 @@ const HomeScreen = () => {
     postsParams: (followingDataLoaded && hasFollowing && currentUser) ? {
       filter: 'following',
       username: currentUser.username,
-      omit: currentUser.user_id
+      omit: currentUser.user_id,
+      sort: 'created_at',
+      order: 'desc'
     } : {
-      omit: currentUser?.user_id
+      omit: currentUser?.user_id,
+      sort: 'created_at',
+      order: 'desc'
     }
   };
 

@@ -151,7 +151,7 @@ const TabNavigator = ({ navigation }) => (
       ),
       headerRight: () => (
         <View style={styles.headerRight}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.garageButton}
             onPress={() => navigation.navigate('MyGarage')}
           >
@@ -234,24 +234,16 @@ const AppNavigator = () => (
         },
       }}
     />
-    <AppStack.Screen 
-      name="MyGarage" 
+    <AppStack.Screen
+      name="MyGarage"
       component={MyGarageScreen}
       options={{
-        headerShown: true,
-        title: 'Garage',
-        headerStyle: {
-          backgroundColor: colors.BRG,
-          height: 100,
-        },
-        headerTintColor: colors.WHITE,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
+        headerShown: false,
+        presentation: 'modal',
       }}
     />
-    <AppStack.Screen 
-      name="UserDetail" 
+    <AppStack.Screen
+      name="UserDetail"
       component={UserDetailScreen}
       options={({ route }) => ({
         headerShown: true,

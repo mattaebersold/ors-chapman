@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGetCarQuery } from '../../services/apiService';
 import BaseBadge from './BaseBadge';
 
-const CarBadge = ({ carId, style = {}, name = true}) => {
+const CarBadge = ({ carId, style = {}, name = true, small = false}) => {
   // Safely get navigation - might not be available in modals
   let navigation;
   try {
@@ -26,6 +26,7 @@ const CarBadge = ({ carId, style = {}, name = true}) => {
   };
 
   const getDisplayName = () => {
+    if(small) { return ''; }
     if(!name) { return ''; }
     const parts = [car.year, car.make, car.model].filter(Boolean);
     if (parts.length > 0) {
@@ -51,6 +52,7 @@ const CarBadge = ({ carId, style = {}, name = true}) => {
       onPress={handlePress}
       style={style}
       disabled={!navigation}
+      small={small}
     />
   );
 };

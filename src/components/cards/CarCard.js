@@ -8,7 +8,7 @@ import EditButton from '../atoms/EditButton';
 import CardTitle from '../atoms/CardTitle';
 import { useNavigation } from '@react-navigation/native';
 import BaseCard from './BaseCard';
-import Badge from '../overlays/Badge';
+import Tags from '../overlays/Tags';
 import UserBadge from '../overlays/UserBadge';
 import Likes from '../Likes';
 import { colors } from '../../constants/colors';
@@ -48,7 +48,7 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
         color={colors.WHITE}
       />
       <CardTitle title={post.title} />
-       <Badge 
+       <Tags 
         entryType={post.entry_type}
         type={post.type} 
         category={post.category}

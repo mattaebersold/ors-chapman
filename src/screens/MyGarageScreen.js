@@ -3,9 +3,9 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Text,
 } from 'react-native';
 import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import Listing from '../components/Listing';
 import CarCard from '../components/cards/CarCard';
@@ -13,6 +13,7 @@ import FAIcon from '../components/ui/FAIcon';
 import CarFormModal from '../components/modals/CarFormModal';
 
 const MyGarageScreen = () => {
+  const navigation = useNavigation();
   const { userInfo } = useSelector(state => state.auth);
   const [carFormVisible, setCarFormVisible] = useState(false);
 
@@ -22,7 +23,7 @@ const MyGarageScreen = () => {
   };
 
   const displayOptions = {
-    hideUserBadge: true, 
+    hideUserBadge: true,
   };
 
   const handleCarFormSuccess = () => {
@@ -31,23 +32,31 @@ const MyGarageScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Add Car Button */}
-      <View style={styles.headerContainer}>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => setCarFormVisible(true)}
+      {/* Header with Close Button */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => navigation.goBack()}
         >
-          <FAIcon name="plus" size={16} color={colors.WHITE} />
-          <Text style={styles.addButtonText}>Add Car</Text>
+          <FAIcon name="times" size={24} color={colors.WHITE} />
         </TouchableOpacity>
       </View>
 
-      {/* Cars List */}
-      <Listing 
-        config={config} 
+      {/* Cars List with Add Button */}
+      <Listing
+        config={config}
         displayOptions={displayOptions}
         CustomComponent={CarCard}
         showFilters={false}
+        heading="My Garage"
+        customHeaderButtons={() => (
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setCarFormVisible(true)}
+          >
+            <FAIcon name="plus" size={16} color={colors.BLACK} />
+          </TouchableOpacity>
+        )}
       />
 
       {/* Car Form Modal */}
@@ -65,27 +74,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.BACKGROUND,
   },
-  headerContainer: {
-    backgroundColor: colors.WHITE,
+  header: {
+    backgroundColor: colors.BRG,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
+    paddingTop: 50,
+    paddingBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  closeButton: {
+    padding: 8,
   },
   addButton: {
-    backgroundColor: colors.BRG,
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    gap: 8,
-  },
-  addButtonText: {
-    color: colors.WHITE,
-    fontSize: 16,
-    fontWeight: '600',
+    alignItems: 'center',
+    marginLeft: 8,
   },
 });
 

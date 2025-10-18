@@ -11,6 +11,7 @@ import { spacing } from '../../constants/layout';
 const Price = ({post}) => {
 
 	return (
+
 		<View style={styles.priceOverlay}>
 			{post.previous_price ? (
 				<View style={styles.priceContainer}>
@@ -33,8 +34,8 @@ const Price = ({post}) => {
 const styles = StyleSheet.create({
 	priceOverlay: {
     backgroundColor: 'rgba(57, 142, 51, 0.9)',
-    paddingHorizontal: spacing.badgeX,
-    paddingVertical: spacing.badgeY,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     borderRadius: 100,
 		alignSelf: 'flex-start',
   },

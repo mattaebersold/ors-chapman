@@ -6,7 +6,7 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient'; // or 'react-native-linear-gradient'
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/layout';
 
@@ -61,7 +61,8 @@ const BaseCard = ({
       
       {/* Gradient overlay */}
       <LinearGradient
-        colors={['rgba(0, 0, 0, .1)', 'rgba(0, 0, 0, .6)']}
+        colors={['rgba(0, 0, 0, .6)', 'rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, .8)']}
+        locations={[0, 0.5, 1]}
         style={styles.gradient}
       />
       
@@ -176,13 +177,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 16,
     left: 12,
-    width: '50%',
+    width: '80%',
   },
   bottomRight: {
     position: 'absolute',
     bottom: 16,
     right: 12,
-    width: '50%',
+    width: '20%',
     alignItems: 'flex-end'
   },
   bottomCenter: {
@@ -199,19 +200,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center'
   },
-
   topLeftSmall: {
     position: 'absolute',
     top: 8,
     left: 8,
-    width: '50%'
+    width: '60%'
   },
   topRightSmall: {
     position: 'absolute',
     top: 8,
     right: 8,
-    width: '50%',
-    alignItems: 'flex-end'
+    width: '40%',
   },
   bottomLeftSmall: {
     position: 'absolute',

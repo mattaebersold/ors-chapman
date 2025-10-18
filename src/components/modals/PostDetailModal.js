@@ -18,7 +18,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { colors } from '../../constants/colors';
 import FAIcon from '../ui/FAIcon';
-import Badge from '../overlays/Badge';
+import Tags from '../overlays/Tags';
 import UserBadge from '../overlays/UserBadge';
 import CarBadge from '../overlays/CarBadge';
 import Likes from '../Likes';
@@ -425,7 +425,7 @@ const PostDetailModal = ({ visible, post, onClose }) => {
 
             {/* Post Info */}
             <View style={styles.postInfo}>
-              <Badge type={normalizedData.type} category={normalizedData.category} style="inline" />
+              <Tags type={normalizedData.type} category={normalizedData.category} style="inline" />
               <Text style={styles.postTitle}>{normalizedData.title}</Text>
               
               <View style={styles.metaRow}>

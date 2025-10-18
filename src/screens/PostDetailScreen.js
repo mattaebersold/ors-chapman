@@ -18,7 +18,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { colors } from '../constants/colors';
 import FAIcon from '../components/ui/FAIcon';
-import Badge from '../components/overlays/Badge';
+import Tags from '../components/overlays/Tags';
 import UserBadge from '../components/overlays/UserBadge';
 import CarBadge from '../components/overlays/CarBadge';
 import Likes from '../components/Likes';
@@ -278,8 +278,8 @@ const PostDetailScreen = ({ route, navigation }) => {
               {normalizedData.make && (
                 <CarBadge make={normalizedData.make} model={normalizedData.model} year={normalizedData.year} />
               )}
-              {normalizedData.type && <Badge text={normalizedData.type} color={colors.BRG} />}
-              {normalizedData.category && <Badge text={normalizedData.category} color={colors.GRAY} />}
+              {normalizedData.type && <Tags text={normalizedData.type} color={colors.BRG} />}
+              {normalizedData.category && <Tags text={normalizedData.category} color={colors.GRAY} />}
             </View>
             <Text style={styles.date}>
               {new Date(normalizedData.created_at).toLocaleDateString()}

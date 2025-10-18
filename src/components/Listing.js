@@ -218,6 +218,15 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 	// Update posts when new data arrives
 	React.useEffect(() => {
 		if (postsData?.entries) {
+			console.log('📦 Posts data received:', {
+				page: currentPage,
+				entriesCount: postsData.entries.length,
+				total: postsData.total,
+				firstPostId: postsData.entries[0]?._id,
+				firstPostTitle: postsData.entries[0]?.title,
+				firstPostCreated: postsData.entries[0]?.created_at
+			});
+
 			// Normalize entries to ensure correct entry_type for rendering
 			const normalizedEntries = postsData.entries.map(entry => {
 				// If config type is 'users', ensure entry_type is 'user'
@@ -229,9 +238,11 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 
 			if (currentPage === 1) {
 				// Fresh data (pull to refresh)
+				console.log('✨ Setting fresh data (page 1)');
 				setAllPosts(normalizedEntries);
 			} else {
 				// Append new data (infinite scroll) - prevent duplicates
+				console.log('➕ Appending data (page ' + currentPage + ')');
 				setAllPosts(prev => {
 					const existingIds = new Set(prev.map(post => post._id));
 					const newPosts = normalizedEntries.filter(post => !existingIds.has(post._id));
@@ -280,11 +291,20 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 	}, [allPosts, selectedPostType, selectedCategory]);
 
 	const handleRefresh = useCallback(() => {
-		setCurrentPage(1);
+		console.log('🔄 Refresh triggered - resetting pagination');
 		setAllPosts([]);
 		setHasMore(true);
-		refetchPosts();
-	}, [refetchPosts]);
+
+		// If we're already on page 1, force refetch
+		if (currentPage === 1) {
+			console.log('Already on page 1, forcing refetch');
+			refetchPosts();
+		} else {
+			// Otherwise, reset to page 1 which will trigger a new query
+			console.log('Resetting to page 1');
+			setCurrentPage(1);
+		}
+	}, [currentPage, refetchPosts]);
 
 	const handleLoadMore = useCallback(() => {
 		if (!postsLoading && hasMore) {

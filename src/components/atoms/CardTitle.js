@@ -6,20 +6,27 @@ import {
 } from 'react-native';
 
 const Title = ({title, small = false}) => {
+	const truncateText = (text, maxLength) => {
+		if (!text) return '';
+		if (text.length <= maxLength) return text;
+		return text.substring(0, maxLength) + '...';
+	};
+
+	const displayTitle = small ? truncateText(title, 13) : truncateText(title, 25);
 
 	return (
 		<Text style={small ? styles.titleStylesSmall : styles.titleStyles} numberOfLines={2}>
-			{title}
+			{displayTitle}
 		</Text>
 	)
 }
 
 const styles = StyleSheet.create({
 	titleStyles: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     color: colors.WHITE,
-		marginVertical: 6,
+		marginVertical: 8,
   },
 	titleStylesSmall: {
     fontSize: 12,
