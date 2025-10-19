@@ -191,7 +191,7 @@ export const apiService = createApi({
         };
       },
       providesTags: ['Post'],
-      keepUnusedDataFor: 0, // Don't cache so we get different random results
+      keepUnusedDataFor: 0, 
     }),
 
     // Get featured users
@@ -214,7 +214,7 @@ export const apiService = createApi({
         };
       },
       providesTags: ['User'],
-      keepUnusedDataFor: 0, // Don't cache so we get different random results
+      keepUnusedDataFor: 0,
     }),
 
     // Get single car by ID

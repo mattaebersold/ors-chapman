@@ -28,6 +28,7 @@ export const colors = {
   ACCENT: '#2E5E60',
   LIGHT_BRG: '#3A5A5C',
   BACKGROUND: '#F8F9FA',
+  BACKGROUND_DARK: '#282828',
   BORDER: '#E9ECEF',
 
   // Extended color palette for components

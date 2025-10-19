@@ -39,8 +39,7 @@ const BaseTag = ({color, label, pro, admin}) => {
 	}
 
 	return (
-		<View 
-			key="type"
+		<View
 			style={[
 				styles.tag,
 				{ backgroundColor: color }

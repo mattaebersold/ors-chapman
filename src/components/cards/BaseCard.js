@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   topCenter: {
     position: 'absolute',
     top: 16,
-    width: '50%',
+    width: '70%',
     alignItems: 'center',
     alignSelf: 'center'
   },

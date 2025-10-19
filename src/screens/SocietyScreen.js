@@ -27,11 +27,6 @@ const SocietyScreen = () => {
   // Fetch featured users
   const { data: featuredUsersData, isLoading: featuredLoading, error: featuredError } = useGetFeaturedUsersQuery({ limit: 10 });
 
-  // Debug featured users
-  console.log('Featured Users Data:', featuredUsersData);
-  console.log('Featured Users Loading:', featuredLoading);
-  console.log('Featured Users Error:', featuredError);
-
   const tabs = [
     { key: 'members', label: 'Members', type: 'users', heading: 'Society Members' },
     { key: 'posts', label: 'Posts', type: 'posts', apiUrl: '/api/post?sort=-createdAt', heading: 'Community Posts' },

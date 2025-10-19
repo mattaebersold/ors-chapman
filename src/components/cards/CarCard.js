@@ -25,8 +25,8 @@ const Card = ({ post, onPress, displayOptions = {} }) => {
     if (onPress) {
       onPress(post);
     } else {
-      // Navigate to PostDetail screen instead of using modal
-      navigation.navigate('PostDetail', { post });
+      // Navigate to CarDetail screen with modal presentation
+      navigation.navigate('CarDetail', { carId: post._id || post.id });
     }
   }, [navigation, onPress, post]);
 

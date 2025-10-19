@@ -5,19 +5,29 @@ import {
 	StyleSheet,
 } from 'react-native';
 
-const Title = ({title, small = false}) => {
+const Title = ({title, small = false, row = false}) => {
 	const truncateText = (text, maxLength) => {
 		if (!text) return '';
 		if (text.length <= maxLength) return text;
 		return text.substring(0, maxLength) + '...';
 	};
 
-	const displayTitle = small ? truncateText(title, 13) : truncateText(title, 25);
+	const displayTitle = small ? truncateText(title, 40) : truncateText(title, 45);
 
 	return (
-		<Text style={small ? styles.titleStylesSmall : styles.titleStyles} numberOfLines={2}>
-			{displayTitle}
-		</Text>
+		<>
+		{row ? (
+			<Text style={styles.titleRow} numberOfLines={1}>
+				{displayTitle}
+			</Text>
+			) : (
+			<Text style={small ? styles.titleStylesSmall : styles.titleStyles} numberOfLines={2}>
+				{displayTitle}
+			</Text>
+			)}
+		</>
+		
+
 	)
 }
 
@@ -33,6 +43,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.WHITE,
 		marginVertical: 6,
+  },
+	titleRow: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.BLACK,
+		marginVertical: 0,
   },
 });
 

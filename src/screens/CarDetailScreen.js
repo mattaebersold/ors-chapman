@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useDeleteGarageCarMutation, useGetUserDetailsQuery, useGetPostsQuery, useToggleGarageCarFeaturedMutation } from '../services/apiService';
+import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useDeleteGarageCarMutation, useGetUserDetailsQuery, useGetPostsQuery, useToggleGarageCarFeaturedMutation, useGetUserQuery } from '../services/apiService';
 import LoadingIndicator from '../components/ui/LoadingIndicator';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import EmptyState from '../components/ui/EmptyState';
@@ -27,6 +27,9 @@ import ModFormModal from '../components/modals/ModFormModal';
 import GalleryFormModal from '../components/modals/GalleryFormModal';
 import Listing from '../components/Listing';
 import GradientPlaceholder from '../components/ui/GradientPlaceholder';
+import { LinearGradient } from 'expo-linear-gradient';
+import UserRow from '../components/cards/UserRow';
+
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -34,7 +37,6 @@ const CarDetailScreen = ({ route, navigation }) => {
   const { carId } = route.params;
   const [activeTab, setActiveTab] = useState('overview');
   const [galleryModalVisible, setGalleryModalVisible] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [individualGalleryModalVisible, setIndividualGalleryModalVisible] = useState(false);
   const [carHeaderGalleryModalVisible, setCarHeaderGalleryModalVisible] = useState(false);
   const [carHeaderGalleryStartIndex, setCarHeaderGalleryStartIndex] = useState(0);
@@ -121,6 +123,11 @@ const CarDetailScreen = ({ route, navigation }) => {
 
   // Get current user details for ownership check
   const { data: currentUser } = useGetUserDetailsQuery();
+
+  // Fetch car owner user data
+  const { data: carOwnerUser } = useGetUserQuery(carData?.user_id, {
+    skip: !carData?.user_id
+  });
 
   // CarTask mutations
   const [createCarTask] = useCreateCarTaskMutation();
@@ -281,35 +288,6 @@ const CarDetailScreen = ({ route, navigation }) => {
     return null;
   };
 
-  const renderCarHeaderImage = ({ item, index }) => {
-    const imageUri = `https://d2481n2uw7a0p.cloudfront.net/${item.filename}`;
-    
-    return (
-      <TouchableOpacity 
-        style={styles.headerImageContainer}
-        onPress={() => handleCarHeaderImagePress(index)}
-        activeOpacity={0.9}
-      >
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.carImage}
-          resizeMode="cover"
-        />
-      </TouchableOpacity>
-    );
-  };
-
-  const handleHeaderScroll = (event) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollPosition / screenWidth);
-    setCurrentImageIndex(index);
-  };
-
-  const handleCarHeaderImagePress = (index) => {
-    setCarHeaderGalleryStartIndex(index);
-    setCarHeaderGalleryModalVisible(true);
-  };
-
   const getDisplayName = () => {
     const parts = [carData.year, carData.make, carData.model].filter(Boolean);
     if (parts.length > 0) {
@@ -410,7 +388,7 @@ const CarDetailScreen = ({ route, navigation }) => {
             {stats.map((stat, index) => (
               <View key={index} style={styles.statRow}>
                 <View style={styles.statIcon}>
-                  <FAIcon name={stat.icon} size={16} color={colors.BRG} />
+                  <FAIcon name={stat.icon} size={16} color={colors.WHITE} />
                 </View>
                 <Text style={styles.statLabel}>{stat.label}</Text>
                 <Text style={styles.statValue}>{stat.value}</Text>
@@ -680,7 +658,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                           setModFormModalVisible(true);
                         }}
                       >
-                        <FAIcon name="edit" size={12} color={colors.TEXT_SECONDARY} />
+                        <FAIcon name="edit" size={12} color={colors.WHITE} />
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={styles.modActionButton}
@@ -1266,46 +1244,25 @@ const CarDetailScreen = ({ route, navigation }) => {
   const renderHeader = () => (
     <>
       {/* Car Header */}
-      <View style={styles.header}>
+      <View>
+
         <View style={styles.imageContainer}>
+          
+          {/* Close Button */}
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => navigation.goBack()}
+          >
+            <FAIcon name="times" size={18} color={colors.WHITE} />
+          </TouchableOpacity>
+
+          {/* Main Header Image */}
           {carData?.gallery?.length > 0 ? (
-            <View style={styles.galleryWrapper}>
-              <FlatList
-                data={carData.gallery}
-                renderItem={renderCarHeaderImage}
-                keyExtractor={(item, index) => index.toString()}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                style={styles.headerGallery}
-                onScroll={handleHeaderScroll}
-                scrollEventThrottle={16}
-              />
-
-              {/* Pagination dots */}
-              {carData.gallery.length > 1 && (
-                <View style={styles.paginationContainer}>
-                  {carData.gallery.map((_, index) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles.paginationDot,
-                        index === currentImageIndex && styles.paginationDotActive
-                      ]}
-                    />
-                  ))}
-                </View>
-              )}
-
-              {/* Image counter */}
-              {carData.gallery.length > 1 && (
-                <View style={styles.imageCounter}>
-                  <Text style={styles.imageCounterText}>
-                    {currentImageIndex + 1} / {carData.gallery.length}
-                  </Text>
-                </View>
-              )}
-            </View>
+            <Image
+              source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${carData.gallery[0].filename}` }}
+              style={styles.carImage}
+              resizeMode="cover"
+            />
           ) : (
             <GradientPlaceholder
               height={250}
@@ -1314,11 +1271,60 @@ const CarDetailScreen = ({ route, navigation }) => {
               text=""
             />
           )}
+
+          {/* Gallery Button */}
+          {carData?.gallery?.length > 0 && (
+            <TouchableOpacity
+              style={styles.galleryButton}
+              onPress={() => {
+                setCarHeaderGalleryStartIndex(0);
+                setCarHeaderGalleryModalVisible(true);
+              }}
+            >
+              <FAIcon name="images" size={20} color={colors.WHITE} />
+              <Text style={styles.galleryButtonText}>{carData.gallery.length}</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* likes button */}
+          <View style={styles.likesButton}>
+            <Likes 
+              document_id={carData.internal_id} 
+              document_type="car"
+            />
+          </View>
+
+          {/* gradient */}
+          <LinearGradient
+            colors={['rgba(40, 40, 40, 0)','rgba(40, 40, 40, 1)']}
+            locations={[0, 1]}
+            style={styles.gradient}
+          />
+
+          {/* title + icon */}
+          <View style={styles.titleContainer}>
+
+            <View style={styles.titleAndIcon}>
+              <FAIcon
+                size="20"
+                name="car"
+                color={colors.WHITE}
+              />
+              <Text style={styles.carTitle}>{getDisplayName()}</Text>
+            </View>
+
+
+            <Text style={styles.carTypeStyles} numberOfLines={1}>
+              {carData.year} {carData.make} {carData.model} {carData.trim}
+            </Text>
+
+          </View>
+
+
         </View>
 
         <View style={styles.carInfo}>
           <View style={styles.carTitleRow}>
-            <Text style={styles.carTitle}>{getDisplayName()}</Text>
 
             <View style={styles.actionButtonsWrapper}>
               {/* Featured Toggle - only show for admins */}
@@ -1358,27 +1364,9 @@ const CarDetailScreen = ({ route, navigation }) => {
 
           {/* User Badge and Actions Row */}
           <View style={styles.carMetaRow}>
-            {carData.user_id && (
-              <View style={styles.userBadgeContainer}>
-                <UserBadge userId={carData.user_id} />
-              </View>
+            {carOwnerUser && (
+              <UserRow user={carOwnerUser} owner nostats />
             )}
-
-            {/* Like Button */}
-            <View style={styles.carActionsContainer}>
-              <Likes
-                document_id={carData.internal_id || carData._id}
-                document_type="car"
-                variant="pill"
-                size="medium"
-              />
-              {/* Temporary debug view */}
-              <View style={{ backgroundColor: 'red', padding: 4, marginTop: 4 }}>
-                <Text style={{ color: 'white', fontSize: 10 }}>
-                  Like button should be above - ID: {carData.internal_id || carData._id}
-                </Text>
-              </View>
-            </View>
           </View>
         </View>
       </View>
@@ -1447,7 +1435,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                 <FAIcon
                   name={tab.icon}
                   size={16}
-                  color={activeTab === tab.key ? colors.WHITE : colors.TEXT_SECONDARY}
+                  color={activeTab === tab.key ? colors.BLACK : colors.WHITE}
                   style={styles.tabIcon}
                 />
                 <Text style={[
@@ -1726,7 +1714,7 @@ const CarDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.BACKGROUND,
+    backgroundColor: colors.BACKGROUND_DARK,
   },
   scrollableContent: {
     flexGrow: 1,
@@ -1737,67 +1725,86 @@ const styles = StyleSheet.create({
   mainScrollViewContent: {
     flexGrow: 1,
   },
-  header: {
-    backgroundColor: colors.WHITE,
-    marginBottom: 8,
-  },
   imageContainer: {
     width: '100%',
-    height: 250,
-  },
-  galleryWrapper: {
+    height: 350,
     position: 'relative',
-    width: '100%',
-    height: 250,
   },
-  headerGallery: {
-    width: '100%',
-    height: 250,
-  },
-  headerImageContainer: {
-    width: screenWidth,
-    height: 250,
-  },
-  carImage: {
-    width: '100%',
-    height: 250,
-  },
-  paginationContainer: {
+  closeButton: {
     position: 'absolute',
-    bottom: 16,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
+    top: 10,
+    right: 10,
+    zIndex: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    backgroundColor: colors.WHITE,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  imageCounter: {
+  galleryButton: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    bottom: 10,
+    right: 10,
+    zIndex: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  imageCounterText: {
+  galleryButtonText: {
     color: colors.WHITE,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
+  carImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+
+  titleContainer: {
+    color: colors.WHITE,
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    elevation: 5,
+    width: '80%'
+  },
+
+  titleAndIcon: {
+    flex: 1,
+    flexDirection: 'row',
+    width: '100%',
+    gap: 8
+  },
+
+  carTypeStyles: {
+    color: colors.WHITE,
+    fontWeight: '800',
+    marginTop: 6,
+    fontSize: 12,
+    letterSpacing: 1,
+    opacity: .4
+  },
+
+  gradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: '100%',
+    height: 150
+  },
+
+  likesButton: {
+    position: 'absolute',
+    bottom: 55,
+    right: 10,
+  },
+
   placeholderContainer: {
     width: '100%',
     height: 250,
@@ -1821,9 +1828,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   carTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.TEXT_PRIMARY,
+    color: colors.WHITE,
     flex: 1,
     marginRight: 16,
   },
@@ -1907,10 +1914,9 @@ const styles = StyleSheet.create({
   
   // Tabs
   tabsContainer: {
-    backgroundColor: colors.WHITE,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
+    
   },
+
   tabsContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -1919,14 +1925,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
-    backgroundColor: colors.BACKGROUND,
     marginRight: 12,
-    borderWidth: 1,
-    borderColor: colors.BORDER,
+    borderWidth: 2,
+    borderColor: colors.WHITE,
   },
   activeTabButton: {
-    backgroundColor: colors.BRG,
-    borderColor: colors.BRG,
+    backgroundColor: colors.WHITE,
+    borderColor: colors.WHITE,
   },
   tabButtonContent: {
     flexDirection: 'row',
@@ -1938,16 +1943,15 @@ const styles = StyleSheet.create({
   tabButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.TEXT_SECONDARY,
+    color: colors.WHITE,
   },
   activeTabButtonText: {
-    color: colors.WHITE,
-    fontWeight: '600',
+    color: colors.BLACK,
+    fontWeight: '700',
   },
   
   // Tab Content
   tabContent: {
-    backgroundColor: colors.WHITE,
     margin: 8,
     borderRadius: 12,
     padding: 16,
@@ -1960,12 +1964,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: colors.TEXT_PRIMARY,
+    color: colors.WHITE,
     marginBottom: 16,
   },
   statsTable: {
     borderWidth: 1,
-    borderColor: colors.BORDER,
+    borderColor: colors.BLACK,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -1975,7 +1979,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
+    borderBottomColor: colors.BLACK,
   },
   statIcon: {
     width: 24,
@@ -1986,12 +1990,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
-    color: colors.TEXT_PRIMARY,
+    color: colors.WHITE,
   },
   statValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.BRG,
+    color: colors.WHITE,
   },
   descriptionSection: {
     marginBottom: 16,
@@ -2218,12 +2222,11 @@ const styles = StyleSheet.create({
   modActionButton: {
     padding: 6,
     borderRadius: 6,
-    backgroundColor: colors.LIGHT_GRAY,
   },
   modTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.TEXT_PRIMARY,
+    color: colors.WHITE,
     marginBottom: 2,
   },
   modCategory: {

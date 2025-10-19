@@ -266,21 +266,13 @@ const AppNavigator = () => (
         title: route.params?.event?.title || 'Event Details',
       })}
     />
-    <AppStack.Screen 
-      name="CarDetail" 
+    <AppStack.Screen
+      name="CarDetail"
       component={CarDetailScreen}
-      options={({ route }) => ({
-        headerShown: true,
-        title: 'Car Details',
-        headerStyle: {
-          backgroundColor: colors.BRG,
-          height: 100,
-        },
-        headerTintColor: colors.WHITE,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-      })}
+      options={{
+        headerShown: false,
+        presentation: 'modal',
+      }}
     />
     <AppStack.Screen
       name="PostDetail"
