@@ -22,7 +22,7 @@ const baseQuery = fetchBaseQuery({
 export const apiService = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Projects', 'Mods', 'CarGallery', 'CarTask', 'Message'],
+  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Projects', 'Mods', 'CarGallery', 'CarTask', 'Message', 'Tags'],
   endpoints: (builder) => ({
     // User authentication endpoints
     getUserDetails: builder.query({
@@ -310,7 +310,7 @@ export const apiService = createApi({
 
     // Posts endpoints
     getPosts: builder.query({
-      query: ({ page = 1, limit = 10, type = null, make = null, model = null, user_id = null, filter = null, username = null, omit = null, sort = 'created_at', order = 'desc' }) => {
+      query: ({ page = 1, limit = 10, type = null, make = null, model = null, user_id = null, filter = null, username = null, omit = null, draft = null, sort = 'created_at', order = 'desc' }) => {
         const params = {
           page: page - 1, // Backend uses 0-based indexing
           limit,
@@ -322,7 +322,8 @@ export const apiService = createApi({
           ...(user_id && { user_id }), // Add user_id parameter if provided
           ...(filter && { filter }), // Add filter parameter (e.g., 'following')
           ...(username && { username }), // Add username parameter (needed for 'following' filter)
-          ...(omit && { omit }) // Add omit parameter to exclude specific user's posts
+          ...(omit && { omit }), // Add omit parameter to exclude specific user's posts
+          ...(draft !== null && { draft }) // Add draft parameter to filter draft/published posts
         };
 
         // Debug logging for posts API calls
@@ -1109,6 +1110,46 @@ export const apiService = createApi({
       ],
     }),
 
+    // Tag endpoints
+    getTagsByPost: builder.query({
+      query: (postId) => ({
+        url: `/api/tags/post/${postId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, postId) => [
+        'Tags',
+        { type: 'Tags', id: postId }
+      ],
+      keepUnusedDataFor: 0,
+    }),
+
+    getRecentTags: builder.query({
+      query: ({ limit = 20 } = {}) => ({
+        url: '/api/tags/recent',
+        method: 'GET',
+        params: { limit },
+      }),
+      providesTags: ['Tags'],
+      keepUnusedDataFor: 60,
+    }),
+
+    createTag: builder.mutation({
+      query: (tagData) => ({
+        url: '/api/tags',
+        method: 'POST',
+        body: tagData,
+      }),
+      invalidatesTags: ['Tags'],
+    }),
+
+    deleteTag: builder.mutation({
+      query: (tagId) => ({
+        url: `/api/tags/${tagId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Tags'],
+    }),
+
     // Message endpoints
     getMessages: builder.query({
       query: ({ page = 0, limit = 20, unread_only = false } = {}) => ({
@@ -1271,6 +1312,10 @@ export const {
   useTogglePostFeaturedMutation,
   useToggleEventFeaturedMutation,
   useToggleUserFeaturedMutation,
+  useGetTagsByPostQuery,
+  useGetRecentTagsQuery,
+  useCreateTagMutation,
+  useDeleteTagMutation,
   useGetMessagesQuery,
   useGetMessageThreadQuery,
   useCreateMessageMutation,

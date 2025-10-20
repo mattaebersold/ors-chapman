@@ -72,7 +72,11 @@ const UsernameSearch = ({ onUserSelect, style }) => {
     setSearchTerm('');
     setShowResults(false);
     Keyboard.dismiss(); // Dismiss keyboard when user is selected
-    onUserSelect(user);
+    if (onUserSelect && typeof onUserSelect === 'function') {
+      onUserSelect(user);
+    } else {
+      console.warn('UsernameSearch: onUserSelect prop is not a function');
+    }
   };
 
   const handleSearchChange = (text) => {

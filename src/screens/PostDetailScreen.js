@@ -278,8 +278,8 @@ const PostDetailScreen = ({ route, navigation }) => {
               {normalizedData.make && (
                 <CarBadge make={normalizedData.make} model={normalizedData.model} year={normalizedData.year} />
               )}
-              {normalizedData.type && <Tags text={normalizedData.type} color={colors.BRG} />}
-              {normalizedData.category && <Tags text={normalizedData.category} color={colors.GRAY} />}
+              {normalizedData.type && <Tags key="typeTag" text={normalizedData.type} color={colors.BRG} />}
+              {normalizedData.category && <Tags key="categoryTag" text={normalizedData.category} color={colors.GRAY} />}
             </View>
             <Text style={styles.date}>
               {new Date(normalizedData.created_at).toLocaleDateString()}

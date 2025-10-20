@@ -81,9 +81,9 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const tabs = [
-    { 
-      key: 'posts', 
-      label: 'Posts', 
+    {
+      key: 'posts',
+      label: 'Posts',
       type: 'posts',
       params: {
         type: 'all',
@@ -92,15 +92,27 @@ const ProfileScreen = ({ navigation }) => {
         omit: 'none'
       }
     },
-    { 
-      key: 'garage', 
-      label: 'Cars', 
-      type: 'userEntries', 
-      apiUrl: '/api/protected/garage/0/none/10' 
+    {
+      key: 'drafts',
+      label: 'Drafts',
+      type: 'posts',
+      params: {
+        type: 'all',
+        filter: 'user',
+        user_id: userDetails?.user_id,
+        omit: 'none',
+        draft: true // Filter for draft posts only
+      }
     },
-    { 
-      key: 'projects', 
-      label: 'Projects', 
+    {
+      key: 'garage',
+      label: 'Cars',
+      type: 'userEntries',
+      apiUrl: '/api/protected/garage/0/none/10'
+    },
+    {
+      key: 'projects',
+      label: 'Projects',
       type: 'projects',
       projectParams: {
         user_id: userDetails?.user_id,

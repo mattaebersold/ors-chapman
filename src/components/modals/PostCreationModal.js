@@ -17,13 +17,14 @@ import { colors } from '../../constants/colors';
 import ImageUploader from '../ImageUploader';
 import MakeModelPicker from '../forms/MakeModelPicker';
 import FAIcon from '../ui/FAIcon';
-import { 
-  useGetUserGarageQuery, 
-  useGetUserProjectsQuery, 
-  useGetUserEventsQuery 
+import {
+  useGetUserGarageQuery,
+  useGetUserProjectsQuery,
+  useGetUserEventsQuery
 } from '../../services/apiService';
 import { useBanner } from '../../contexts/BannerContext';
-import { postTypes, postCategories } from '../../constants/categories'
+import { postTypes, postCategories } from '../../constants/categories';
+import TagScreen from '../../screens/TagScreen';
 
 const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, existingPost = null }) => {
   // Try to use banner context, fallback to Alert if not available
@@ -63,17 +64,21 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
   const [carModalVisible, setCarModalVisible] = useState(false);
   const [projectModalVisible, setProjectModalVisible] = useState(false);
   const [eventModalVisible, setEventModalVisible] = useState(false);
+  const [tagModalVisible, setTagModalVisible] = useState(false);
 
   // Load association data
   const { data: garageData } = useGetUserGarageQuery({ limit: 100 });
   const { data: projectsData } = useGetUserProjectsQuery({ limit: 100 });
   const { data: eventsData } = useGetUserEventsQuery({ limit: 100 });
 
+  // Don't auto-create draft posts - let backend handle draft creation when needed
+  // This avoids issues with backend not supporting draft field yet
+
   // Populate form data when editing
   useEffect(() => {
     if (editMode && existingPost) {
       const hasCustomCarInfo = existingPost.year || existingPost.make || existingPost.model || existingPost.trim || existingPost.color;
-      
+
       setFormData({
         title: existingPost.title || '',
         body: existingPost.body || '',
@@ -94,26 +99,9 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
 
       // Show custom car info section if post has custom car data
       setShowCustomCarInfo(hasCustomCarInfo);
-    } else if (!editMode) {
-      // Reset form when creating new post
-      setFormData({
-        title: '',
-        body: '',
-        type: 'general',
-        category: 'show',
-        images: [],
-        car_id: '',
-        project_id: '',
-        event_id: '',
-        year: '',
-        make: '',
-        model: '',
-        trim: '',
-        color: '',
-        price: '',
-        condition: '',
-      });
-      setShowCustomCarInfo(false);
+    } else if (!editMode && !visible) {
+      // Reset form when modal closes
+      resetForm();
     }
   }, [editMode, existingPost, visible]);
 
@@ -211,7 +199,7 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
   };
 
   const handleClose = () => {
-    // For now, just close directly. We could implement a custom confirmation modal later if needed
+    // Just close the modal and reset form
     resetForm();
     onClose();
   };
@@ -324,6 +312,20 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
               maxImages={10}
             />
           </View>
+
+          {/* Tag Button - only show in edit mode when we have a post ID */}
+          {editMode && existingPost?.internal_id && (
+            <View style={styles.section}>
+              <TouchableOpacity
+                style={styles.tagButton}
+                onPress={() => setTagModalVisible(true)}
+              >
+                <FAIcon name="tag" size={20} color={colors.BRG} />
+                <Text style={styles.tagButtonText}>Tag users & cars</Text>
+                <FAIcon name="chevron-right" size={16} color={colors.TEXT_SECONDARY} />
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Body Input */}
           <View style={styles.section}>
@@ -712,6 +714,20 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Tag Modal - only in edit mode */}
+      {editMode && existingPost?.internal_id && (
+        <Modal
+          visible={tagModalVisible}
+          animationType="slide"
+          presentationStyle="fullScreen"
+        >
+          <TagScreen
+            postId={existingPost.internal_id}
+            onClose={() => setTagModalVisible(false)}
+          />
+        </Modal>
+      )}
     </Modal>
   );
 };
@@ -777,6 +793,35 @@ const styles = StyleSheet.create({
     color: colors.GRAY,
     marginTop: 8,
     marginBottom: 16,
+  },
+  tagButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.WHITE,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+    gap: 12,
+  },
+  tagButtonText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.LIGHT_GRAY,
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.TEXT_SECONDARY,
   },
   typeGrid: {
     flexDirection: 'row',
