@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
@@ -34,11 +35,21 @@ const MyGarageScreen = () => {
     <View style={styles.container}>
       {/* Header with Close Button */}
       <View style={styles.header}>
+
         <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setCarFormVisible(true)}
+          >
+            <FAIcon name="plus" size={18} color={colors.WHITE} />
+          </TouchableOpacity>
+
+           <Text style={styles.headingText}>My Garage</Text>
+
+          <TouchableOpacity
           style={styles.closeButton}
           onPress={() => navigation.goBack()}
         >
-          <FAIcon name="times" size={24} color={colors.WHITE} />
+          <FAIcon name="times" size={18} color={colors.WHITE} />
         </TouchableOpacity>
       </View>
 
@@ -48,15 +59,6 @@ const MyGarageScreen = () => {
         displayOptions={displayOptions}
         CustomComponent={CarCard}
         showFilters={false}
-        heading="My Garage"
-        customHeaderButtons={() => (
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setCarFormVisible(true)}
-          >
-            <FAIcon name="plus" size={16} color={colors.BLACK} />
-          </TouchableOpacity>
-        )}
       />
 
       {/* Car Form Modal */}
@@ -77,23 +79,34 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: colors.BRG,
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 12,
     paddingBottom: 16,
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    position: 'relative',
+  },
+  headingText: {
+    color: colors.WHITE,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    fontSize: 16,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    zIndex: 0,
   },
   closeButton: {
     padding: 8,
+    zIndex: 1,
   },
   addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 8,
+    gap: 6,
+    padding: 8,
+    zIndex: 1,
   },
 });
 

@@ -30,7 +30,7 @@ import FilterBar from './FilterBar';
 import FAIcon from './ui/FAIcon';
 
 
-const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false, numColumns = 1, heading, customHeaderButtons, customFilterBar, customHeaderSection }) => {
+const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false, numColumns = 1, heading, customHeaderButtons, customFilterBar, customHeaderSection, CustomComponent, onItemPress }) => {
 	// const { userInfo } = useSelector(state => state.auth);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [allPosts, setAllPosts] = useState([]);
@@ -94,15 +94,17 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 		switch (config?.type) {
 			case 'posts':
 				const postType = extractTypeFromUrl(config?.apiUrl);
-				return useGetPostsQuery({ 
-					page: currentPage, 
+				const postsQueryParams = {
+					page: currentPage,
 					limit: POSTS_PER_PAGE,
 					type: postType,
 					make,
 					model,
 					user_id,
-					...(config?.postsParams || {})
-				}, {
+					...(config?.postsParams || config?.params || {})
+				};
+				console.log('🔍 Listing: Querying posts with params:', postsQueryParams);
+				return useGetPostsQuery(postsQueryParams, {
 					skip: !!customEvents
 				});
 			case 'cars':
@@ -183,15 +185,15 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 				});
 			default:
 				const defaultType = extractTypeFromUrl(config?.apiUrl);
-				return useGetPostsQuery({ 
-					page: currentPage, 
+				return useGetPostsQuery({
+					page: currentPage,
 					limit: POSTS_PER_PAGE,
 					type: defaultType,
 					make,
 					model,
 					user_id,
 					// Add support for additional params from config
-					...(config?.postsParams || {})
+					...(config?.postsParams || config?.params || {})
 				}, {
 					skip: !!customEvents
 				});
@@ -319,6 +321,19 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 			numColumns,
 		};
 
+		// If CustomComponent is provided, use it for posts
+		if (CustomComponent && item.entry_type === 'post') {
+			return (
+				<View style={numColumns > 1 ? styles.cardWrapperGrid : styles.cardWrapper}>
+					<CustomComponent
+						post={item}
+						displayOptions={cardDisplayOptions}
+						onPress={onItemPress}
+					/>
+				</View>
+			);
+		}
+
 		const card = (() => {
 			switch(item.entry_type) {
 				case 'post':
@@ -335,7 +350,7 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 				{card}
 			</View>
 		);
-	}, [displayOptions, numColumns]);
+	}, [displayOptions, numColumns, CustomComponent, onItemPress]);
 
 	const renderFooter = () => {
 		if (!hasMore) return null;
@@ -585,7 +600,6 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
-		paddingVertical: 12,
 	},
 	welcomeText: {
 		fontSize: 16,

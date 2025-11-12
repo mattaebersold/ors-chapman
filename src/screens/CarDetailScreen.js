@@ -7,25 +7,25 @@ import {
   Image,
   TouchableOpacity,
   FlatList,
-  Modal,
   Dimensions,
   Alert,
+  Modal,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useDeleteGarageCarMutation, useGetUserDetailsQuery, useGetPostsQuery, useToggleGarageCarFeaturedMutation, useGetUserQuery } from '../services/apiService';
+import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useDeleteGarageCarMutation, useGetUserDetailsQuery, useToggleGarageCarFeaturedMutation, useGetUserQuery } from '../services/apiService';
 import LoadingIndicator from '../components/ui/LoadingIndicator';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import EmptyState from '../components/ui/EmptyState';
 import FAIcon from '../components/ui/FAIcon';
-import UserBadge from '../components/overlays/UserBadge';
 import CarCard from '../components/cards/CarCard';
 import ImageGalleryModal from '../components/modals/ImageGalleryModal';
+import CarFeedPanel from '../components/panels/CarFeedPanel';
 import Likes from '../components/Likes';
 import CarTaskModal from '../components/modals/CarTaskModal';
+import CarTasksViewModal from '../components/modals/CarTasksViewModal';
 import CarFormModal from '../components/modals/CarFormModal';
 import ModFormModal from '../components/modals/ModFormModal';
 import GalleryFormModal from '../components/modals/GalleryFormModal';
-import Listing from '../components/Listing';
 import GradientPlaceholder from '../components/ui/GradientPlaceholder';
 import { LinearGradient } from 'expo-linear-gradient';
 import UserRow from '../components/cards/UserRow';
@@ -338,8 +338,6 @@ const CarDetailScreen = ({ route, navigation }) => {
       switch (activeTab) {
         case 'overview':
           return renderOverviewTab();
-        case 'feed':
-          return renderFeedTab();
         case 'galleries':
           return renderGalleriesTab();
         case 'mods':
@@ -355,26 +353,6 @@ const CarDetailScreen = ({ route, navigation }) => {
     return content;
   };
 
-  const renderFeedTab = () => {
-    // Display a button that opens the feed modal
-    return (
-      <View style={styles.feedTabContainer}>
-        <View style={styles.feedHeader}>
-          <Text style={styles.sectionTitle}>Posts featuring this car</Text>
-          <Text style={styles.sectionSubtitle}>
-            See posts related to this {carData?.year} {carData?.make} {carData?.model}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.openFeedModalButton}
-          onPress={() => setFeedModalVisible(true)}
-        >
-          <FAIcon name="rss" size={20} color={colors.WHITE} />
-          <Text style={styles.openFeedModalButtonText}>View Posts</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
 
   const renderOverviewTab = () => {
     const stats = getCarStats();
@@ -1078,169 +1056,6 @@ const CarDetailScreen = ({ route, navigation }) => {
     );
   };
 
-  const renderTasksContent = () => {
-    if (tasksLoading) {
-      return (
-        <View style={styles.tasksModalLoadingContainer}>
-          <FAIcon name="spinner" size={20} color={colors.BRG} />
-          <Text style={styles.loadingText}>Loading tasks...</Text>
-        </View>
-      );
-    }
-
-    if (tasksError) {
-      return (
-        <View style={styles.tasksModalErrorContainer}>
-          <FAIcon name="exclamation" size={24} color={colors.ERROR} />
-          <Text style={styles.errorText}>Error loading tasks</Text>
-          <Text style={styles.errorDetails}>
-            {tasksError?.data?.message || tasksError?.message || 'Failed to load tasks'}
-          </Text>
-        </View>
-      );
-    }
-
-    const tasks = carTasksData?.entries || [];
-
-    // Group tasks by type
-    const tasksByType = tasks.reduce((groups, task) => {
-      const type = task.type || 'other';
-      if (!groups[type]) {
-        groups[type] = [];
-      }
-      groups[type].push(task);
-      return groups;
-    }, {});
-
-    // Type display names
-    const typeLabels = {
-      maintenance: 'Maintenance',
-      repair: 'Repair',
-      upgrade: 'Upgrade',
-      inspection: 'Inspection',
-      cleaning: 'Cleaning',
-      modification: 'Modification',
-      other: 'Other',
-    };
-
-    return (
-      <>
-        {/* Tasks List */}
-        {tasks.length === 0 ? (
-          <View style={styles.tasksModalEmptyState}>
-            <FAIcon name="check-square" size={40} color={colors.TEXT_SECONDARY} />
-            <Text style={styles.tasksModalEmptyTitle}>No Tasks</Text>
-            <Text style={styles.tasksModalEmptyMessage}>
-              No tasks found for this car. Add your first task to get started!
-            </Text>
-          </View>
-        ) : (
-          <ScrollView style={styles.tasksModalScrollView} showsVerticalScrollIndicator={false}>
-            {Object.entries(tasksByType).map(([type, typeTasks]) => (
-              <View key={type} style={styles.categoryGroup}>
-                <Text style={styles.categoryTitle}>
-                  {typeLabels[type] || type} ({typeTasks.length})
-                </Text>
-                {typeTasks.map((task, index) => (
-                  <View key={task._id || index} style={[
-                    styles.taskItem,
-                    task.completed && styles.completedTask
-                  ]}>
-                    <View style={styles.taskHeader}>
-                      <View style={styles.taskTitleRow}>
-                        <TouchableOpacity 
-                          style={styles.checkbox}
-                          onPress={() => handleToggleTaskCompletion(task)}
-                        >
-                          <FAIcon 
-                            name={task.completed ? "check-square" : "square"} 
-                            size={24} 
-                            color={colors.WHITE}
-                          />
-                        </TouchableOpacity>
-                        <Text style={[
-                          styles.taskTitle,
-                          task.completed && styles.completedTaskTitle
-                        ]}>
-                          {task.title}
-                        </Text>
-                      </View>
-                      <View style={styles.taskActions}>
-                        <View style={styles.reorderButtons}>
-                          <TouchableOpacity 
-                            style={[styles.reorderButton, index === 0 && styles.disabledButton]}
-                            onPress={() => handleMoveTask(task.internal_id || task._id, 'up')}
-                            disabled={index === 0}
-                          >
-                            <FAIcon name="chevron-up" size={12} color={index === 0 ? 'rgba(255,255,255,0.3)' : colors.WHITE} />
-                          </TouchableOpacity>
-                          <TouchableOpacity 
-                            style={[styles.reorderButton, index === typeTasks.length - 1 && styles.disabledButton]}
-                            onPress={() => handleMoveTask(task.internal_id || task._id, 'down')}
-                            disabled={index === typeTasks.length - 1}
-                          >
-                            <FAIcon name="chevron-down" size={12} color={index === typeTasks.length - 1 ? 'rgba(255,255,255,0.3)' : colors.WHITE} />
-                          </TouchableOpacity>
-                        </View>
-                        <TouchableOpacity 
-                          style={styles.taskActionButton}
-                          onPress={() => {
-                            setEditingTask(task);
-                            setTasksViewModalVisible(false);
-                            setTaskModalVisible(true);
-                          }}
-                        >
-                          <FAIcon name="edit" size={14} color={colors.WHITE} />
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                          style={styles.taskActionButton}
-                          onPress={() => handleDeleteTask(task.internal_id || task._id)}
-                        >
-                          <FAIcon name="trash" size={14} color={colors.WHITE} />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                    {task.body && (
-                      <Text style={[
-                        styles.taskDescription,
-                        task.completed && styles.completedTaskText
-                      ]} numberOfLines={2}>
-                        {task.body}
-                      </Text>
-                    )}
-                    <View style={styles.taskMeta}>
-                      <View style={styles.taskBadges}>
-                        <Text style={[
-                          styles.taskCategory,
-                          task.completed && styles.completedTaskText
-                        ]}>
-                          {task.category || 'general'}
-                        </Text>
-                        <Text style={[
-                          styles.taskPriority,
-                          styles[`${task.priority || 'medium'}Priority`],
-                          task.completed && styles.completedTaskText
-                        ]}>
-                          {task.priority || 'medium'}
-                        </Text>
-                      </View>
-                      <Text style={[
-                        styles.taskDate,
-                        task.completed && styles.completedTaskText
-                      ]}>
-                        {new Date(task.created_at).toLocaleDateString()}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ))}
-          </ScrollView>
-        )}
-      </>
-    );
-  };
-
   const renderHeader = () => (
     <>
       {/* Car Header */}
@@ -1347,7 +1162,7 @@ const CarDetailScreen = ({ route, navigation }) => {
                     style={styles.editButton}
                     onPress={() => setEditCarModalVisible(true)}
                   >
-                    <FAIcon name="edit" size={16} color={colors.BRG} />
+                    <FAIcon name="edit" size={16} color={colors.WHITE} />
                     <Text style={styles.editButtonText}>Edit</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -1376,13 +1191,9 @@ const CarDetailScreen = ({ route, navigation }) => {
         <View style={styles.tasksSection}>
           <View style={styles.tasksSectionHeader}>
             <View style={styles.tasksSectionTitle}>
-              <FAIcon name="check-square" size={18} color={colors.WHITE} />
               <View>
                 <Text style={styles.tasksSectionTitleText}>
-                  Tasks ({carTasksData?.entries?.length || 0})
-                </Text>
-                <Text style={styles.tasksVisibilityText}>
-                  Tasks are visible to you only
+                  To-Do List ({carTasksData?.entries?.length || 0})
                 </Text>
               </View>
             </View>
@@ -1390,7 +1201,7 @@ const CarDetailScreen = ({ route, navigation }) => {
               style={styles.addTaskButton}
               onPress={() => setTaskModalVisible(true)}
             >
-              <FAIcon name="plus" size={14} color={colors.WHITE} />
+              <FAIcon name="plus" size={14} color={colors.BLACK} />
             </TouchableOpacity>
           </View>
           {tasksLoading ? (
@@ -1405,11 +1216,11 @@ const CarDetailScreen = ({ route, navigation }) => {
             >
               <Text style={styles.tasksPreviewText}>
                 {carTasksData?.entries?.length > 0
-                  ? `View all tasks`
-                  : 'No tasks yet. Add your first task!'
+                  ? 'View all'
+                  : 'No to-dos yet'
                 }
               </Text>
-              <FAIcon name="chevron-right" size={14} color={colors.TEXT_SECONDARY} />
+              <FAIcon name="chevron-right" size={14} color={colors.WHITE} />
             </TouchableOpacity>
           )}
         </View>
@@ -1429,7 +1240,14 @@ const CarDetailScreen = ({ route, navigation }) => {
                 styles.tabButton,
                 activeTab === tab.key && styles.activeTabButton
               ]}
-              onPress={() => setActiveTab(tab.key)}
+              onPress={() => {
+                if (tab.key === 'feed') {
+                  // Open feed modal directly instead of changing tab
+                  setFeedModalVisible(true);
+                } else {
+                  setActiveTab(tab.key);
+                }
+              }}
             >
               <View style={styles.tabButtonContent}>
                 <FAIcon
@@ -1454,19 +1272,7 @@ const CarDetailScreen = ({ route, navigation }) => {
   );
 
   const renderContent = () => {
-    // For feed tab, don't use ScrollView to avoid VirtualizedList nesting
-    if (activeTab === 'feed') {
-      return (
-        <View style={styles.container}>
-          {renderHeader()}
-          <View style={styles.feedContainer}>
-            {renderTabContent()}
-          </View>
-        </View>
-      );
-    }
-
-    // For other tabs, use ScrollView with header included
+    // Use ScrollView with header included
     return (
       <ScrollView
         style={styles.container}
@@ -1538,33 +1344,25 @@ const CarDetailScreen = ({ route, navigation }) => {
       />
 
       {/* Tasks View Modal */}
-      <Modal
+      <CarTasksViewModal
         visible={tasksViewModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setTasksViewModalVisible(false)}
-      >
-        <View style={styles.tasksModalContainer}>
-          <View style={styles.tasksModalHeader}>
-            <TouchableOpacity onPress={() => setTasksViewModalVisible(false)}>
-              <FAIcon name="times" size={20} color={colors.WHITE} />
-            </TouchableOpacity>
-            <Text style={styles.tasksModalTitle}>Car Tasks</Text>
-            <TouchableOpacity 
-              style={styles.tasksModalAddButton}
-              onPress={() => {
-                setTasksViewModalVisible(false);
-                setTaskModalVisible(true);
-              }}
-            >
-              <FAIcon name="plus" size={16} color={colors.WHITE} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.tasksModalContent}>
-            {renderTasksContent()}
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setTasksViewModalVisible(false)}
+        tasksData={carTasksData}
+        tasksLoading={tasksLoading}
+        tasksError={tasksError}
+        onToggleTaskCompletion={handleToggleTaskCompletion}
+        onMoveTask={handleMoveTask}
+        onDeleteTask={handleDeleteTask}
+        onEditTask={(task) => {
+          setEditingTask(task);
+          setTasksViewModalVisible(false);
+          setTaskModalVisible(true);
+        }}
+        onAddTask={() => {
+          setTasksViewModalVisible(false);
+          setTaskModalVisible(true);
+        }}
+      />
 
       {/* Car Edit Modal */}
       <CarFormModal
@@ -1608,38 +1406,24 @@ const CarDetailScreen = ({ route, navigation }) => {
         presentationStyle="pageSheet"
         onRequestClose={() => setFeedModalVisible(false)}
       >
-        <View style={styles.feedModalContainer}>
-          <View style={styles.feedModalHeader}>
-            <TouchableOpacity onPress={() => setFeedModalVisible(false)}>
-              <FAIcon name="times" size={24} color={colors.BRG} />
-            </TouchableOpacity>
-            <Text style={styles.feedModalTitle}>
-              Posts - {carData?.year} {carData?.make} {carData?.model}
-            </Text>
-            <View style={{ width: 24 }} />
-          </View>
-          <View style={styles.feedModalContent}>
-            <Listing
-              config={{
-                type: 'posts',
-                heading: '',
-                params: {
-                  // Since car_id filtering isn't supported by the API,
-                  // filter by make and model as a fallback
-                  ...(carData?.make && { make: carData.make }),
-                  ...(carData?.model && carData?.make && { model: carData.model })
-                }
-              }}
-              displayOptions={{
-                badgeProfile: true,
-                badgeCar: true // Show car badge since we're in a modal
-              }}
-              showFilters={true}
-              filterTypes={['postType']}
-              nestedScrollEnabled={true}
-            />
-          </View>
-        </View>
+        <CarFeedPanel
+          carData={carData}
+          onClose={() => setFeedModalVisible(false)}
+          onPostPress={(post) => {
+            // Close the feed modal first
+            setFeedModalVisible(false);
+            // Then navigate to the post detail with a slight delay to allow modal to close
+            setTimeout(() => {
+              navigation.navigate('PostDetail', { post });
+            }, 100);
+          }}
+          displayOptions={{
+            badgeProfile: true,
+            badgeCar: false,
+          }}
+          showFilters={true}
+          title={`Posts - ${carData?.title}`}
+        />
       </Modal>
 
       {/* Related Make Cars Modal */}
@@ -1837,18 +1621,17 @@ const styles = StyleSheet.create({
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.LIGHT_GRAY,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.BRG,
+    borderColor: colors.WHITE,
     gap: 6,
   },
   editButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: colors.BRG,
+    fontWeight: '700',
+    color: colors.WHITE,
   },
   actionButtonsWrapper: {
     flexDirection: 'row',
@@ -1885,7 +1668,6 @@ const styles = StyleSheet.create({
   deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.LIGHT_GRAY,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -1954,7 +1736,7 @@ const styles = StyleSheet.create({
   tabContent: {
     margin: 8,
     borderRadius: 12,
-    padding: 16,
+    paddingVertical: 16,
   },
   
   // Overview Tab - Stats Table
@@ -2340,88 +2122,6 @@ const styles = StyleSheet.create({
   tasksContainer: {
     flex: 1,
   },
-  categoryGroup: {
-    marginBottom: 20,
-  },
-  categoryTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.WHITE,
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.BRG,
-  },
-  taskItem: {
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
-  },
-  taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.WHITE,
-    flex: 1,
-    marginRight: 12,
-  },
-  taskActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  taskActionButton: {
-    padding: 8,
-    borderRadius: 6,
-  },
-  taskDescription: {
-    fontSize: 14,
-    color: colors.WHITE,
-    lineHeight: 20,
-    marginBottom: 8,
-    opacity: 0.9,
-  },
-  taskMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  taskType: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.BRG,
-    textTransform: 'capitalize',
-    backgroundColor: colors.LIGHT_GRAY,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  taskDate: {
-    fontSize: 12,
-    color: colors.WHITE,
-    opacity: 0.8,
-  },
-  taskVisibilityTagline: {
-    fontSize: 11,
-    color: colors.WHITE,
-    opacity: 0.7,
-    fontStyle: 'italic',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-
   // Related Cars
   relatedSection: {
     marginBottom: 24,
@@ -2481,15 +2181,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     marginBottom: 8,
     borderRadius: 12,
-    padding: 16,
     borderWidth: 1,
-    borderColor: colors.BORDER,
+    borderColor: colors.BLACK,
   },
   tasksSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    borderBottomWidth: 1,
+    borderColor: colors.BLACK,
+    padding: 12,
   },
   tasksSectionTitle: {
     flexDirection: 'row',
@@ -2509,7 +2211,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   addTaskButton: {
-    backgroundColor: colors.BRG,
+    backgroundColor: colors.WHITE,
     borderRadius: 20,
     width: 32,
     height: 32,
@@ -2520,7 +2222,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    padding: 12,
+    paddingTop: 0,
   },
   tasksPreviewText: {
     fontSize: 14,
@@ -2532,198 +2235,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.WHITE,
     marginLeft: 8,
-  },
-
-  // Tasks Modal
-  tasksModalContainer: {
-    flex: 1,
-    backgroundColor: '#161616',
-  },
-  tasksModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 16,
-    backgroundColor: colors.BRG,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
-  },
-  tasksModalTitle: {
-    color: colors.WHITE,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  tasksModalAddButton: {
-    backgroundColor: colors.SPEED,
-    borderRadius: 20,
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tasksModalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  tasksModalScrollView: {
-    flex: 1,
-  },
-  tasksModalLoadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  tasksModalErrorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  tasksModalEmptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  tasksModalEmptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.WHITE,
-  },
-  tasksModalEmptyMessage: {
-    fontSize: 14,
-    color: colors.WHITE,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-
-  // Task Checkbox and Completion Styles
-  taskTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  checkbox: {
-    marginRight: 12,
-    padding: 4,
-  },
-  completedTask: {
-  },
-  completedTaskTitle: {
-    textDecorationLine: 'line-through',
-  },
-  completedTaskText: {
-    color: colors.TEXT_SECONDARY,
-    opacity: 0.7,
-  },
-  taskBadges: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  taskCategory: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.WHITE,
-    textTransform: 'capitalize',
-    backgroundColor: colors.BRG,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  taskPriority: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    color: colors.WHITE,
-  },
-  
-  // Priority-specific colors
-  criticalPriority: {
-    backgroundColor: '#FF4444',
-  },
-  highPriority: {
-    backgroundColor: '#FF8800',
-  },
-  mediumPriority: {
-    backgroundColor: '#FFBB33',
-  },
-  lowPriority: {
-    backgroundColor: '#00C851',
-  },
-  
-  // Reorder buttons
-  reorderButtons: {
-    flexDirection: 'column',
-    marginRight: 8,
-  },
-  reorderButton: {
-    padding: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabledButton: {
-    opacity: 0.3,
-  },
-
-  // Feed Tab and Modal Styles
-  feedTabContainer: {
-    padding: 20,
-    alignItems: 'center',
-    backgroundColor: colors.WHITE,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: colors.TEXT_SECONDARY,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  openFeedModalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.BRG,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-    marginTop: 20,
-  },
-  openFeedModalButtonText: {
-    color: colors.WHITE,
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  feedModalContainer: {
-    flex: 1,
-    backgroundColor: colors.BACKGROUND,
-  },
-  feedModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: colors.WHITE,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
-  },
-  feedModalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.TEXT_PRIMARY,
-    textAlign: 'center',
-    flex: 1,
-  },
-  feedModalContent: {
-    flex: 1,
   },
 
   // Related Tab and Modal Styles

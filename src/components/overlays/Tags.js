@@ -31,7 +31,7 @@ const Tags = ({ entryType, type, category, specificStyles, small = false }) => {
     const typeLabel = types.find(pt => pt.key === type)?.label || type;
     
     tags.push(
-      <BaseTag color={backgroundColor} label={typeLabel} />
+      <BaseTag color={backgroundColor} key={1} label={typeLabel} />
     );
   }
 
@@ -50,7 +50,7 @@ const Tags = ({ entryType, type, category, specificStyles, small = false }) => {
     }
     
     tags.push(
-      <BaseTag color={backgroundColor} label={categoryLabel} />
+      <BaseTag color={backgroundColor} key={2} label={categoryLabel} />
     );
   }
 

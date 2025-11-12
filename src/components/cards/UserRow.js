@@ -90,6 +90,7 @@ const UserRow = ({ user, onPress, displayOptions = {}, owner = false, nostats = 
       bottomRight={!nostats && renderStats()}
       bottomLeft={renderMainContent()}
       topLeft={renderUserTags()}
+      layout="rich"
     />
   );
 };

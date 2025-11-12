@@ -49,14 +49,16 @@ import {
   faSignOutAlt,
   faExclamationTriangle,
   faPaperPlane,
-  faStar
+  faStar,
+  faExpand
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
   faUser as faUserRegular,
   faHeart as faHeartRegular,
   faComment as faCommentRegular,
-  faStar as faStarRegular
+  faStar as faStarRegular,
+  faSquare as faSquareRegular
 } from '@fortawesome/free-regular-svg-icons';
 
 import {
@@ -108,6 +110,7 @@ const iconMap = {
   edit: faEdit,
   trash: faTrash,
   'check-square': faCheckSquare,
+  square: faSquareRegular,
   camera: faCamera,
   'info-circle': faInfoCircle,
   rss: faRss,
@@ -131,6 +134,7 @@ const iconMap = {
   'paper-plane': faPaperPlane,
   star: faStar,
   'star-outline': faStarRegular,
+  expand: faExpand,
 };
 
 const FAIcon = ({ name, size = 20, color = '#000', style, ...props }) => {

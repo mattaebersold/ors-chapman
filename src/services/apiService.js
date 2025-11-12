@@ -310,7 +310,7 @@ export const apiService = createApi({
 
     // Posts endpoints
     getPosts: builder.query({
-      query: ({ page = 1, limit = 10, type = null, make = null, model = null, user_id = null, filter = null, username = null, omit = null, draft = null, sort = 'created_at', order = 'desc' }) => {
+      query: ({ page = 1, limit = 10, type = null, make = null, model = null, user_id = null, car_id = null, filter = null, username = null, omit = null, draft = null, sort = 'created_at', order = 'desc' }) => {
         const params = {
           page: page - 1, // Backend uses 0-based indexing
           limit,
@@ -320,6 +320,7 @@ export const apiService = createApi({
           ...(make && { make }), // Add make parameter if provided
           ...(model && make && { model }), // Add model parameter if provided (requires make)
           ...(user_id && { user_id }), // Add user_id parameter if provided
+          ...(car_id && { car_id }), // Add car_id parameter if provided
           ...(filter && { filter }), // Add filter parameter (e.g., 'following')
           ...(username && { username }), // Add username parameter (needed for 'following' filter)
           ...(omit && { omit }), // Add omit parameter to exclude specific user's posts
