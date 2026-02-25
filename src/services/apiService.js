@@ -22,7 +22,7 @@ const baseQuery = fetchBaseQuery({
 export const apiService = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'Projects', 'Mods', 'CarGallery', 'CarTask', 'Message', 'Tags'],
+  tagTypes: ['User', 'Post', 'Cars', 'UserEntries', 'Search', 'Like', 'Comment', 'Brands', 'Models', 'Articles', 'Events', 'EventGallery', 'Projects', 'Mods', 'CarGallery', 'CarTask', 'Message', 'Tags', 'Notifications', 'CarFollow', 'Group', 'GroupMembers', 'GroupForum', 'GroupNews', 'GroupResources'],
   endpoints: (builder) => ({
     // User authentication endpoints
     getUserDetails: builder.query({
@@ -98,11 +98,6 @@ export const apiService = createApi({
     // Get featured cars
     getFeaturedCars: builder.query({
       query: ({ limit = 10 } = {}) => {
-        console.log('getFeaturedCars query params:', {
-          featured: true,
-          limit,
-          page: 0
-        });
         return {
           url: '/api/garage',
           method: 'GET',
@@ -122,12 +117,6 @@ export const apiService = createApi({
     // Get featured marketplace listings
     getFeaturedListings: builder.query({
       query: ({ limit = 10 } = {}) => {
-        console.log('getFeaturedListings query params:', {
-          featured: true,
-          type: 'listing',
-          limit,
-          page: 0
-        });
         return {
           url: '/api/post',
           method: 'GET',
@@ -147,12 +136,6 @@ export const apiService = createApi({
     // Get featured want ads
     getFeaturedWantAds: builder.query({
       query: ({ limit = 10 } = {}) => {
-        console.log('getFeaturedWantAds query params:', {
-          featured: true,
-          type: 'want',
-          limit,
-          page: 0
-        });
         return {
           url: '/api/post',
           method: 'GET',
@@ -172,12 +155,6 @@ export const apiService = createApi({
     // Get featured spotted cars
     getFeaturedSpottedCars: builder.query({
       query: ({ limit = 10 } = {}) => {
-        console.log('getFeaturedSpottedCars query params:', {
-          featured: true,
-          type: 'spot',
-          limit,
-          page: 0
-        });
         return {
           url: '/api/post',
           method: 'GET',
@@ -197,11 +174,6 @@ export const apiService = createApi({
     // Get featured users
     getFeaturedUsers: builder.query({
       query: ({ limit = 10 } = {}) => {
-        console.log('getFeaturedUsers query params:', {
-          featured: true,
-          limit,
-          page: 0
-        });
         return {
           url: '/api/users',
           method: 'GET',
@@ -326,9 +298,6 @@ export const apiService = createApi({
           ...(omit && { omit }), // Add omit parameter to exclude specific user's posts
           ...(draft !== null && { draft }) // Add draft parameter to filter draft/published posts
         };
-
-        // Debug logging for posts API calls
-        console.log('📡 API getPosts called with params:', params);
 
         return {
           url: '/api/post',
@@ -624,13 +593,8 @@ export const apiService = createApi({
       providesTags: ['User'],
       keepUnusedDataFor: 60, // Cache for 1 minute
       transformResponse: (response, meta, { query, limit = 10 }) => {
-        console.log('searchUsernames API Response:', response);
-        console.log('Search query:', query);
-        
         // The backend now handles search properly, so just return the entries
         if (response && response.entries) {
-          console.log('Total users found:', response.total);
-          console.log('Users returned:', response.entries.length);
           return response.entries; // Return the entries directly
         }
         return [];
@@ -706,6 +670,17 @@ export const apiService = createApi({
       ],
     }),
 
+    getLikeUsers: builder.query({
+      query: ({ document_id, document_type, limit = 10 }) => ({
+        url: `/api/likes/users/${document_id}`,
+        method: 'GET',
+        params: { document_type, limit },
+      }),
+      providesTags: (result, error, { document_id }) => [
+        { type: 'Like', id: document_id }
+      ],
+    }),
+
     likePost: builder.mutation({
       query: ({ document_id, document_type }) => ({
         url: '/api/likes/like',
@@ -776,18 +751,89 @@ export const apiService = createApi({
       ],
     }),
 
-    // Articles endpoint  
+    // Notification endpoints
+    getNotifications: builder.query({
+      query: ({ limit = 20, offset = 0, unread_only = false, include_archived = false }) => ({
+        url: '/api/notifications',
+        method: 'GET',
+        params: { limit, offset, unread_only, include_archived },
+      }),
+      providesTags: ['Notifications'],
+      keepUnusedDataFor: 0, // Don't cache to ensure fresh data
+    }),
+
+    getUnreadCount: builder.query({
+      query: () => ({
+        url: '/api/notifications/unread-count',
+        method: 'GET',
+      }),
+      providesTags: ['Notifications'],
+      keepUnusedDataFor: 0,
+    }),
+
+    markNotificationAsRead: builder.mutation({
+      query: (notificationId) => ({
+        url: `/api/notifications/${notificationId}/read`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Notifications'],
+    }),
+
+    markAllNotificationsAsRead: builder.mutation({
+      query: () => ({
+        url: '/api/notifications/read-all',
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Notifications'],
+    }),
+
+    archiveNotification: builder.mutation({
+      query: (notificationId) => ({
+        url: `/api/notifications/${notificationId}/archive`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Notifications'],
+    }),
+
+    archiveAllNotifications: builder.mutation({
+      query: () => ({
+        url: '/api/notifications/archive-all',
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Notifications'],
+    }),
+
+    deleteNotification: builder.mutation({
+      query: (notificationId) => ({
+        url: `/api/notifications/${notificationId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Notifications'],
+    }),
+
+    // Articles endpoint
     getArticles: builder.query({
       query: ({ page = 1, limit = 20 }) => {
-        // Convert to 0-based indexing like other endpoints
-        const index = page - 1;
+        const backendPage = page - 1; // Backend uses 0-based indexing
         return {
-          url: `/api/article/${index}/none/${limit}`,
+          url: `/api/article/${backendPage}/none/${limit}`,
           method: 'GET',
         };
       },
       providesTags: ['Articles'],
-      keepUnusedDataFor: 0, // Don't cache for debugging
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
+    // Get single article by ID
+    getArticle: builder.query({
+      query: (articleId) => ({
+        url: `/api/article/detail/${articleId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, articleId) => [
+        { type: 'Articles', id: articleId }
+      ],
+      keepUnusedDataFor: 300,
     }),
 
     // Events endpoint - dedicated events API
@@ -801,8 +847,6 @@ export const apiService = createApi({
           ...(time_filter && { time_filter }), // "upcoming" or "past"
         };
         
-        console.log('API getEvents - params:', params);
-        console.log('API getEvents - final URL:', '/api/event');
         return {
           url: '/api/event',
           method: 'GET',
@@ -811,6 +855,18 @@ export const apiService = createApi({
       },
       providesTags: ['Events'],
       keepUnusedDataFor: 0, // Don't cache for debugging
+    }),
+
+    // Get single event by ID
+    getEvent: builder.query({
+      query: (eventId) => ({
+        url: `/api/event/${eventId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, eventId) => [
+        { type: 'Events', id: eventId }
+      ],
+      keepUnusedDataFor: 300,
     }),
 
     // Create new event
@@ -841,6 +897,68 @@ export const apiService = createApi({
         body: { internal_id: eventId },
       }),
       invalidatesTags: ['Events', 'UserEntries'],
+    }),
+
+    // Event Gallery endpoints
+    getEventGalleries: builder.query({
+      query: (eventId) => ({
+        url: `/api/event/galleries/${eventId}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, eventId) => [
+        'EventGallery',
+        { type: 'EventGallery', id: `event-${eventId}` }
+      ],
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
+    getEventGalleryBucketImages: builder.query({
+      query: (bucketName) => ({
+        url: `/api/eventgallery/bucket/${bucketName}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, bucketName) => [
+        { type: 'EventGallery', id: `bucket-${bucketName}` }
+      ],
+      keepUnusedDataFor: 300, // Cache for 5 minutes
+    }),
+
+    createEventGallery: builder.mutation({
+      query: (galleryData) => ({
+        url: '/api/eventgallery/create',
+        method: 'POST',
+        body: galleryData,
+      }),
+      invalidatesTags: (result, error, { event_id }) => [
+        'EventGallery',
+        ...(event_id ? [{ type: 'EventGallery', id: `event-${event_id}` }] : [])
+      ],
+    }),
+
+    updateEventGallery: builder.mutation({
+      query: (galleryData) => ({
+        url: '/api/eventgallery/update',
+        method: 'POST',
+        body: galleryData,
+      }),
+      invalidatesTags: (result, error, { event_id, internal_id }) => [
+        'EventGallery',
+        { type: 'EventGallery', id: internal_id },
+        ...(event_id ? [{ type: 'EventGallery', id: `event-${event_id}` }] : [])
+      ],
+    }),
+
+    deleteEventGallery: builder.mutation({
+      query: ({ internal_id, event_id }) => ({
+        url: '/api/eventgallery/delete',
+        method: 'POST',
+        body: { internal_id },
+      }),
+      invalidatesTags: (result, error, { internal_id, event_id }) => [
+        'EventGallery',
+        { type: 'EventGallery', id: internal_id },
+        ...(event_id ? [{ type: 'EventGallery', id: `event-${event_id}` }] : [])
+      ],
     }),
 
     // Mods endpoints
@@ -1111,6 +1229,18 @@ export const apiService = createApi({
       ],
     }),
 
+    // Car Follow endpoints
+    getCarFollowers: builder.query({
+      query: ({ car_id, page = 0, limit = 24 }) => ({
+        url: `/api/carfollow/car-followers/${car_id}/${page}/none/${limit}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, { car_id }) => [
+        'CarFollow',
+        { type: 'CarFollow', id: car_id }
+      ],
+    }),
+
     // Tag endpoints
     getTagsByPost: builder.query({
       query: (postId) => ({
@@ -1231,6 +1361,417 @@ export const apiService = createApi({
       keepUnusedDataFor: 60,
     }),
 
+    // Cache management endpoints (admin only)
+    getCacheStats: builder.query({
+      query: () => ({
+        url: '/api/cache/stats',
+        method: 'GET',
+      }),
+      keepUnusedDataFor: 0, // Don't cache cache stats
+    }),
+
+    getCacheCollections: builder.query({
+      query: () => ({
+        url: '/api/cache/collections',
+        method: 'GET',
+      }),
+      keepUnusedDataFor: 0,
+    }),
+
+    clearCollectionCache: builder.mutation({
+      query: (collection) => ({
+        url: `/api/cache/clear/${collection}`,
+        method: 'POST',
+      }),
+    }),
+
+    clearMultipleCollections: builder.mutation({
+      query: (collections) => ({
+        url: '/api/cache/clear-multiple',
+        method: 'POST',
+        body: { collections },
+      }),
+    }),
+
+    flushAllCache: builder.mutation({
+      query: () => ({
+        url: '/api/cache/flush',
+        method: 'POST',
+      }),
+    }),
+
+    // =====================
+    // Group endpoints
+    // =====================
+
+    getGroups: builder.query({
+      query: ({ page = 0, omit = 'none', limit = 24, user_id, type, category, tag }) => {
+        const params = {};
+        if (user_id) params.user_id = user_id;
+        if (type) params.type = type;
+        if (category) params.category = category;
+        if (tag) params.tag = tag;
+        return {
+          url: `/api/group/${page}/${omit}/${limit}`,
+          method: 'GET',
+          params,
+        };
+      },
+      providesTags: ['Group'],
+    }),
+
+    getGroupDetail: builder.query({
+      query: (id) => ({
+        url: `/api/group/detail/${id}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, id) => [{ type: 'Group', id }],
+    }),
+
+    createGroup: builder.mutation({
+      query: (groupData) => ({
+        url: '/api/group/create',
+        method: 'POST',
+        body: groupData,
+      }),
+      invalidatesTags: ['Group', 'UserEntries'],
+    }),
+
+    updateGroup: builder.mutation({
+      query: (groupData) => ({
+        url: '/api/group/update',
+        method: 'POST',
+        body: groupData,
+      }),
+      invalidatesTags: ['Group', 'UserEntries'],
+    }),
+
+    deleteGroup: builder.mutation({
+      query: (data) => ({
+        url: '/api/group/delete',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Group', 'UserEntries'],
+    }),
+
+    // Group membership
+    getGroupMembers: builder.query({
+      query: ({ group_id, status }) => ({
+        url: `/api/group/${group_id}/members`,
+        method: 'GET',
+        params: status ? { status } : undefined,
+      }),
+      providesTags: (result, error, { group_id }) => [
+        { type: 'GroupMembers', id: group_id }
+      ],
+    }),
+
+    getUserGroups: builder.query({
+      query: ({ user_id, status, member_type }) => {
+        const params = {};
+        if (status) params.status = status;
+        if (member_type) params.member_type = member_type;
+        return {
+          url: `/api/group/user/${user_id}/groups`,
+          method: 'GET',
+          params,
+        };
+      },
+      providesTags: (result, error, { user_id }) => [
+        { type: 'GroupMembers', id: `user-${user_id}` }
+      ],
+    }),
+
+    joinGroup: builder.mutation({
+      query: (group_id) => ({
+        url: `/api/group/${group_id}/join`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, group_id) => [
+        { type: 'GroupMembers', id: group_id },
+        'Group',
+      ],
+    }),
+
+    leaveGroup: builder.mutation({
+      query: (group_id) => ({
+        url: `/api/group/${group_id}/leave`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, group_id) => [
+        { type: 'GroupMembers', id: group_id },
+        'Group',
+      ],
+    }),
+
+    approveMember: builder.mutation({
+      query: ({ group_id, user_id }) => ({
+        url: `/api/group/${group_id}/approve/${user_id}`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, { group_id }) => [
+        { type: 'GroupMembers', id: group_id }
+      ],
+    }),
+
+    rejectMember: builder.mutation({
+      query: ({ group_id, user_id }) => ({
+        url: `/api/group/${group_id}/reject/${user_id}`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, { group_id }) => [
+        { type: 'GroupMembers', id: group_id }
+      ],
+    }),
+
+    removeMember: builder.mutation({
+      query: ({ group_id, user_id }) => ({
+        url: `/api/group/${group_id}/remove/${user_id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, { group_id }) => [
+        { type: 'GroupMembers', id: group_id }
+      ],
+    }),
+
+    updateMemberType: builder.mutation({
+      query: ({ group_id, user_id, member_type }) => ({
+        url: `/api/group/${group_id}/member/${user_id}`,
+        method: 'PATCH',
+        body: { member_type },
+      }),
+      invalidatesTags: (result, error, { group_id }) => [
+        { type: 'GroupMembers', id: group_id }
+      ],
+    }),
+
+    inviteMember: builder.mutation({
+      query: ({ group_id, user_id }) => ({
+        url: `/api/group/${group_id}/invite/${user_id}`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, { group_id }) => [
+        { type: 'GroupMembers', id: group_id }
+      ],
+    }),
+
+    cancelInvitation: builder.mutation({
+      query: ({ group_id, user_id }) => ({
+        url: `/api/group/${group_id}/invite/${user_id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, { group_id }) => [
+        { type: 'GroupMembers', id: group_id }
+      ],
+    }),
+
+    // Group cars
+    getGroupCars: builder.query({
+      query: ({ group_id, page = 1, limit = 24 }) => ({
+        url: `/api/garage/group/${group_id}`,
+        method: 'GET',
+        params: { page, limit },
+      }),
+      providesTags: (result, error, { group_id }) => [
+        { type: 'Group', id: `cars-${group_id}` }
+      ],
+    }),
+
+    // =====================
+    // Group Forum endpoints
+    // =====================
+
+    getGroupForumPosts: builder.query({
+      query: ({ page = 0, omit = 'none', limit = 24, group_id, category }) => {
+        const params = {};
+        if (group_id) params.group_id = group_id;
+        if (category) params.category = category;
+        return {
+          url: `/api/groupforum/${page}/${omit}/${limit}`,
+          method: 'GET',
+          params,
+        };
+      },
+      providesTags: ['GroupForum'],
+    }),
+
+    getGroupForumPost: builder.query({
+      query: (id) => ({
+        url: `/api/groupforum/detail/${id}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, id) => [{ type: 'GroupForum', id }],
+    }),
+
+    createGroupForumPost: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupforum/create',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupForum'],
+    }),
+
+    updateGroupForumPost: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupforum/update',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupForum'],
+    }),
+
+    deleteGroupForumPost: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupforum/delete',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupForum'],
+    }),
+
+    upvoteForumPost: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupforum/upvote',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupForum'],
+    }),
+
+    downvoteForumPost: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupforum/downvote',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupForum'],
+    }),
+
+    // =====================
+    // Group News endpoints
+    // =====================
+
+    getGroupNews: builder.query({
+      query: ({ page = 0, omit = 'none', limit = 24, group_id }) => {
+        const params = {};
+        if (group_id) params.group_id = group_id;
+        return {
+          url: `/api/groupnews/${page}/${omit}/${limit}`,
+          method: 'GET',
+          params,
+        };
+      },
+      providesTags: ['GroupNews'],
+    }),
+
+    getGroupNewsDetail: builder.query({
+      query: (id) => ({
+        url: `/api/groupnews/detail/${id}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, id) => [{ type: 'GroupNews', id }],
+    }),
+
+    createGroupNews: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupnews/create',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupNews'],
+    }),
+
+    updateGroupNews: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupnews/update',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupNews'],
+    }),
+
+    deleteGroupNews: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupnews/delete',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupNews'],
+    }),
+
+    // =====================
+    // Group Resources endpoints
+    // =====================
+
+    getGroupResources: builder.query({
+      query: ({ page = 0, omit = 'none', limit = 24, group_id, category }) => {
+        const params = {};
+        if (group_id) params.group_id = group_id;
+        if (category) params.category = category;
+        return {
+          url: `/api/groupresource/${page}/${omit}/${limit}`,
+          method: 'GET',
+          params,
+        };
+      },
+      providesTags: ['GroupResources'],
+    }),
+
+    getGroupResourceDetail: builder.query({
+      query: (id) => ({
+        url: `/api/groupresource/detail/${id}`,
+        method: 'GET',
+      }),
+      providesTags: (result, error, id) => [{ type: 'GroupResources', id }],
+    }),
+
+    createGroupResource: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupresource/create',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupResources'],
+    }),
+
+    updateGroupResource: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupresource/update',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupResources'],
+    }),
+
+    deleteGroupResource: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupresource/delete',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupResources'],
+    }),
+
+    upvoteResource: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupresource/upvote',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupResources'],
+    }),
+
+    downvoteResource: builder.mutation({
+      query: (data) => ({
+        url: '/api/groupresource/downvote',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GroupResources'],
+    }),
+
   }),
 });
 
@@ -1277,17 +1818,32 @@ export const {
   useGetPaginatedFollowingQuery,
   useGetLikeInfoQuery,
   useGetPostCountsQuery,
+  useGetLikeUsersQuery,
   useLikePostMutation,
   useUnlikePostMutation,
   useGetCommentsQuery,
   useCreateCommentMutation,
   useUpdateCommentMutation,
   useDeleteCommentMutation,
+  useGetNotificationsQuery,
+  useGetUnreadCountQuery,
+  useMarkNotificationAsReadMutation,
+  useMarkAllNotificationsAsReadMutation,
+  useArchiveNotificationMutation,
+  useArchiveAllNotificationsMutation,
+  useDeleteNotificationMutation,
   useGetArticlesQuery,
+  useGetArticleQuery,
   useGetEventsQuery,
+  useGetEventQuery,
   useCreateEventMutation,
   useUpdateEventMutation,
   useDeleteEventMutation,
+  useGetEventGalleriesQuery,
+  useGetEventGalleryBucketImagesQuery,
+  useCreateEventGalleryMutation,
+  useUpdateEventGalleryMutation,
+  useDeleteEventGalleryMutation,
   useGetModsQuery,
   useGetModQuery,
   useCreateModMutation,
@@ -1325,4 +1881,49 @@ export const {
   useDeleteMessageMutation,
   useGetUnreadMessageCountQuery,
   useSearchUsersQuery,
+  useGetCacheStatsQuery,
+  useGetCacheCollectionsQuery,
+  useClearCollectionCacheMutation,
+  useClearMultipleCollectionsMutation,
+  useFlushAllCacheMutation,
+  useGetCarFollowersQuery,
+  // Group hooks
+  useGetGroupsQuery,
+  useGetGroupDetailQuery,
+  useCreateGroupMutation,
+  useUpdateGroupMutation,
+  useDeleteGroupMutation,
+  useGetGroupMembersQuery,
+  useGetUserGroupsQuery,
+  useJoinGroupMutation,
+  useLeaveGroupMutation,
+  useApproveMemberMutation,
+  useRejectMemberMutation,
+  useRemoveMemberMutation,
+  useUpdateMemberTypeMutation,
+  useInviteMemberMutation,
+  useCancelInvitationMutation,
+  useGetGroupCarsQuery,
+  // Group Forum hooks
+  useGetGroupForumPostsQuery,
+  useGetGroupForumPostQuery,
+  useCreateGroupForumPostMutation,
+  useUpdateGroupForumPostMutation,
+  useDeleteGroupForumPostMutation,
+  useUpvoteForumPostMutation,
+  useDownvoteForumPostMutation,
+  // Group News hooks
+  useGetGroupNewsQuery,
+  useGetGroupNewsDetailQuery,
+  useCreateGroupNewsMutation,
+  useUpdateGroupNewsMutation,
+  useDeleteGroupNewsMutation,
+  // Group Resources hooks
+  useGetGroupResourcesQuery,
+  useGetGroupResourceDetailQuery,
+  useCreateGroupResourceMutation,
+  useUpdateGroupResourceMutation,
+  useDeleteGroupResourceMutation,
+  useUpvoteResourceMutation,
+  useDownvoteResourceMutation,
 } = apiService;

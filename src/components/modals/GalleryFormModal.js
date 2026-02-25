@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Alert,
   KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { colors } from '../../constants/colors';
 import FAIcon from '../ui/FAIcon';
@@ -157,9 +156,9 @@ const GalleryFormModal = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior='height'
       >
         {/* Header */}
         <View style={styles.header}>
@@ -286,7 +285,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingTop: 20,
     paddingBottom: 16,
     backgroundColor: colors.WHITE,
     borderBottomWidth: 1,
@@ -362,7 +361,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.WHITE,
     borderTopWidth: 1,
     borderTopColor: colors.BORDER,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    paddingBottom: 16,
   },
   footerButton: {
     paddingHorizontal: 24,

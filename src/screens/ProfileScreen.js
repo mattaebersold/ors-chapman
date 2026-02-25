@@ -21,12 +21,15 @@ import {
   useCreateProjectMutation,
   useCreateEventMutation,
   useGetUnreadMessageCountQuery,
+  useGetUsersQuery,
+  useGetCarsQuery,
 } from '../services/apiService';
 import { colors } from '../constants/colors';
 import { createFormData } from '../utils/formUtils';
 import SettingsModal from '../components/modals/SettingsModal';
 import Listing from '../components/Listing';
 import CarCard from '../components/cards/CarCard';
+import UserCard from '../components/cards/UserCard';
 import PostCreationModal from '../components/modals/PostCreationModal';
 import CarFormModal from '../components/modals/CarFormModal';
 import ProjectFormModal from '../components/modals/ProjectFormModal';
@@ -90,18 +93,7 @@ const ProfileScreen = ({ navigation }) => {
         filter: 'user',
         user_id: userDetails?.user_id,
         omit: 'none'
-      }
-    },
-    {
-      key: 'drafts',
-      label: 'Drafts',
-      type: 'posts',
-      params: {
-        type: 'all',
-        filter: 'user',
-        user_id: userDetails?.user_id,
-        omit: 'none',
-        draft: true // Filter for draft posts only
+        // Removed draft filter - will show all posts including drafts
       }
     },
     {
@@ -121,12 +113,27 @@ const ProfileScreen = ({ navigation }) => {
     {
       key: 'events',
       label: 'Events',
-      type: 'posts',
-      params: {
-        type: 'event',
-        filter: 'user',
+      type: 'events',
+      eventParams: {
         user_id: userDetails?.user_id,
-        omit: 'none'
+      }
+    },
+    {
+      key: 'followers',
+      label: 'Followers',
+      type: 'users',
+      params: {
+        filter: 'followers',
+        username: userDetails?.username,
+      }
+    },
+    {
+      key: 'following',
+      label: 'Following',
+      type: 'following', // Special type for combined users + cars
+      params: {
+        filter: 'following',
+        username: userDetails?.username,
       }
     },
   ];
@@ -138,6 +145,7 @@ const ProfileScreen = ({ navigation }) => {
       apiUrl: tab.apiUrl,
       params: tab.params,
       projectParams: tab.projectParams,
+      eventParams: tab.eventParams,
       heading: `Your ${tab.label}`,
     };
   };
@@ -168,6 +176,9 @@ const ProfileScreen = ({ navigation }) => {
           onPress: () => setEventModalVisible(true),
           icon: 'calendar'
         };
+      case 'followers':
+      case 'following':
+        return null; // No create button for followers/following
       default:
         return null;
     }
@@ -191,19 +202,86 @@ const ProfileScreen = ({ navigation }) => {
     );
   };
 
+  // Fetch following data for the special following tab
+  const { data: followingUsers } = useGetUsersQuery({
+    page: 1,
+    limit: 50,
+    filter: 'following',
+    username: userDetails?.username,
+  }, {
+    skip: activeTab !== 'following' || !userDetails?.username
+  });
+
+  const { data: followingCars } = useGetCarsQuery({
+    page: 1,
+    limit: 50,
+    filter: 'following',
+    username: userDetails?.username,
+  }, {
+    skip: activeTab !== 'following' || !userDetails?.username
+  });
+
+  const renderFollowingTab = () => {
+    const users = followingUsers?.entries || [];
+    const cars = followingCars?.entries || [];
+
+    return (
+      <ScrollView style={styles.followingContainer}>
+        {users.length > 0 && (
+          <View style={styles.followingSection}>
+            <Text style={styles.followingSectionTitle}>Following Users ({users.length})</Text>
+            {users.map((user, index) => (
+              <View key={user._id || index} style={styles.followingItem}>
+                <UserCard user={user} displayOptions={{}} />
+              </View>
+            ))}
+          </View>
+        )}
+
+        {cars.length > 0 && (
+          <View style={styles.followingSection}>
+            <Text style={styles.followingSectionTitle}>Following Cars ({cars.length})</Text>
+            {cars.map((car, index) => (
+              <View key={car._id || index} style={styles.followingItem}>
+                <CarCard post={car} displayOptions={{ small: false }} />
+              </View>
+            ))}
+          </View>
+        )}
+
+        {users.length === 0 && cars.length === 0 && (
+          <View style={styles.emptyState}>
+            <FAIcon name="users" size={48} color={colors.TEXT_SECONDARY} />
+            <Text style={styles.emptyStateText}>Not following anyone yet</Text>
+          </View>
+        )}
+      </ScrollView>
+    );
+  };
+
   const renderTabContent = () => {
     const config = getTabConfig(activeTab);
-    
+
+    // Special handling for following tab
+    if (activeTab === 'following') {
+      return (
+        <View style={styles.tabContent}>
+          {renderFeedHeader()}
+          {renderFollowingTab()}
+        </View>
+      );
+    }
+
     // Display options - hide user badge since this is the user's own profile
     const displayOptions = {
       badgeProfile: false, // Hide user badge - this is the user's own profile
       badgeCar: true, // Keep car badge for posts
     };
-    
+
     return (
       <View style={styles.tabContent}>
         {renderFeedHeader()}
-        <Listing 
+        <Listing
           config={config}
           displayOptions={displayOptions}
           CustomComponent={activeTab === 'garage' ? CarCard : undefined}
@@ -726,6 +804,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 6,
+  },
+  // Following Tab Styles
+  followingContainer: {
+    flex: 1,
+    backgroundColor: colors.BACKGROUND,
+  },
+  followingSection: {
+    marginTop: 8,
+    backgroundColor: colors.WHITE,
+    padding: 16,
+  },
+  followingSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.TEXT_PRIMARY,
+    marginBottom: 12,
+  },
+  followingItem: {
+    marginBottom: 12,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: colors.TEXT_SECONDARY,
+    marginTop: 16,
   },
 });
 

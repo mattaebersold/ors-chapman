@@ -9,7 +9,6 @@ import {
   Image,
   Dimensions,
   FlatList,
-  Platform,
   Share,
   Alert,
 } from 'react-native';
@@ -21,13 +20,17 @@ import FAIcon from '../ui/FAIcon';
 import Tags from '../overlays/Tags';
 import UserBadge from '../overlays/UserBadge';
 import CarBadge from '../overlays/CarBadge';
+import EventBadge from '../overlays/EventBadge';
+import UserRow from '../UserRow';
+import CarRow from '../CarRow';
+import EventRow from '../EventRow';
 import Likes from '../Likes';
 import Comments from '../Comments';
 import ImageGalleryModal from './ImageGalleryModal';
 import GradientPlaceholder from '../ui/GradientPlaceholder';
 import { useModal } from '../../contexts/ModalContext';
 import { useBanner } from '../../contexts/BannerContext';
-import { useDeletePostMutation, useGetUserDetailsQuery, useTogglePostFeaturedMutation, useToggleEventFeaturedMutation } from '../../services/apiService';
+import { useDeletePostMutation, useGetUserDetailsQuery, useTogglePostFeaturedMutation, useToggleEventFeaturedMutation, useGetTagsByPostQuery, useGetUserQuery } from '../../services/apiService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -53,6 +56,16 @@ const PostDetailModal = ({ visible, post, onClose }) => {
   const [deletePost] = useDeletePostMutation();
   const [togglePostFeatured] = useTogglePostFeaturedMutation();
   const [toggleEventFeatured] = useToggleEventFeaturedMutation();
+
+  // Fetch tags for this post
+  const { data: tagsData } = useGetTagsByPostQuery(post?.internal_id || post?._id, {
+    skip: !post?.internal_id && !post?._id
+  });
+
+  // Fetch post author data
+  const { data: postAuthor } = useGetUserQuery(post?.user_id, {
+    skip: !post?.user_id
+  });
 
   if (!post) return null;
 
@@ -148,6 +161,11 @@ const PostDetailModal = ({ visible, post, onClose }) => {
     event_type: post.event_type,
   };
 
+  // Organize tags by type
+  const taggedUsers = tagsData?.tags?.filter(tag => tag.tag_entry_type === 'user') || [];
+  const taggedCars = tagsData?.tags?.filter(tag => tag.tag_entry_type === 'garagecar') || [];
+  const taggedEvents = tagsData?.tags?.filter(tag => tag.tag_entry_type === 'event') || [];
+
   const handleImagePress = (index) => {
     setImageGalleryStartIndex(index);
     setImageGalleryModalVisible(true);
@@ -175,78 +193,52 @@ const PostDetailModal = ({ visible, post, onClose }) => {
           const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
           
           if (downloadResult.status === 200) {
-            // Try platform-specific approaches for sharing image with text
-            if (Platform.OS === 'ios') {
-              // iOS: Use React Native Share with both image and text
-              try {
-                await Share.share({
-                  message: message,
-                  title: post.title || 'Check out this post',
-                  url: downloadResult.uri, // iOS can handle local file URLs
-                }, {
-                  dialogTitle: post.title || 'Share this post',
-                  subject: post.title || 'Check out this post',
-                });
-              } catch (iosShareError) {
-                console.log('iOS share failed, trying Expo sharing:', iosShareError);
-                // Fallback to Expo sharing
-                await Sharing.shareAsync(downloadResult.uri, {
-                  dialogTitle: post.title || 'Share this post',
-                  UTI: 'public.jpeg',
-                });
-              }
-            } else {
-              // Android: Use a different approach
-              try {
-                // First try React Native Share with image URL
-                await Share.share({
-                  message: message,
-                  title: post.title || 'Check out this post',
-                  url: `file://${downloadResult.uri}`,
-                }, {
-                  dialogTitle: post.title || 'Share this post',
-                  subject: post.title || 'Check out this post',
-                });
-              } catch (androidShareError) {
-                console.log('Android share failed, trying sequential approach:', androidShareError);
-                // Sequential approach: Share image first, then text
-                await Sharing.shareAsync(downloadResult.uri, {
-                  dialogTitle: post.title || 'Share this post',
-                  UTI: 'public.jpeg',
-                });
-                
-                // Give user time to complete image share, then offer text
-                setTimeout(async () => {
-                  try {
-                    Alert.alert(
-                      'Share Text',
-                      'Would you like to also share the post text?',
-                      [
-                        { text: 'No', style: 'cancel' },
-                        {
-                          text: 'Yes',
-                          onPress: async () => {
-                            await Share.share({
-                              message: message,
-                              title: post.title || 'Check out this post',
-                            });
-                          }
+            try {
+              // First try React Native Share with image URL
+              await Share.share({
+                message: message,
+                title: post.title || 'Check out this post',
+                url: `file://${downloadResult.uri}`,
+              }, {
+                dialogTitle: post.title || 'Share this post',
+                subject: post.title || 'Check out this post',
+              });
+            } catch (shareError) {
+              // Sequential approach: Share image first, then text
+              await Sharing.shareAsync(downloadResult.uri, {
+                dialogTitle: post.title || 'Share this post',
+                UTI: 'public.jpeg',
+              });
+
+              // Give user time to complete image share, then offer text
+              setTimeout(async () => {
+                try {
+                  Alert.alert(
+                    'Share Text',
+                    'Would you like to also share the post text?',
+                    [
+                      { text: 'No', style: 'cancel' },
+                      {
+                        text: 'Yes',
+                        onPress: async () => {
+                          await Share.share({
+                            message: message,
+                            title: post.title || 'Check out this post',
+                          });
                         }
-                      ]
-                    );
-                  } catch (textShareError) {
-                    console.log('Text share failed:', textShareError);
-                  }
-                }, 1000);
-              }
+                      }
+                    ]
+                  );
+                } catch (textShareError) {
+                }
+              }, 1000);
             }
-            
+
             // Clean up the downloaded file after sharing
             setTimeout(async () => {
               try {
                 await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
               } catch (cleanupError) {
-                console.log('Cleanup failed:', cleanupError);
               }
             }, 5000); // Increased delay to ensure sharing is complete
             
@@ -254,7 +246,6 @@ const PostDetailModal = ({ visible, post, onClose }) => {
             throw new Error('Failed to download image');
           }
         } catch (imageError) {
-          console.log('Image sharing failed, falling back to text only:', imageError);
           // Fallback to text-only sharing
           await Share.share({
             message: message,
@@ -294,7 +285,7 @@ const PostDetailModal = ({ visible, post, onClose }) => {
         source={{ uri: item }} 
         style={styles.carouselImage}
         resizeMode="cover"
-        onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
+        onError={(error) => {}}
       />
     </TouchableOpacity>
   );
@@ -425,18 +416,28 @@ const PostDetailModal = ({ visible, post, onClose }) => {
 
             {/* Post Info */}
             <View style={styles.postInfo}>
-              <Tags type={normalizedData.type} category={normalizedData.category} style="inline" />
+              <Tags entryType="post" type={normalizedData.type} category={normalizedData.category} style="inline" />
               <Text style={styles.postTitle}>{normalizedData.title}</Text>
-              
-              <View style={styles.metaRow}>
-                <View style={styles.badgeRow}>
-                  {normalizedData.user_id && <UserBadge userId={normalizedData.user_id} />}
-                  {normalizedData.car_id && <CarBadge carId={normalizedData.car_id} />}
+
+              {/* Posted By */}
+              {postAuthor && (
+                <View style={styles.postedByContainer}>
+                  <Text style={styles.sectionLabel}>Posted by</Text>
+                  <UserBadge userId={normalizedData.user_id} />
+                  <Text style={styles.date}>
+                    {new Date(normalizedData.created_at).toLocaleDateString()}
+                  </Text>
                 </View>
-                <Text style={styles.date}>
-                  {new Date(normalizedData.created_at).toLocaleDateString()}
-                </Text>
-              </View>
+              )}
+
+              {/* Post Description */}
+              {normalizedData.body && (
+                <View style={styles.descriptionContainer}>
+                  <Text style={styles.descriptionText}>
+                    {normalizedData.body.replace(/<[^>]*>/g, '')} {/* Strip HTML tags */}
+                  </Text>
+                </View>
+              )}
 
               {/* Listing Details */}
               {(post.type === 'listing' || post.type === 'want') && (post.price || post.condition) && (
@@ -466,12 +467,42 @@ const PostDetailModal = ({ visible, post, onClose }) => {
                 </View>
               )}
 
-              {/* Body */}
-              {normalizedData.body && (
-                <View style={styles.bodyContainer}>
-                  <Text style={styles.bodyText}>
-                    {normalizedData.body.replace(/<[^>]*>/g, '')} {/* Strip HTML tags */}
-                  </Text>
+              {/* Tagged Users */}
+              {taggedUsers.length > 0 && (
+                <View style={styles.taggedSection}>
+                  <Text style={styles.sectionLabel}>Tagged Users</Text>
+                  {taggedUsers.map((tag, index) => (
+                    <UserRow
+                      key={`user-${tag.tag_internal_id}-${index}`}
+                      userId={tag.tag_internal_id}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {/* Tagged Cars */}
+              {taggedCars.length > 0 && (
+                <View style={styles.taggedSection}>
+                  <Text style={styles.sectionLabel}>Tagged Cars</Text>
+                  {taggedCars.map((tag, index) => (
+                    <CarRow
+                      key={`car-${tag.tag_internal_id}-${index}`}
+                      carId={tag.tag_internal_id}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {/* Tagged Events */}
+              {taggedEvents.length > 0 && (
+                <View style={styles.taggedSection}>
+                  <Text style={styles.sectionLabel}>Tagged Events</Text>
+                  {taggedEvents.map((tag, index) => (
+                    <EventRow
+                      key={`event-${tag.tag_internal_id}-${index}`}
+                      eventId={tag.tag_internal_id}
+                    />
+                  ))}
                 </View>
               )}
 
@@ -737,6 +768,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: colors.TEXT_PRIMARY,
+  },
+  postedByContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.TEXT_SECONDARY,
+  },
+  descriptionContainer: {
+    marginBottom: 20,
+    padding: 12,
+    backgroundColor: colors.BACKGROUND,
+    borderRadius: 8,
+  },
+  descriptionText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.TEXT_PRIMARY,
+  },
+  taggedSection: {
+    marginBottom: 20,
   },
   socialContainer: {
     marginBottom: 20,

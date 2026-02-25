@@ -10,25 +10,47 @@ import {
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
-import { 
+import {
   useUpdateUserBioMutation,
   useUpdateUserNameMutation,
   useUpdateUserUsernameMutation,
   useUpdateUserEmailMutation,
-  useUpdateUserPasswordMutation 
+  useUpdateUserPasswordMutation,
+  useGetCacheStatsQuery,
+  useGetCacheCollectionsQuery,
+  useClearCollectionCacheMutation,
+  useFlushAllCacheMutation
 } from '../../services/apiService';
 import { colors } from '../../constants/colors';
+import { useDispatch } from 'react-redux';
+import { deleteAccount, logout } from '../../store/authSlice';
+import { useNavigation } from '@react-navigation/native';
 
 const SettingsModal = ({ visible, onClose, userInfo }) => {
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+
   const [updateBio, { isLoading: bioLoading }] = useUpdateUserBioMutation();
   const [updateName, { isLoading: nameLoading }] = useUpdateUserNameMutation();
   const [updateUsername, { isLoading: usernameLoading }] = useUpdateUserUsernameMutation();
   const [updateEmail, { isLoading: emailLoading }] = useUpdateUserEmailMutation();
   const [updatePassword, { isLoading: passwordLoading }] = useUpdateUserPasswordMutation();
-  
+
+  // Cache management hooks (admin only)
+  const { data: cacheStats, refetch: refetchStats } = useGetCacheStatsQuery(undefined, {
+    skip: userInfo?.accountType !== 'admin',
+  });
+  const { data: cacheCollections } = useGetCacheCollectionsQuery(undefined, {
+    skip: userInfo?.accountType !== 'admin',
+  });
+  const [clearCollection, { isLoading: clearingCollection }] = useClearCollectionCacheMutation();
+  const [flushCache, { isLoading: flushingCache }] = useFlushAllCacheMutation();
+
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
   const profileLoading = bioLoading || nameLoading || usernameLoading || emailLoading;
+  const isAdmin = userInfo?.accountType === 'admin';
 
   const [profileData, setProfileData] = useState({
     username: userInfo?.username || '',
@@ -107,6 +129,145 @@ const SettingsModal = ({ visible, onClose, userInfo }) => {
     }
   };
 
+  const handleClearCache = async (collectionKey) => {
+    try {
+      await clearCollection(collectionKey).unwrap();
+      await refetchStats();
+      Alert.alert('Success', `Cache cleared for ${collectionKey}`);
+    } catch (error) {
+      Alert.alert('Error', error.data?.error || 'Failed to clear cache');
+    }
+  };
+
+  const handleFlushAll = async () => {
+    Alert.alert(
+      'Flush All Cache',
+      'Are you sure you want to clear ALL cache? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Flush All',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await flushCache().unwrap();
+              await refetchStats();
+              Alert.alert('Success', 'All cache cleared successfully');
+            } catch (error) {
+              Alert.alert('Error', error.data?.error || 'Failed to flush cache');
+            }
+          }
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you absolutely sure? This will permanently delete your account and all associated data including:\n\n• Your profile and settings\n• All cars in your garage\n• All posts, comments, and interactions\n• All projects, events, and groups you\'ve created\n• All marketplace listings\n\nThis action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete My Account',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeletingAccount(true);
+            try {
+              await dispatch(deleteAccount()).unwrap();
+              // Close modal and logout
+              onClose();
+              dispatch(logout());
+              // The LoginScreen will automatically show after logout
+            } catch (error) {
+              setIsDeletingAccount(false);
+              Alert.alert('Error', error || 'Failed to delete account');
+            }
+          }
+        },
+      ]
+    );
+  };
+
+  const renderCacheTab = () => (
+    <View style={styles.tabContent}>
+      <Text style={styles.sectionTitle}>Cache Management</Text>
+
+      {/* Cache Stats */}
+      {cacheStats?.stats && (
+        <View style={styles.statsContainer}>
+          <Text style={styles.statsTitle}>Cache Statistics</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Total Keys</Text>
+              <Text style={styles.statValue}>{cacheStats.stats.keys}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Hit Rate</Text>
+              <Text style={styles.statValue}>
+                {cacheStats.stats.hits + cacheStats.stats.misses > 0
+                  ? `${Math.round((cacheStats.stats.hits / (cacheStats.stats.hits + cacheStats.stats.misses)) * 100)}%`
+                  : 'N/A'
+                }
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Cache Hits</Text>
+              <Text style={styles.statValue}>{cacheStats.stats.hits}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Cache Misses</Text>
+              <Text style={styles.statValue}>{cacheStats.stats.misses}</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.button, styles.secondaryButton]}
+            onPress={refetchStats}
+          >
+            <Text style={styles.secondaryButtonText}>Refresh Stats</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Collections */}
+      <Text style={styles.subsectionTitle}>Clear Cache by Collection</Text>
+      {cacheCollections?.collections?.map((collection) => (
+        <View key={collection.key} style={styles.collectionItem}>
+          <View style={styles.collectionInfo}>
+            <Text style={styles.collectionLabel}>{collection.label}</Text>
+            <Text style={styles.collectionDescription}>{collection.description}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.button, styles.destructiveButton, styles.smallButton]}
+            onPress={() => handleClearCache(collection.key)}
+            disabled={clearingCollection}
+          >
+            <Text style={styles.buttonText}>Clear</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+
+      {/* Flush All */}
+      <View style={styles.dangerZone}>
+        <Text style={styles.dangerTitle}>Danger Zone</Text>
+        <Text style={styles.dangerDescription}>
+          Clear all cached data across all collections. This will force fresh data fetches.
+        </Text>
+        <TouchableOpacity
+          style={[styles.button, styles.destructiveButton]}
+          onPress={handleFlushAll}
+          disabled={flushingCache}
+        >
+          {flushingCache ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Flush All Cache</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const renderProfileTab = () => (
     <View style={styles.tabContent}>
       <Text style={styles.sectionTitle}>Profile Information</Text>
@@ -173,7 +334,7 @@ const SettingsModal = ({ visible, onClose, userInfo }) => {
   const renderPasswordTab = () => (
     <View style={styles.tabContent}>
       <Text style={styles.sectionTitle}>Change Password</Text>
-      
+
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Current Password</Text>
         <TextInput
@@ -221,6 +382,30 @@ const SettingsModal = ({ visible, onClose, userInfo }) => {
     </View>
   );
 
+  const renderAccountTab = () => (
+    <View style={styles.tabContent}>
+      <Text style={styles.sectionTitle}>Account Management</Text>
+
+      <View style={styles.dangerZone}>
+        <Text style={styles.dangerTitle}>Danger Zone</Text>
+        <Text style={styles.dangerDescription}>
+          Deleting your account is permanent and cannot be undone. This will remove all of your data including your profile, garage cars, posts, projects, events, and marketplace listings.
+        </Text>
+        <TouchableOpacity
+          style={[styles.button, styles.destructiveButton]}
+          onPress={handleDeleteAccount}
+          disabled={isDeletingAccount}
+        >
+          {isDeletingAccount ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Delete My Account</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -228,10 +413,10 @@ const SettingsModal = ({ visible, onClose, userInfo }) => {
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        behavior='height'
+        keyboardVerticalOffset={20}
       >
         <View style={styles.header}>
           <Text style={styles.title}>Settings</Text>
@@ -257,14 +442,35 @@ const SettingsModal = ({ visible, onClose, userInfo }) => {
               Password
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'account' && styles.activeTab]}
+            onPress={() => setActiveTab('account')}
+          >
+            <Text style={[styles.tabText, activeTab === 'account' && styles.activeTabText]}>
+              Account
+            </Text>
+          </TouchableOpacity>
+          {isAdmin && (
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'cache' && styles.activeTab]}
+              onPress={() => setActiveTab('cache')}
+            >
+              <Text style={[styles.tabText, activeTab === 'cache' && styles.activeTabText]}>
+                Cache
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {activeTab === 'profile' ? renderProfileTab() : renderPasswordTab()}
+          {activeTab === 'profile' && renderProfileTab()}
+          {activeTab === 'password' && renderPasswordTab()}
+          {activeTab === 'account' && renderAccountTab()}
+          {activeTab === 'cache' && isAdmin && renderCacheTab()}
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
@@ -366,6 +572,106 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  secondaryButton: {
+    backgroundColor: colors.WHITE,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+  },
+  secondaryButtonText: {
+    color: colors.BRG,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  destructiveButton: {
+    backgroundColor: '#dc2626',
+  },
+  smallButton: {
+    padding: 8,
+    marginTop: 0,
+  },
+  statsContainer: {
+    backgroundColor: colors.WHITE,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+  },
+  statsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.BRG,
+    marginBottom: 12,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+  },
+  statItem: {
+    width: '50%',
+    marginBottom: 12,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: colors.GRAY,
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.BRG,
+  },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.BRG,
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  collectionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.WHITE,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  collectionInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  collectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.BRG,
+    marginBottom: 4,
+  },
+  collectionDescription: {
+    fontSize: 12,
+    color: colors.GRAY,
+  },
+  dangerZone: {
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 20,
+  },
+  dangerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#dc2626',
+    marginBottom: 8,
+  },
+  dangerDescription: {
+    fontSize: 14,
+    color: colors.GRAY,
+    marginBottom: 12,
   },
 });
 

@@ -14,11 +14,12 @@ const ArticlesScreen = () => {
   const [activeTab, setActiveTab] = useState('recent-articles');
 
   const tabs = [
-    { 
-      key: 'recent-articles', 
-      label: 'Recent Articles', 
+    {
+      key: 'recent-articles',
+      label: 'Recent Articles',
       type: 'articles',
-      heading: 'Recent Articles' 
+      heading: 'Recent Articles',
+      apiUrl: null // Not needed for articles, uses type
     },
  ];
 

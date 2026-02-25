@@ -50,7 +50,10 @@ import {
   faExclamationTriangle,
   faPaperPlane,
   faStar,
-  faExpand
+  faExpand,
+  faBell,
+  faBellSlash,
+  faArchive
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -135,6 +138,10 @@ const iconMap = {
   star: faStar,
   'star-outline': faStarRegular,
   expand: faExpand,
+  bell: faBell,
+  'bell-slash': faBellSlash,
+  archive: faArchive,
+  send: faPaperPlane,
 };
 
 const FAIcon = ({ name, size = 20, color = '#000', style, ...props }) => {

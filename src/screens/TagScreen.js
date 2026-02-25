@@ -8,16 +8,18 @@ import {
   Alert,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetTagsByPostQuery, useGetRecentTagsQuery, useDeleteTagMutation, useGetUserQuery, useGetCarQuery } from '../services/apiService';
+import { useGetTagsByPostQuery, useGetRecentTagsQuery, useDeleteTagMutation, useGetUserQuery, useGetCarQuery, useGetEventQuery } from '../services/apiService';
 import FAIcon from '../components/ui/FAIcon';
 import UserBadge from '../components/overlays/UserBadge';
 import LoadingIndicator from '../components/ui/LoadingIndicator';
 import UserSearchModal from '../components/modals/UserSearchModal';
 import CarSearchModal from '../components/modals/CarSearchModal';
+import EventSearchModal from '../components/modals/EventSearchModal';
 
 const TagScreen = ({ postId, onClose }) => {
   const [userSearchVisible, setUserSearchVisible] = useState(false);
   const [carSearchVisible, setCarSearchVisible] = useState(false);
+  const [eventSearchVisible, setEventSearchVisible] = useState(false);
 
   // Fetch tags for this post
   const { data: tagsData, isLoading: tagsLoading } = useGetTagsByPostQuery(postId, {
@@ -39,6 +41,11 @@ const TagScreen = ({ postId, onClose }) => {
   const taggedCars = useMemo(() => {
     if (!tagsData?.tags) return [];
     return tagsData.tags.filter(tag => tag.tag_entry_type === 'garagecar');
+  }, [tagsData]);
+
+  const taggedEvents = useMemo(() => {
+    if (!tagsData?.tags) return [];
+    return tagsData.tags.filter(tag => tag.tag_entry_type === 'event');
   }, [tagsData]);
 
   // De-duplicate recent tags
@@ -118,11 +125,49 @@ const TagScreen = ({ postId, onClose }) => {
     );
   };
 
+  const TaggedEventItem = ({ tag }) => {
+    const { data: event, isLoading } = useGetEventQuery(tag.tag_internal_id);
+
+    if (isLoading) return <LoadingIndicator size="small" />;
+    if (!event?.entry) return null;
+
+    const formatDate = () => {
+      if (event.entry.event_type === 'recurring' && event.entry.recurring_frequency) {
+        return event.entry.recurring_frequency;
+      }
+      if (event.entry.event_date) {
+        const d = new Date(event.entry.event_date);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      return '';
+    };
+
+    return (
+      <View style={styles.tagItem}>
+        <View style={styles.carBadge}>
+          <FAIcon name="calendar" size={16} color={colors.BRG} />
+          <View>
+            <Text style={styles.carBadgeText}>{event.entry.title}</Text>
+            <Text style={styles.eventDateText}>{formatDate()}</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => handleDeleteTag(tag._id)}
+        >
+          <FAIcon name="times" size={16} color={colors.ERROR} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const RecentTagItem = ({ tag }) => {
     if (tag.tag_entry_type === 'user') {
       return <TaggedUserItem tag={tag} />;
     } else if (tag.tag_entry_type === 'garagecar') {
       return <TaggedCarItem tag={tag} />;
+    } else if (tag.tag_entry_type === 'event') {
+      return <TaggedEventItem tag={tag} />;
     }
     return null;
   };
@@ -171,6 +216,22 @@ const TagScreen = ({ postId, onClose }) => {
           )}
         </View>
 
+        {/* Tagged Events Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Events Tagged on This Post</Text>
+          {tagsLoading ? (
+            <LoadingIndicator />
+          ) : taggedEvents.length > 0 ? (
+            <View style={styles.tagsList}>
+              {taggedEvents.map(tag => (
+                <TaggedEventItem key={tag._id} tag={tag} />
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.emptyText}>No events tagged yet</Text>
+          )}
+        </View>
+
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
@@ -189,6 +250,15 @@ const TagScreen = ({ postId, onClose }) => {
           >
             <FAIcon name="car" size={20} color={colors.WHITE} />
             <Text style={styles.actionButtonText}>Search Cars</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            key="search-events-button"
+            style={styles.actionButton}
+            onPress={() => setEventSearchVisible(true)}
+          >
+            <FAIcon name="calendar" size={20} color={colors.WHITE} />
+            <Text style={styles.actionButtonText}>Search Events</Text>
           </TouchableOpacity>
         </View>
 
@@ -220,6 +290,13 @@ const TagScreen = ({ postId, onClose }) => {
       <CarSearchModal
         visible={carSearchVisible}
         onClose={() => setCarSearchVisible(false)}
+        postId={postId}
+      />
+
+      {/* Event Search Modal */}
+      <EventSearchModal
+        visible={eventSearchVisible}
+        onClose={() => setEventSearchVisible(false)}
         postId={postId}
       />
     </View>
@@ -288,6 +365,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.TEXT_PRIMARY,
+  },
+  eventDateText: {
+    fontSize: 12,
+    color: colors.TEXT_SECONDARY,
+    marginTop: 2,
   },
   emptyText: {
     fontSize: 14,

@@ -93,6 +93,33 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   await AsyncStorage.removeItem('userToken');
 });
 
+export const deleteAccount = createAsyncThunk(
+  'auth/deleteAccount',
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const { auth } = getState();
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth.userToken}`,
+        },
+      };
+
+      const { data } = await axios.delete(
+        `${CONFIG.API_BASE_URL}/api/users/account`,
+        config
+      );
+
+      // Remove token from storage
+      await AsyncStorage.removeItem('userToken');
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  }
+);
+
 // Initial state
 const initialState = {
   loading: false,

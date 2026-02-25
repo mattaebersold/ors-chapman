@@ -8,7 +8,6 @@ import {
   Image,
   Dimensions,
   FlatList,
-  Platform,
   Share,
   Alert,
   SafeAreaView,
@@ -21,13 +20,17 @@ import FAIcon from '../components/ui/FAIcon';
 import Tags from '../components/overlays/Tags';
 import UserBadge from '../components/overlays/UserBadge';
 import CarBadge from '../components/overlays/CarBadge';
+import EventBadge from '../components/overlays/EventBadge';
+import UserRow from '../components/UserRow';
+import CarRow from '../components/CarRow';
+import EventRow from '../components/EventRow';
 import Likes from '../components/Likes';
 import Comments from '../components/Comments';
 import ImageGalleryModal from '../components/modals/ImageGalleryModal';
 import GradientPlaceholder from '../components/ui/GradientPlaceholder';
 import { useModal } from '../contexts/ModalContext';
 import { useBanner } from '../contexts/BannerContext';
-import { useDeletePostMutation, useGetUserDetailsQuery } from '../services/apiService';
+import { useDeletePostMutation, useGetUserDetailsQuery, useGetTagsByPostQuery, useGetUserQuery } from '../services/apiService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -53,6 +56,16 @@ const PostDetailScreen = ({ route, navigation }) => {
     showError = (message) => Alert.alert('Error', message);
   }
   const [deletePost] = useDeletePostMutation();
+
+  // Fetch tags for this post
+  const { data: tagsData } = useGetTagsByPostQuery(post?.internal_id || post?._id, {
+    skip: !post?.internal_id && !post?._id
+  });
+
+  // Fetch post author data
+  const { data: postAuthor } = useGetUserQuery(post?.user_id, {
+    skip: !post?.user_id
+  });
 
   if (!post) {
     return (
@@ -141,19 +154,17 @@ const PostDetailScreen = ({ route, navigation }) => {
     event_type: post.event_type,
   };
 
+  // Organize tags by type
+  const taggedUsers = tagsData?.tags?.filter(tag => tag.tag_entry_type === 'user') || [];
+  const taggedCars = tagsData?.tags?.filter(tag => tag.tag_entry_type === 'garagecar') || [];
+  const taggedEvents = tagsData?.tags?.filter(tag => tag.tag_entry_type === 'event') || [];
+
   // Handle share functionality
   const handleShare = async () => {
     try {
-      if (Platform.OS === 'ios') {
-        await Share.share({
-          message: `Check out this ${isEvent ? 'event' : 'post'}: ${normalizedData.title}`,
-          url: `https://opensociety.app/post/${normalizedData.internal_id}`, // You'll need to replace with your actual domain
-        });
-      } else {
-        await Share.share({
-          message: `Check out this ${isEvent ? 'event' : 'post'}: ${normalizedData.title}\n\nhttps://opensociety.app/post/${normalizedData.internal_id}`,
-        });
-      }
+      await Share.share({
+        message: `Check out this ${isEvent ? 'event' : 'post'}: ${normalizedData.title}\n\nhttps://opensociety.app/post/${normalizedData.internal_id}`,
+      });
     } catch (error) {
       console.error('Error sharing:', error);
     }
@@ -268,23 +279,31 @@ const PostDetailScreen = ({ route, navigation }) => {
 
         {/* Post info */}
         <View style={styles.postInfo}>
+          {/* Type & Category Badges */}
+          <Tags entryType="post" type={normalizedData.type} category={normalizedData.category} style="inline" />
+
           {/* Title */}
           <Text style={styles.postTitle}>{normalizedData.title}</Text>
 
-          {/* Meta info */}
-          <View style={styles.metaRow}>
-            <View style={styles.badgeRow}>
-              <UserBadge user={normalizedData.user || { username: normalizedData.username }} />
-              {normalizedData.make && (
-                <CarBadge make={normalizedData.make} model={normalizedData.model} year={normalizedData.year} />
-              )}
-              {normalizedData.type && <Tags key="typeTag" text={normalizedData.type} color={colors.BRG} />}
-              {normalizedData.category && <Tags key="categoryTag" text={normalizedData.category} color={colors.GRAY} />}
+          {/* Posted By */}
+          {postAuthor && (
+            <View style={styles.postedByContainer}>
+              <Text style={styles.sectionLabel}>Posted by</Text>
+              <UserBadge userId={normalizedData.user_id} />
+              <Text style={styles.date}>
+                {new Date(normalizedData.created_at).toLocaleDateString()}
+              </Text>
             </View>
-            <Text style={styles.date}>
-              {new Date(normalizedData.created_at).toLocaleDateString()}
-            </Text>
-          </View>
+          )}
+
+          {/* Post Description */}
+          {normalizedData.body && (
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.descriptionText}>
+                {normalizedData.body.replace(/<[^>]*>/g, '')} {/* Strip HTML tags */}
+              </Text>
+            </View>
+          )}
 
           {/* Listing details for marketplace items */}
           {(normalizedData.price || normalizedData.condition) && (
@@ -314,12 +333,42 @@ const PostDetailScreen = ({ route, navigation }) => {
             </View>
           )}
 
-          {/* Body */}
-          {normalizedData.body && (
-            <View style={styles.bodyContainer}>
-              <Text style={styles.bodyText}>
-                {normalizedData.body.replace(/<[^>]*>/g, '')} {/* Strip HTML tags */}
-              </Text>
+          {/* Tagged Users */}
+          {taggedUsers.length > 0 && (
+            <View style={styles.taggedSection}>
+              <Text style={styles.sectionLabel}>Tagged Users</Text>
+              {taggedUsers.map((tag, index) => (
+                <UserRow
+                  key={`user-${tag.tag_internal_id}-${index}`}
+                  userId={tag.tag_internal_id}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Tagged Cars */}
+          {taggedCars.length > 0 && (
+            <View style={styles.taggedSection}>
+              <Text style={styles.sectionLabel}>Tagged Cars</Text>
+              {taggedCars.map((tag, index) => (
+                <CarRow
+                  key={`car-${tag.tag_internal_id}-${index}`}
+                  carId={tag.tag_internal_id}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Tagged Events */}
+          {taggedEvents.length > 0 && (
+            <View style={styles.taggedSection}>
+              <Text style={styles.sectionLabel}>Tagged Events</Text>
+              {taggedEvents.map((tag, index) => (
+                <EventRow
+                  key={`event-${tag.tag_internal_id}-${index}`}
+                  eventId={tag.tag_internal_id}
+                />
+              ))}
             </View>
           )}
 
@@ -552,6 +601,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: colors.TEXT_PRIMARY,
+  },
+  postedByContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.TEXT_SECONDARY,
+  },
+  descriptionContainer: {
+    marginBottom: 20,
+    padding: 12,
+    backgroundColor: colors.BACKGROUND,
+    borderRadius: 8,
+  },
+  descriptionText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.TEXT_PRIMARY,
+  },
+  taggedSection: {
+    marginBottom: 20,
   },
   socialContainer: {
     marginBottom: 20,

@@ -9,7 +9,6 @@ import {
   ScrollView,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -122,8 +121,8 @@ const EventFormModal = ({ visible, onClose, onSubmit, editMode = false, existing
   };
 
   const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(Platform.OS === 'ios');
-    
+    setShowDatePicker(false);
+
     if (selectedDate) {
       setSelectedDate(selectedDate);
       // Format date as YYYY-MM-DD
@@ -198,9 +197,9 @@ const EventFormModal = ({ visible, onClose, onSubmit, editMode = false, existing
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior='height'
       >
         {/* Header */}
         <View style={styles.header}>

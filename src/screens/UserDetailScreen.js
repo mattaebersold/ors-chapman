@@ -6,34 +6,49 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  ScrollView,
+  Dimensions,
+  FlatList,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import FAIcon from '../components/ui/FAIcon';
-import Listing from '../components/Listing';
-import { useGetUserQuery, useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery, useGetPostsQuery, useGetCarsQuery, useToggleUserFeaturedMutation, useGetUserDetailsQuery } from '../services/apiService';
-import EventCarousel from '../components/EventCarousel';
+import CarCard from '../components/cards/CarCard';
+import PostCard from '../components/cards/PostCard';
+import UserCard from '../components/cards/UserCard';
+import LoadingIndicator from '../components/ui/LoadingIndicator';
+import PaneModal from '../components/modals/PaneModal';
+import {
+  useGetUserQuery,
+  useFollowUserMutation,
+  useUnfollowUserMutation,
+  useGetFollowStatusQuery,
+  useGetPostsQuery,
+  useGetCarsQuery,
+  useToggleUserFeaturedMutation,
+  useGetUserDetailsQuery,
+  useGetUsersQuery
+} from '../services/apiService';
 
+const { width } = Dimensions.get('window');
 
 const UserDetailScreen = () => {
   const route = useRoute();
+  const navigation = useNavigation();
   const { userId, user: passedUser } = route.params || {};
   const { userInfo } = useSelector(state => state.auth);
-  const [activeTab, setActiveTab] = useState('posts');
 
-  // Fetch detailed user data if not passed - use getUser instead of getUserDetails
+  // Fetch detailed user data
   const { data: userDetails, isLoading: userLoading } = useGetUserQuery(userId, {
     skip: !userId || !!passedUser
   });
 
   const user = passedUser || userDetails;
   const isOwnProfile = user?._id === userInfo?.id || user?.id === userInfo?.id;
-
-  // Determine the correct user ID to use (prioritize user_id field)
   const actualUserId = user?.user_id || user?._id || user?.id || userId;
 
-  // Follow functionality - backend uses username
+  // Follow functionality
   const { data: followStatus, isLoading: statusLoading } = useGetFollowStatusQuery(user?.username, {
     skip: !user || isOwnProfile || !user?.username
   });
@@ -47,6 +62,63 @@ const UserDetailScreen = () => {
   // Get current user details to check if admin
   const { data: currentUser } = useGetUserDetailsQuery();
   const isAdmin = currentUser && currentUser.accountType === 'admin';
+
+  // Modal state for followers/following panes
+  const [followersModalVisible, setFollowersModalVisible] = useState(false);
+  const [followingModalVisible, setFollowingModalVisible] = useState(false);
+
+  // Fetch followers list when modal is open
+  const { data: followersList, isLoading: followersLoading } = useGetUsersQuery({
+    page: 1,
+    limit: 50,
+    filter: 'followers',
+    username: user?.username,
+  }, {
+    skip: !followersModalVisible || !user?.username
+  });
+
+  // Fetch following list when modal is open
+  const { data: followingList, isLoading: followingLoading } = useGetUsersQuery({
+    page: 1,
+    limit: 50,
+    filter: 'following',
+    username: user?.username,
+  }, {
+    skip: !followingModalVisible || !user?.username
+  });
+
+  // Fetch user's content sections
+  const { data: userPosts } = useGetPostsQuery({
+    page: 1,
+    limit: 6,
+    user_id: actualUserId
+  }, { skip: !actualUserId });
+
+  const { data: userCars } = useGetCarsQuery({
+    page: 1,
+    limit: 12,
+    user_id: actualUserId
+  }, { skip: !actualUserId });
+
+  const { data: taggedPosts } = useGetPostsQuery({
+    page: 1,
+    limit: 6,
+    tagged_user_id: actualUserId
+  }, { skip: !actualUserId });
+
+  const { data: userListings } = useGetPostsQuery({
+    page: 1,
+    limit: 6,
+    type: 'listing',
+    user_id: actualUserId
+  }, { skip: !actualUserId });
+
+  const { data: userWantAds } = useGetPostsQuery({
+    page: 1,
+    limit: 6,
+    type: 'want',
+    user_id: actualUserId
+  }, { skip: !actualUserId });
 
   const handleFollowToggle = async () => {
     try {
@@ -85,55 +157,30 @@ const UserDetailScreen = () => {
     return null;
   };
 
-  // Fetch user statistics for summary numbers
-  const { data: userPostsStats } = useGetPostsQuery({ 
-    page: 1, 
-    limit: 1, 
-    user_id: actualUserId 
-  }, { 
-    skip: !actualUserId 
-  });
-  
-  const { data: userCarsStats } = useGetCarsQuery({ 
-    page: 1, 
-    limit: 1, 
-    user_id: actualUserId 
-  }, { 
-    skip: !actualUserId 
-  });
+  const getBannerImageSource = () => {
+    if (user?.banners?.[0]?.filename) {
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${user.banners[0].filename}` };
+    }
+    if (user?.banners?.[0]) {
+      // If banners[0] is a string (just filename)
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${user.banners[0]}` };
+    }
+    if (user?.banner_image) {
+      return { uri: user.banner_image };
+    }
+    return null;
+  };
 
-  // Fetch user events for carousel
-  const { data: userEvents, isLoading: eventsLoading, error: eventsError } = useGetPostsQuery({ 
-    page: 1, 
-    limit: 10, // Get more events for carousel
-    type: 'event',
-    user_id: actualUserId 
-  }, { 
-    skip: !actualUserId 
-  });
-
-  const tabs = [
-    { key: 'posts', label: 'Posts', type: 'posts', apiUrl: `/api/post?user_id=${actualUserId}`, heading: 'User Posts' },
-    { key: 'cars', label: 'Cars', type: 'cars', apiUrl: `/api/garage?user_id=${actualUserId}`, heading: 'User Cars' },
-    { key: 'events', label: 'Events', type: 'posts', apiUrl: `/api/post?type=event&user_id=${actualUserId}`, heading: 'User Events' }, // NOTE: Using posts until Events API supports user_id filtering
-  ];
-  
-  // console.log('UserDetailScreen - tab URLs:', tabs.map(tab => ({ key: tab.key, url: tab.apiUrl })));
-
-  const getTabConfig = (tabKey) => {
-    const tab = tabs.find(t => t.key === tabKey);
-    return {
-      type: tab.type,
-      apiUrl: tab.apiUrl,
-      heading: tab.heading,
-    };
+  // Strip HTML tags from bio text
+  const stripHtml = (html) => {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
   };
 
   if (!user && userLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <FAIcon name="spinner" size={48} color={colors.BRG} />
-        <Text style={styles.loadingText}>Loading user profile...</Text>
+        <LoadingIndicator text="Loading user profile..." />
       </View>
     );
   }
@@ -147,39 +194,65 @@ const UserDetailScreen = () => {
     );
   }
 
-  const renderHeader = () => (
-    <View>
-      {/* Profile Header */}
-      <View style={styles.header}>
-        <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            {getProfileImageSource() ? (
-              <Image
-                source={getProfileImageSource()}
-                style={styles.avatar}
-              />
-            ) : (
-              <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                <FAIcon name="user" size={48} color={colors.WHITE} />
-              </View>
-            )}
-          </View>
+  const renderSectionHeader = (title, count, onViewAll) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {count > 0 && onViewAll && (
+        <TouchableOpacity onPress={onViewAll}>
+          <Text style={styles.viewAllText}>View All ({count})</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 
-          <View style={styles.userInfo}>
-            <Text style={styles.username}>{user.username || user.name || 'Unknown User'}</Text>
-            {user.location && (
-              <View style={styles.locationRow}>
-                <FAIcon name="map-marker" size={12} color={colors.TEXT_SECONDARY} />
-                <Text style={styles.location}>{user.location}</Text>
-              </View>
-            )}
-            {user.bio && (
-              <Text style={styles.bio}>{user.bio}</Text>
-            )}
+  return (
+    <ScrollView style={styles.container}>
+      {/* Banner Section */}
+      <View style={styles.bannerContainer}>
+        {getBannerImageSource() ? (
+          <Image
+            source={getBannerImageSource()}
+            style={styles.bannerImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.bannerPlaceholder}>
+            <FAIcon name="image" size={48} color={colors.TEXT_SECONDARY} />
           </View>
+        )}
+      </View>
 
+      {/* Profile Section */}
+      <View style={styles.profileSection}>
+        <View style={styles.avatarContainer}>
+          {getProfileImageSource() ? (
+            <Image
+              source={getProfileImageSource()}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <FAIcon name="user" size={48} color={colors.WHITE} />
+            </View>
+          )}
+          {user.memberNumber && (
+            <View style={styles.memberBadge}>
+              <Text style={styles.memberBadgeText}>#{user.memberNumber}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.userInfoSection}>
+          <Text style={styles.username}>{user.username || user.name || 'Unknown User'}</Text>
+          {user.location && (
+            <View style={styles.locationRow}>
+              <FAIcon name="map-marker" size={12} color={colors.TEXT_SECONDARY} />
+              <Text style={styles.location}>{user.location}</Text>
+            </View>
+          )}
+
+          {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            {/* Follow Button */}
             {!isOwnProfile && (
               <TouchableOpacity
                 style={[
@@ -208,7 +281,6 @@ const UserDetailScreen = () => {
               </TouchableOpacity>
             )}
 
-            {/* Featured Toggle - only show for admins */}
             {isAdmin && (
               <TouchableOpacity
                 style={[styles.featuredButton, user?.featured && styles.featuredButtonActive]}
@@ -222,106 +294,182 @@ const UserDetailScreen = () => {
             )}
           </View>
         </View>
-
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{userPostsStats?.total || 0}</Text>
-            <Text style={styles.statLabel}>Posts</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{userCarsStats?.total || 0}</Text>
-            <Text style={styles.statLabel}>Cars</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user?.follower_count || 0}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user?.following_count || 0}</Text>
-            <Text style={styles.statLabel}>Following</Text>
-          </View>
-        </View>
       </View>
 
-      {/* Tab Navigation */}
-      <View style={styles.tabBar}>
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[
-              styles.tab,
-              activeTab === tab.key && styles.activeTab
-            ]}
-            onPress={() => setActiveTab(tab.key)}
-          >
-            <Text style={[
-              styles.tabText,
-              activeTab === tab.key && styles.activeTabText
-            ]}>
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* Stats Row */}
+      <View style={styles.statsContainer}>
+        <TouchableOpacity
+          style={styles.statItem}
+          onPress={() => setFollowersModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.statNumber}>
+            {user?.followersCount || user?.follower_count || user?.followers?.length || 0}
+          </Text>
+          <Text style={styles.statLabel}>Followers</Text>
+        </TouchableOpacity>
+        <View style={styles.statDivider} />
+        <TouchableOpacity
+          style={styles.statItem}
+          onPress={() => setFollowingModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.statNumber}>
+            {user?.followingCount || user?.following_count || user?.following?.length || 0}
+          </Text>
+          <Text style={styles.statLabel}>Following</Text>
+        </TouchableOpacity>
       </View>
-    </View>
-  );
 
-  // Custom renderer for events tab
-  const renderEventsTab = () => {
-    if (eventsLoading) {
-      return (
-        <View style={styles.container}>
-          {renderHeader()}
-          <View style={styles.loadingContainer}>
-            <FAIcon name="spinner" size={48} color={colors.BRG} />
-            <Text style={styles.loadingText}>Loading events...</Text>
-          </View>
+      {/* Bio Section */}
+      {user.bio && (
+        <View style={styles.bioSection}>
+          <Text style={styles.bioText}>{stripHtml(user.bio)}</Text>
         </View>
-      );
-    }
-
-    if (eventsError) {
-      return (
-        <View style={styles.container}>
-          {renderHeader()}
-          <View style={styles.errorContainer}>
-            <FAIcon name="exclamation" size={48} color={colors.ERROR} />
-            <Text style={styles.errorText}>Error loading events</Text>
-            <Text style={styles.errorDetails}>{eventsError?.message || 'Unknown error'}</Text>
-          </View>
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.container}>
-        {renderHeader()}
-        <EventCarousel 
-          events={userEvents?.entries || []} 
-          displayOptions={{ badgeProfile: false, badgeCar: false }}
-        />
-      </View>
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      {/* Render events tab with custom carousel or default listing */}
-      {activeTab === 'events' ? (
-        renderEventsTab()
-      ) : (
-        <>
-          <Listing 
-            config={getTabConfig(activeTab)} 
-            displayOptions={{ badgeProfile: false, badgeCar: false }}
-            HeaderComponent={renderHeader}
-            showFilters={activeTab === 'posts'} 
-            filterTypes={['postType']}
-          />
-        </>
       )}
-    </View>
+
+      {/* Garage Section */}
+      {userCars?.entries && userCars.entries.length > 0 && (
+        <View style={styles.contentSection}>
+          {renderSectionHeader('Garage', userCars.total, null)}
+          <View style={styles.garageList}>
+            {userCars.entries.slice(0, 12).map((car, index) => (
+              <View key={car._id || index} style={styles.carCardWrapper}>
+                <CarCard post={car} displayOptions={{ small: false }} />
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Recent Posts Section */}
+      {userPosts?.entries && userPosts.entries.length > 0 && (
+        <View style={styles.contentSection}>
+          {renderSectionHeader('Recent Posts', userPosts.total, null)}
+          <View style={styles.postsContainer}>
+            {userPosts.entries.slice(0, 6).map((post, index) => (
+              <View key={post._id || index} style={styles.postCardWrapper}>
+                <PostCard post={post} displayOptions={{ small: false }} />
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Tagged Posts Section */}
+      {taggedPosts?.entries && taggedPosts.entries.length > 0 && (
+        <View style={styles.contentSection}>
+          {renderSectionHeader('Tagged Posts', taggedPosts.total, null)}
+          <View style={styles.postsContainer}>
+            {taggedPosts.entries.slice(0, 6).map((post, index) => (
+              <View key={post._id || index} style={styles.postCardWrapper}>
+                <PostCard post={post} displayOptions={{ small: false }} />
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Listings Section */}
+      {userListings?.entries && userListings.entries.length > 0 && (
+        <View style={styles.contentSection}>
+          {renderSectionHeader('Listings For Sale', userListings.total, null)}
+          <View style={styles.postsContainer}>
+            {userListings.entries.slice(0, 6).map((post, index) => (
+              <View key={post._id || index} style={styles.postCardWrapper}>
+                <PostCard post={post} displayOptions={{ small: false }} />
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Want-Ads Section */}
+      {userWantAds?.entries && userWantAds.entries.length > 0 && (
+        <View style={styles.contentSection}>
+          {renderSectionHeader('Want-Ads', userWantAds.total, null)}
+          <View style={styles.postsContainer}>
+            {userWantAds.entries.slice(0, 6).map((post, index) => (
+              <View key={post._id || index} style={styles.postCardWrapper}>
+                <PostCard post={post} displayOptions={{ small: false }} />
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Empty State */}
+      {!userCars?.entries?.length &&
+       !userPosts?.entries?.length &&
+       !taggedPosts?.entries?.length &&
+       !userListings?.entries?.length &&
+       !userWantAds?.entries?.length && (
+        <View style={styles.emptyState}>
+          <FAIcon name="user" size={64} color={colors.TEXT_SECONDARY} />
+          <Text style={styles.emptyStateText}>No content yet</Text>
+        </View>
+      )}
+
+      {/* Followers Modal */}
+      <PaneModal
+        visible={followersModalVisible}
+        onClose={() => setFollowersModalVisible(false)}
+        title="Followers"
+      >
+        {followersLoading ? (
+          <View style={{ padding: 20 }}>
+            <LoadingIndicator text="Loading followers..." />
+          </View>
+        ) : (
+          <FlatList
+            data={followersList?.entries || []}
+            renderItem={({ item }) => (
+              <View style={{ padding: 12 }}>
+                <UserCard user={item} displayOptions={{}} />
+              </View>
+            )}
+            keyExtractor={(item) => item._id || item.user_id}
+            contentContainerStyle={{ paddingBottom: 20 }}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <FAIcon name="users" size={48} color={colors.TEXT_SECONDARY} />
+                <Text style={styles.emptyStateText}>No followers yet</Text>
+              </View>
+            }
+          />
+        )}
+      </PaneModal>
+
+      {/* Following Modal */}
+      <PaneModal
+        visible={followingModalVisible}
+        onClose={() => setFollowingModalVisible(false)}
+        title="Following"
+      >
+        {followingLoading ? (
+          <View style={{ padding: 20 }}>
+            <LoadingIndicator text="Loading following..." />
+          </View>
+        ) : (
+          <FlatList
+            data={followingList?.entries || []}
+            renderItem={({ item }) => (
+              <View style={{ padding: 12 }}>
+                <UserCard user={item} displayOptions={{}} />
+              </View>
+            )}
+            keyExtractor={(item) => item._id || item.user_id}
+            contentContainerStyle={{ paddingBottom: 20 }}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <FAIcon name="users" size={48} color={colors.TEXT_SECONDARY} />
+                <Text style={styles.emptyStateText}>Not following anyone yet</Text>
+              </View>
+            }
+          />
+        )}
+      </PaneModal>
+    </ScrollView>
   );
 };
 
@@ -336,87 +484,107 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.BACKGROUND,
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: colors.TEXT_SECONDARY,
-  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.BACKGROUND,
+    padding: 20,
   },
   errorText: {
     marginTop: 16,
     fontSize: 18,
     color: colors.ERROR,
-  },
-  errorDetails: {
-    marginTop: 8,
-    fontSize: 14,
-    color: colors.TEXT_SECONDARY,
     textAlign: 'center',
   },
-  header: {
-    backgroundColor: colors.WHITE,
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
+  bannerContainer: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.LIGHT_GRAY,
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  bannerPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.BRG,
+    opacity: 0.3,
   },
   profileSection: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 20,
+    backgroundColor: colors.WHITE,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    marginTop: -50,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   avatarContainer: {
-    marginRight: 16,
+    alignItems: 'center',
+    marginBottom: 16,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: colors.LIGHT_GRAY,
+    borderWidth: 4,
+    borderColor: colors.WHITE,
   },
   avatarPlaceholder: {
     backgroundColor: colors.BRG,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  userInfo: {
-    flex: 1,
-    marginRight: 12,
+  memberBadge: {
+    backgroundColor: colors.BRG,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  memberBadgeText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  userInfoSection: {
+    alignItems: 'center',
   },
   username: {
     fontSize: 24,
     fontWeight: 'bold',
     color: colors.TEXT_PRIMARY,
     marginBottom: 4,
+    textAlign: 'center',
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 16,
   },
   location: {
     fontSize: 14,
     color: colors.TEXT_SECONDARY,
     marginLeft: 4,
   },
-  bio: {
-    fontSize: 16,
-    color: colors.TEXT_PRIMARY,
-    lineHeight: 22,
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
   },
   followButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.BRG,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 25,
-    minWidth: 100,
+    minWidth: 120,
     justifyContent: 'center',
   },
   followingButton: {
@@ -433,15 +601,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  actionButtons: {
-    flexDirection: 'column',
-    gap: 8,
-  },
   featuredButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.WHITE,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 25,
     borderWidth: 1,
@@ -462,54 +626,88 @@ const styles = StyleSheet.create({
   featuredButtonTextActive: {
     color: colors.GOLD,
   },
-  statsRow: {
+  statsContainer: {
     flexDirection: 'row',
+    backgroundColor: colors.WHITE,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
     justifyContent: 'space-around',
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: colors.BORDER,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
   },
   statItem: {
     alignItems: 'center',
+    flex: 1,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: colors.BORDER,
+    marginHorizontal: 20,
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: colors.TEXT_PRIMARY,
   },
   statLabel: {
     fontSize: 12,
     color: colors.TEXT_SECONDARY,
-    marginTop: 2,
+    marginTop: 4,
   },
-  tabBar: {
-    flexDirection: 'row',
+  bioSection: {
     backgroundColor: colors.WHITE,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.BORDER,
+    padding: 20,
+    marginTop: 8,
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 16,
+  bioText: {
+    fontSize: 16,
+    color: colors.TEXT_PRIMARY,
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  contentSection: {
+    backgroundColor: colors.WHITE,
+    marginTop: 8,
+    padding: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    marginBottom: 16,
   },
-  activeTab: {
-    borderBottomColor: colors.BRG,
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.TEXT_PRIMARY,
   },
-  tabText: {
+  viewAllText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: colors.TEXT_SECONDARY,
-  },
-  activeTabText: {
     color: colors.BRG,
     fontWeight: '600',
   },
-  tabContent: {
+  garageList: {
+    gap: 12,
+  },
+  carCardWrapper: {
+    marginBottom: 12,
+  },
+  postsContainer: {
+    gap: 12,
+  },
+  postCardWrapper: {
+    marginBottom: 12,
+  },
+  emptyState: {
     flex: 1,
-    minHeight: 400,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: colors.TEXT_SECONDARY,
+    marginTop: 16,
   },
 });
 

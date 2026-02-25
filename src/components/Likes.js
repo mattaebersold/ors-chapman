@@ -7,20 +7,21 @@ import FAIcon from './ui/FAIcon';
 
 const Likes = ({
   document_id,
+  document_type = 'post',
   forceLikeNumber
 }) => {
   const { userInfo } = useSelector(state => state.auth);
-  
-  const { 
-    data: likeInfo, 
-    isLoading, 
-    error 
+
+  const {
+    data: likeInfo,
+    isLoading,
+    error
   } = useGetLikeInfoQuery(document_id, {
     skip: !document_id
   });
 
-  const [likePost] = useLikePostMutation();
-  const [unlikePost] = useUnlikePostMutation();
+  const [likePost, { isLoading: liking }] = useLikePostMutation();
+  const [unlikePost, { isLoading: unliking }] = useUnlikePostMutation();
 
 
   // Don't show if no document_id
@@ -49,25 +50,25 @@ const Likes = ({
   const isLiked = userInfo?.user_id ? users.includes(userInfo.user_id) : false;
 
   const handleLikeToggle = async () => {
+    // Don't allow interaction if user not logged in
+    if (!userInfo) {
+      return;
+    }
 
-    // // Don't allow interaction if user not logged in
-    // if (!userInfo) {
-    //   console.log('No user logged in, ignoring like action');
-    //   return;
-    // }
+    // Don't allow interaction while loading
+    if (liking || unliking) {
+      return;
+    }
 
-    // try {
-    //   console.log('Attempting to', isLiked ? 'unlike' : 'like', 'document');
-    //   if (isLiked) {
-    //     const result = await unlikePost({ document_id, document_type }).unwrap();
-    //     console.log('Unlike result:', result);
-    //   } else {
-    //     const result = await likePost({ document_id, document_type }).unwrap();
-    //     console.log('Like result:', result);
-    //   }
-    // } catch (error) {
-    //   console.error('Error toggling like:', error);
-    // }
+    try {
+      if (isLiked) {
+        await unlikePost({ document_id, document_type }).unwrap();
+      } else {
+        await likePost({ document_id, document_type }).unwrap();
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
   };
 
   const formatLikeCount = (count) => {
@@ -80,10 +81,11 @@ const Likes = ({
     <TouchableOpacity
       style={[
         styles.likesContainer,
+        (liking || unliking) && styles.likesContainerDisabled,
       ]}
       onPress={handleLikeToggle}
       activeOpacity={0.7}
-      disabled={false}
+      disabled={!userInfo || liking || unliking}
     >
       <FAIcon
         size="14"
@@ -110,6 +112,9 @@ const styles = StyleSheet.create({
     minHeight: 32,
     backgroundColor: 'rgba(0,0,0, 0.4)',
     paddingHorizontal: 12
+  },
+  likesContainerDisabled: {
+    opacity: 0.6,
   },
   likeCount: {
     fontWeight: '600',

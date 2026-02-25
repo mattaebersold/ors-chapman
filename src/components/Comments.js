@@ -25,7 +25,6 @@ import FAIcon from './ui/FAIcon';
 const Comments = ({ document_id, document_type = 'post' }) => {
   const { userInfo } = useSelector(state => state.auth);
   const { data: currentUser } = useGetUserDetailsQuery();
-  const [collapsed, setCollapsed] = useState(true); // Start collapsed
   const [newComment, setNewComment] = useState('');
   const [editingComment, setEditingComment] = useState(null);
   const [editText, setEditText] = useState('');
@@ -123,7 +122,8 @@ const Comments = ({ document_id, document_type = 'post' }) => {
       <View style={styles.commentItem}>
         <View style={styles.commentHeader}>
           <View style={styles.commentHeaderLeft}>
-            <UserBadge userId={comment.user_id} />
+            <UserBadge userId={comment.user_id} small={true} />
+            <Text style={styles.username}>{comment.username || 'User'}</Text>
             {isUserComment && (
               <View style={styles.yourCommentBadge}>
                 <Text style={styles.yourCommentText}>You</Text>
@@ -195,27 +195,17 @@ const Comments = ({ document_id, document_type = 'post' }) => {
   return (
     <View style={styles.container}>
       {/* Comments Header */}
-      <TouchableOpacity 
-        style={styles.header}
-        onPress={() => setCollapsed(!collapsed)}
-        activeOpacity={0.7}
-      >
+      <View style={styles.header}>
         <View style={styles.headerLeft}>
           <FAIcon name="comment" size={16} color={colors.WHITE} />
           <Text style={styles.headerTitle}>
             Comments {commentCount > 0 && `(${commentCount})`}
           </Text>
         </View>
-        <FAIcon 
-          name={collapsed ? "chevron-down" : "chevron-up"} 
-          size={14} 
-          color={colors.WHITE} 
-        />
-      </TouchableOpacity>
+      </View>
 
       {/* Comments Content */}
-      {!collapsed && (
-        <View style={styles.content}>
+      <View style={styles.content}>
           {/* New Comment Input */}
           {currentUser && (
             <View style={styles.newCommentContainer}>
@@ -259,7 +249,6 @@ const Comments = ({ document_id, document_type = 'post' }) => {
             />
           )}
         </View>
-      )}
     </View>
   );
 };
@@ -357,6 +346,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  username: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
   },
   yourCommentBadge: {
     backgroundColor: colors.SPEED,

@@ -117,7 +117,6 @@ const GoogleSignInButton = ({ onSuccess, loading: externalLoading = false }) => 
           throw new Error('No ID token received from Google');
         }
       } else if (result.type === 'cancel') {
-        console.log('Google sign-in was cancelled');
       } else {
         throw new Error('Google sign-in failed');
       }

@@ -31,6 +31,7 @@ const SocietyScreen = () => {
     { key: 'members', label: 'Members', type: 'users', heading: 'Society Members' },
     { key: 'posts', label: 'Posts', type: 'posts', apiUrl: '/api/post?sort=-createdAt', heading: 'Community Posts' },
     { key: 'events', label: 'Events', type: 'dedicated-events', heading: 'Events' },
+    { key: 'groups', label: 'Groups', type: 'groups', heading: 'Groups' },
   ];
 
   const getTabConfig = (tabKey) => {
@@ -92,11 +93,6 @@ const SocietyScreen = () => {
 
   // Render featured users section
   const renderFeaturedUsers = () => {
-    console.log('renderFeaturedUsers called');
-    console.log('featuredUsersData:', featuredUsersData);
-    console.log('featuredUsersData?.entries:', featuredUsersData?.entries);
-    console.log('entries length:', featuredUsersData?.entries?.length);
-
     // Show loading state
     if (featuredLoading) {
       return (
@@ -111,17 +107,14 @@ const SocietyScreen = () => {
 
     // Show error state
     if (featuredError) {
-      console.log('Featured users error:', featuredError);
       return null;
     }
 
     // No featured users
     if (!featuredUsersData?.entries || featuredUsersData.entries.length === 0) {
-      console.log('No featured users found');
       return null;
     }
 
-    console.log('Rendering featured users:', featuredUsersData.entries.length);
     return (
       <View style={styles.featuredSection}>
         <View style={styles.featuredHeader}>
@@ -191,6 +184,14 @@ const SocietyScreen = () => {
     // Use custom EventsList component for events tab
     if (activeTab === 'events') {
       return <EventsList />;
+    }
+
+    // Groups tab - navigate to GroupsScreen
+    if (activeTab === 'groups') {
+      // Navigate to Groups screen for full functionality
+      navigation.navigate('GroupsList');
+      setActiveTab('members'); // Reset to members after navigation
+      return null;
     }
 
     return <Listing config={config} displayOptions={displayOptions} />;

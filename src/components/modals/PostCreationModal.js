@@ -9,7 +9,6 @@ import {
   ScrollView,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   Alert,
   SafeAreaView,
 } from 'react-native';
@@ -213,9 +212,9 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior='height'
       >
         {/* Header */}
         <View style={styles.header}>
@@ -403,8 +402,8 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
                   onPress={() => setCarModalVisible(true)}
                 >
                   <Text style={styles.associationText}>
-                    {formData.car_id ? 
-                      garageData.entries.find(car => car.internal_id === formData.car_id)?.title || 'Select a car...' :
+                    {formData.car_id ?
+                      garageData?.entries?.find(car => car.internal_id === formData.car_id)?.title || 'Select a car...' :
                       'Select a car...'
                     }
                   </Text>
@@ -421,8 +420,8 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
                   onPress={() => setProjectModalVisible(true)}
                 >
                   <Text style={styles.associationText}>
-                    {formData.project_id ? 
-                      projectsData.entries.find(project => project.internal_id === formData.project_id)?.title || 'Select a project...' :
+                    {formData.project_id ?
+                      projectsData?.entries?.find(project => project.internal_id === formData.project_id)?.title || 'Select a project...' :
                       'Select a project...'
                     }
                   </Text>
@@ -439,8 +438,8 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
                   onPress={() => setEventModalVisible(true)}
                 >
                   <Text style={styles.associationText}>
-                    {formData.event_id ? 
-                      eventsData.entries.find(event => event.internal_id === formData.event_id)?.title || 'Select an event...' :
+                    {formData.event_id ?
+                      eventsData?.entries?.find(event => event.internal_id === formData.event_id)?.title || 'Select an event...' :
                       'Select an event...'
                     }
                   </Text>

@@ -56,17 +56,6 @@ const UsernameSearch = ({ onUserSelect, style }) => {
   // Limit results to keep dropdown manageable
   const finalResults = filteredResults.slice(0, 8);
 
-  // Debug logging
-  useEffect(() => {
-    
-    if (debouncedSearchTerm.length >= 2) {
-      
-      if (searchError) {
-        console.log('Search Error:', searchError);
-      }
-      console.log('=== End Debug ===\n');
-    }
-  }, [searchTerm, debouncedSearchTerm, searchResults, filteredResults, finalResults, isLoading, searchError, showResults]);
 
   const handleUserSelect = (user) => {
     setSearchTerm('');

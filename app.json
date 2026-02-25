@@ -4,7 +4,15 @@
     "slug": "ChapmanExpo",
     "version": "1.0.0",
     "description": "Connect with car enthusiasts, share your builds, and discover amazing automotive content",
-    "keywords": ["cars", "automotive", "social", "community", "builds", "garage", "modifications"],
+    "keywords": [
+      "cars",
+      "automotive",
+      "social",
+      "community",
+      "builds",
+      "garage",
+      "modifications"
+    ],
     "privacy": "unlisted",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -59,6 +67,25 @@
     },
     "updates": {
       "url": "https://u.expo.dev/1d94b29e-03eb-487f-85d1-be5bf4750636"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2E7D32",
+          "sounds": [],
+          "mode": "production"
+        }
+      ]
+    ],
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#2E7D32",
+      "androidMode": "default",
+      "androidCollapsedTitle": "Open Road Society"
     }
   }
 }

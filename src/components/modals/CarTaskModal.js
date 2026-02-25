@@ -10,7 +10,6 @@ import {
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { colors } from '../../constants/colors';
 import ImageUploader from '../ImageUploader';
@@ -147,9 +146,9 @@ const CarTaskModal = ({ visible, onClose, onSubmit, carId, editMode = false, exi
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      <KeyboardAvoidingView 
-        style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior='height'
       >
         {/* Header */}
         <View style={styles.header}>
@@ -302,7 +301,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    paddingTop: 16,
     backgroundColor: colors.BRG,
     borderBottomWidth: 1,
     borderBottomColor: colors.LIGHT_GRAY,

@@ -5,7 +5,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Platform,
   KeyboardAvoidingView,
   ScrollView,
 } from 'react-native';
@@ -73,7 +72,7 @@ const BaseModal = ({
     if (keyboardAvoiding) {
       return (
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior='height'
           style={styles.keyboardAvoid}
         >
           {content}

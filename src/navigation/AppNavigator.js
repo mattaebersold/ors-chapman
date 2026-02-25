@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { useGetUserDetailsQuery, useGetUnreadMessageCountQuery } from '../services/apiService';
+import { useGetUserDetailsQuery, useGetUnreadMessageCountQuery, useGetUnreadCountQuery } from '../services/apiService';
 
 // Import screens
 import LoginScreen from '../screens/LoginScreen';
@@ -32,6 +32,7 @@ import CreateScreen from '../screens/CreateScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import MessageThreadScreen from '../screens/MessageThreadScreen';
 import ComposeMessageScreen from '../screens/ComposeMessageScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 // Import marketing screens
 import AboutScreen from '../screens/AboutScreen';
@@ -44,8 +45,21 @@ import SupportScreen from '../screens/SupportScreen';
 import BrandDetailScreen from '../screens/BrandDetailScreen';
 import ModelDetailScreen from '../screens/ModelDetailScreen';
 
+// Import group screens
+import GroupsScreen from '../screens/GroupsScreen';
+import GroupDetailScreen from '../screens/GroupDetailScreen';
+import GroupForumScreen from '../screens/GroupForumScreen';
+import GroupNewsScreen from '../screens/GroupNewsScreen';
+import GroupCarsScreen from '../screens/GroupCarsScreen';
+import GroupMembersScreen from '../screens/GroupMembersScreen';
+import GroupEventsScreen from '../screens/GroupEventsScreen';
+import GroupMarketplaceScreen from '../screens/GroupMarketplaceScreen';
+import GroupResourcesScreen from '../screens/GroupResourcesScreen';
+import GroupCreateScreen from '../screens/GroupCreateScreen';
+
 // Import components
 import HamburgerMenu from '../components/HamburgerMenu';
+import NotificationHandler from '../components/NotificationHandler';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -60,6 +74,25 @@ const AuthNavigator = () => (
     <Stack.Screen name="Login" component={LoginScreen} />
   </Stack.Navigator>
 );
+
+// Notification button component
+const NotificationButton = ({ onPress }) => {
+  const { data: unreadData } = useGetUnreadCountQuery(undefined, {
+    pollingInterval: 30000, // Poll every 30 seconds
+  });
+  const unreadCount = unreadData?.count || 0;
+
+  return (
+    <TouchableOpacity style={styles.notificationButton} onPress={onPress}>
+      <FAIcon name="bell" size={20} color={colors.WHITE} />
+      {unreadCount > 0 && (
+        <View style={styles.unreadIndicator}>
+          <Text style={styles.unreadText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+};
 
 // Profile button component
 const ProfileButton = ({ onPress }) => {
@@ -158,6 +191,7 @@ const TabNavigator = ({ navigation }) => (
             <FAIcon name="car" size={16} color={colors.WHITE} />
             <Text style={styles.garageButtonText}>Garage</Text>
           </TouchableOpacity>
+          <NotificationButton onPress={() => navigation.navigate('Notifications')} />
           <ProfileButton onPress={() => navigation.navigate('Profile')} />
         </View>
       ),
@@ -283,6 +317,14 @@ const AppNavigator = () => (
       }}
     />
     <AppStack.Screen
+      name="ArticleDetail"
+      component={require('../screens/ArticleDetailScreen').default}
+      options={{
+        headerShown: false,
+        presentation: 'modal',
+      }}
+    />
+    <AppStack.Screen
       name="Messages"
       component={MessagesScreen}
       options={{
@@ -310,6 +352,14 @@ const AppNavigator = () => (
       component={ComposeMessageScreen}
       options={{
         headerShown: false,
+      }}
+    />
+    <AppStack.Screen
+      name="Notifications"
+      component={NotificationsScreen}
+      options={{
+        headerShown: false,
+        presentation: 'modal',
       }}
     />
     
@@ -412,8 +462,8 @@ const AppNavigator = () => (
         },
       }}
     />
-    <AppStack.Screen 
-      name="Support" 
+    <AppStack.Screen
+      name="Support"
       component={SupportScreen}
       options={{
         headerShown: true,
@@ -428,6 +478,69 @@ const AppNavigator = () => (
         },
       }}
     />
+
+    {/* Group Screens */}
+    <AppStack.Screen
+      name="GroupsList"
+      component={GroupsScreen}
+      options={{
+        headerShown: true,
+        title: 'Groups',
+        headerStyle: {
+          backgroundColor: colors.BRG,
+          height: 100,
+        },
+        headerTintColor: colors.WHITE,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    />
+    <AppStack.Screen
+      name="GroupDetail"
+      component={GroupDetailScreen}
+      options={{ headerShown: false }}
+    />
+    <AppStack.Screen
+      name="GroupForum"
+      component={GroupForumScreen}
+      options={{ headerShown: false }}
+    />
+    <AppStack.Screen
+      name="GroupNews"
+      component={GroupNewsScreen}
+      options={{ headerShown: false }}
+    />
+    <AppStack.Screen
+      name="GroupCars"
+      component={GroupCarsScreen}
+      options={{ headerShown: false }}
+    />
+    <AppStack.Screen
+      name="GroupMembers"
+      component={GroupMembersScreen}
+      options={{ headerShown: false }}
+    />
+    <AppStack.Screen
+      name="GroupEvents"
+      component={GroupEventsScreen}
+      options={{ headerShown: false }}
+    />
+    <AppStack.Screen
+      name="GroupMarketplace"
+      component={GroupMarketplaceScreen}
+      options={{ headerShown: false }}
+    />
+    <AppStack.Screen
+      name="GroupResources"
+      component={GroupResourcesScreen}
+      options={{ headerShown: false }}
+    />
+    <AppStack.Screen
+      name="GroupCreate"
+      component={GroupCreateScreen}
+      options={{ headerShown: false }}
+    />
   </AppStack.Navigator>
 );
 
@@ -440,7 +553,14 @@ const MainNavigator = () => {
 
   return (
     <NavigationContainer>
-      {isLoggedIn ? <AppNavigator /> : <AuthNavigator />}
+      {isLoggedIn ? (
+        <>
+          <AppNavigator />
+          <NotificationHandler />
+        </>
+      ) : (
+        <AuthNavigator />
+      )}
     </NavigationContainer>
   );
 };
@@ -471,6 +591,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     marginTop: 2,
+  },
+  notificationButton: {
+    marginRight: 12,
+    padding: 4,
+    position: 'relative',
   },
   profileButton: {
     position: 'relative',

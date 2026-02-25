@@ -17,9 +17,7 @@ import Listing from '../components/Listing';
 const BrandDetailScreen = ({ route, navigation }) => {
   const { brand, brandName } = route.params;
   const [activeTab, setActiveTab] = useState('models');
-  
-  console.log('BrandDetailScreen - brand:', brand, 'brandName:', brandName);
-  
+
   const { data: modelsData, isLoading, error } = useGetBrandModelsQuery(brand);
   
   const models = modelsData?.models || [];
@@ -92,11 +90,6 @@ const BrandDetailScreen = ({ route, navigation }) => {
       }
     }
   ];
-
-  console.log('BrandDetailScreen - tabs with API URLs:', tabs.map(tab => ({
-    key: tab.key,
-    apiUrl: tab.config?.apiUrl
-  })));
 
   const renderModelCard = ({ item: model }) => (
     <TouchableOpacity

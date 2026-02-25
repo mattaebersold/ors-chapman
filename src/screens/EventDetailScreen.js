@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,18 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import { colors } from '../constants/colors';
 import FAIcon from '../components/ui/FAIcon';
 import Likes from '../components/Likes';
+import Button from '../components/ui/Button';
+import EventGalleryFormModal from '../components/modals/EventGalleryFormModal';
+import EventGalleryDetailModal from '../components/modals/EventGalleryDetailModal';
+import { useGetEventGalleriesQuery } from '../services/apiService';
 
 const { width } = Dimensions.get('window');
 
@@ -19,6 +26,33 @@ const EventDetailScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { event, eventId } = route.params || {};
+  const userInfo = useSelector((state) => state.auth.userInfo);
+
+  const [galleryFormVisible, setGalleryFormVisible] = useState(false);
+  const [galleryDetailVisible, setGalleryDetailVisible] = useState(false);
+  const [selectedGallery, setSelectedGallery] = useState(null);
+
+  // Fetch event galleries
+  const {
+    data: galleriesData,
+    isLoading: galleriesLoading,
+    refetch: refetchGalleries
+  } = useGetEventGalleriesQuery(event?.internal_id || eventId, {
+    skip: !event?.internal_id && !eventId
+  });
+
+  const eventGalleries = galleriesData?.entries || [];
+  const isEventOwner = userInfo && event && userInfo.user_id === event.user_id;
+
+  const handleGalleryClick = (gallery) => {
+    setSelectedGallery(gallery);
+    setGalleryDetailVisible(true);
+  };
+
+  const handleGalleryFormClose = () => {
+    setGalleryFormVisible(false);
+    refetchGalleries();
+  };
 
   if (!event) {
     return (
@@ -55,6 +89,7 @@ const EventDetailScreen = () => {
   };
 
   return (
+    <>
     <ScrollView style={styles.container}>
       {/* Header with back button */}
       <View style={styles.header}>
@@ -154,8 +189,101 @@ const EventDetailScreen = () => {
             </View>
           )}
         </View>
+
+        {/* Event Galleries Section */}
+        <View style={styles.galleriesSection}>
+          <View style={styles.galleriesSectionHeader}>
+            <Text style={styles.sectionTitle}>Event Galleries</Text>
+            {isEventOwner && (
+              <TouchableOpacity
+                onPress={() => setGalleryFormVisible(true)}
+                style={styles.addGalleryButton}
+              >
+                <FAIcon name="plus" size={14} color={colors.WHITE} />
+                <Text style={styles.addGalleryButtonText}>Add Gallery</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {galleriesLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.BRG} />
+            </View>
+          )}
+
+          {!galleriesLoading && eventGalleries.length === 0 && (
+            <View style={styles.emptyGalleriesContainer}>
+              <FAIcon name="images" size={32} color={colors.TEXT_SECONDARY} />
+              <Text style={styles.emptyGalleriesText}>
+                {isEventOwner
+                  ? 'No galleries yet. Tap "Add Gallery" to create one!'
+                  : 'No galleries available for this event'}
+              </Text>
+            </View>
+          )}
+
+          {!galleriesLoading && eventGalleries.length > 0 && (
+            <FlatList
+              data={eventGalleries}
+              keyExtractor={(item) => item.internal_id || item._id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.galleriesList}
+              renderItem={({ item: gallery }) => {
+                // Determine thumbnail - first gallery image or first S3 bucket image
+                let thumbnailSource = null;
+                if (gallery.gallery && gallery.gallery.length > 0) {
+                  thumbnailSource = {
+                    uri: `https://d2481n2uw7a0p.cloudfront.net/${gallery.gallery[0].filename}`
+                  };
+                }
+
+                return (
+                  <TouchableOpacity
+                    style={styles.galleryCard}
+                    onPress={() => handleGalleryClick(gallery)}
+                  >
+                    {thumbnailSource ? (
+                      <Image source={thumbnailSource} style={styles.galleryCardImage} />
+                    ) : (
+                      <View style={[styles.galleryCardImage, styles.galleryCardPlaceholder]}>
+                        <FAIcon name="images" size={32} color={colors.WHITE} />
+                      </View>
+                    )}
+                    <View style={styles.galleryCardContent}>
+                      <Text style={styles.galleryCardTitle} numberOfLines={2}>
+                        {gallery.title}
+                      </Text>
+                      {gallery.aws_bucket_id && (
+                        <View style={styles.bucketBadge}>
+                          <FAIcon name="folder" size={10} color={colors.BRG} />
+                          <Text style={styles.bucketBadgeText}>S3 Bucket</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          )}
+        </View>
       </View>
     </ScrollView>
+
+    {/* Modals */}
+    <EventGalleryFormModal
+      visible={galleryFormVisible}
+      onClose={handleGalleryFormClose}
+      eventId={event?.internal_id || eventId}
+      onSuccess={refetchGalleries}
+    />
+
+    <EventGalleryDetailModal
+      visible={galleryDetailVisible}
+      onClose={() => setGalleryDetailVisible(false)}
+      gallery={selectedGallery}
+    />
+  </>
   );
 };
 
@@ -267,6 +395,94 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: colors.BRG,
     fontSize: 16,
+    fontWeight: '600',
+  },
+  galleriesSection: {
+    marginTop: 24,
+  },
+  galleriesSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  addGalleryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.BRG,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 6,
+  },
+  addGalleryButtonText: {
+    color: colors.WHITE,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyGalleriesContainer: {
+    padding: 40,
+    alignItems: 'center',
+    backgroundColor: colors.CARD_BG,
+    borderRadius: 12,
+  },
+  emptyGalleriesText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: colors.TEXT_SECONDARY,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  galleriesList: {
+    paddingRight: 20,
+  },
+  galleryCard: {
+    width: 200,
+    marginRight: 12,
+    borderRadius: 12,
+    backgroundColor: colors.WHITE,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  galleryCardImage: {
+    width: '100%',
+    height: 120,
+  },
+  galleryCardPlaceholder: {
+    backgroundColor: colors.BRG,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  galleryCardContent: {
+    padding: 12,
+  },
+  galleryCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+    marginBottom: 8,
+  },
+  bucketBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.BRG_LIGHT,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    gap: 4,
+  },
+  bucketBadgeText: {
+    fontSize: 10,
+    color: colors.BRG,
     fontWeight: '600',
   },
 });

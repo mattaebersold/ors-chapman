@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   Dimensions,
   Image,
@@ -54,9 +53,9 @@ const LoginScreen = () => {
         isMuted={true}
       />
       <View style={styles.overlay} />
-      <KeyboardAvoidingView 
-        style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior='height'
       >
         <View style={styles.form}>
           <View style={styles.logoContainer}>

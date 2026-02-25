@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useGetPaginatedFollowingQuery, useGetUserDetailsQuery } from '../services/apiService';
-import Listing from '../components/Listing';
-import { colors } from '../constants/colors';
-import FAIcon from '../components/ui/FAIcon';
+import ORSMainFeed from '../components/ORSMainFeed';
 
 const HomeScreen = () => {
   const { userInfo } = useSelector(state => state.auth);
@@ -21,35 +18,33 @@ const HomeScreen = () => {
     index: 0,
     limit: 1,
   });
-  
+
   const hasFollowing = followingData?.total > 0;
   const followingDataLoaded = !followingLoading && followingData !== undefined;
 
-  const listingConfig = {
-    type: 'posts',
-    heading: '',
-    postsParams: (followingDataLoaded && hasFollowing && currentUser) ? {
-      filter: 'following',
-      username: currentUser.username,
-      omit: currentUser.user_id,
-      sort: 'created_at',
-      order: 'desc'
-    } : {
+  // Memoize params to prevent unnecessary re-renders
+  const params = useMemo(() => {
+    if (followingDataLoaded && hasFollowing && currentUser) {
+      return {
+        filter: 'following',
+        username: currentUser.username,
+        omit: currentUser.user_id,
+        sort: 'created_at',
+        order: 'desc'
+      };
+    }
+    return {
       omit: currentUser?.user_id,
       sort: 'created_at',
       order: 'desc'
-    }
-  };
+    };
+  }, [followingDataLoaded, hasFollowing, currentUser]);
 
   return (
     <View style={styles.container}>
-      <Listing
+      <ORSMainFeed
         key={`feed-${followingDataLoaded}-${hasFollowing}-${userInfo?.user_id}`}
-        config={listingConfig}
-        showFilters={true}
-        filterTypes={['postType']}
-        numColumns={2}
-        heading="Recent Posts"
+        params={params}
       />
     </View>
   );
@@ -58,14 +53,6 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  followMessage: {
-    backgroundColor: colors.WHITE,
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: colors.BRG,
   },
 });
 

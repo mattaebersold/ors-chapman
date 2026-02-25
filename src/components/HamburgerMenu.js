@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,23 +7,57 @@ import {
   Modal,
   SafeAreaView,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { colors } from '../constants/colors';
 import FAIcon from './ui/FAIcon';
 
+const MENU_WIDTH = 300;
+
 const HamburgerMenu = ({ navigation }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const toggleMenu = () => {
-    setIsVisible(!isVisible);
+  const openMenu = () => {
+    setIsVisible(true);
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 280,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 280,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeMenu = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -MENU_WIDTH,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setIsVisible(false));
   };
 
   const navigateToPage = (pageName) => {
-    setIsVisible(false);
-    navigation.navigate(pageName);
+    closeMenu();
+    setTimeout(() => navigation.navigate(pageName), 220);
   };
 
   const menuItems = [
+    { title: 'Groups', page: 'GroupsList', icon: 'users' },
+    { title: 'Messages', page: 'Messages', icon: 'envelope' },
     { title: 'About', page: 'About', icon: 'user' },
     { title: 'Features', page: 'Features', icon: 'plus' },
     { title: 'Changelog', page: 'Changelog', icon: 'new' },
@@ -33,7 +67,7 @@ const HamburgerMenu = ({ navigation }) => {
 
   return (
     <>
-      <TouchableOpacity style={styles.hamburgerButton} onPress={toggleMenu}>
+      <TouchableOpacity style={styles.hamburgerButton} onPress={openMenu}>
         <View style={styles.hamburgerLine} />
         <View style={styles.hamburgerLine} />
         <View style={styles.hamburgerLine} />
@@ -41,25 +75,20 @@ const HamburgerMenu = ({ navigation }) => {
 
       <Modal
         visible={isVisible}
-        animationType="slide"
+        animationType="none"
         transparent={true}
-        onRequestClose={() => setIsVisible(false)}
+        onRequestClose={closeMenu}
         presentationStyle="overFullScreen"
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsVisible(false)}
-        >
-          <TouchableOpacity
-            style={styles.menuContainer}
-            activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
-          >
+        <View style={styles.modalOverlay}>
+          <Animated.View style={[styles.overlayBackground, { opacity: fadeAnim }]}>
+            <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={closeMenu} />
+          </Animated.View>
+          <Animated.View style={[styles.menuContainer, { transform: [{ translateX: slideAnim }] }]}>
           <SafeAreaView style={styles.safeArea}>
             {/* Header */}
             <View style={styles.menuHeader}>
-              <TouchableOpacity onPress={toggleMenu} style={styles.closeButton}>
+              <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
                 <FAIcon name="times" size={24} color={colors.WHITE} />
               </TouchableOpacity>
               <Text style={styles.menuTitle}>Open Road Society</Text>
@@ -89,8 +118,8 @@ const HamburgerMenu = ({ navigation }) => {
               </View>
             </ScrollView>
           </SafeAreaView>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </Animated.View>
+        </View>
       </Modal>
     </>
   );
@@ -111,14 +140,15 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     flexDirection: 'row',
   },
+  overlayBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
   menuContainer: {
-    flex: 1,
+    width: MENU_WIDTH,
     backgroundColor: colors.BRG,
-    width: '80%',
-    maxWidth: 300,
   },
   safeArea: {
     flex: 1,

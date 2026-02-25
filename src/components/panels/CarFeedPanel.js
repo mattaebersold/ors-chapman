@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { colors } from '../../constants/colors';
 import Listing from '../Listing';
 import PostRow from '../cards/PostRow';
 import FAIcon from '../ui/FAIcon';
+import { categories } from '../../types/postTypes';
 
 /**
  * Reusable panel component that displays posts filtered by a specific car
@@ -33,6 +35,7 @@ const CarFeedPanel = ({
   showFilters = false,
   title = "Posts featuring this car"
 }) => {
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   if (!carData) {
     return (
@@ -41,6 +44,22 @@ const CarFeedPanel = ({
       </View>
     );
   }
+
+  // Get car_record categories for filtering
+  const carRecordCategories = categories.find(cat => cat.type === 'record')?.items || [];
+
+  // Memoize params to ensure they update when category changes
+  const feedParams = useMemo(() => {
+    const params = {
+      car_id: carData?.internal_id,
+    };
+
+    if (selectedCategory !== 'all') {
+      params.category = selectedCategory;
+    }
+
+    return params;
+  }, [carData?.internal_id, selectedCategory]);
 
   const FeedHeader = () => (
     <>
@@ -56,18 +75,58 @@ const CarFeedPanel = ({
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Category Filter Buttons */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScrollView}
+        contentContainerStyle={styles.filterContainer}
+      >
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            selectedCategory === 'all' && styles.filterButtonActive
+          ]}
+          onPress={() => setSelectedCategory('all')}
+        >
+          <Text style={[
+            styles.filterButtonText,
+            selectedCategory === 'all' && styles.filterButtonTextActive
+          ]}>
+            All
+          </Text>
+        </TouchableOpacity>
+
+        {carRecordCategories.map((category) => (
+          <TouchableOpacity
+            key={category.key}
+            style={[
+              styles.filterButton,
+              selectedCategory === category.key && styles.filterButtonActive
+            ]}
+            onPress={() => setSelectedCategory(category.key)}
+          >
+            <Text style={[
+              styles.filterButtonText,
+              selectedCategory === category.key && styles.filterButtonTextActive
+            ]}>
+              {category.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </>
   );
 
   return (
     <View style={styles.container}>
       <Listing
+        key={`car-feed-${carData?.internal_id}-${selectedCategory}`}
         config={{
           type: 'posts',
           heading: '',
-          params: {
-            car_id: carData?.internal_id,
-          }
+          params: feedParams
         }}
         displayOptions={displayOptions}
         CustomComponent={PostRow}
@@ -109,7 +168,34 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     gap: 6,
   },
-
+  filterScrollView: {
+    backgroundColor: colors.WHITE,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.BORDER,
+  },
+  filterContainer: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.LIGHT_GRAY,
+    marginRight: 8,
+  },
+  filterButtonActive: {
+    backgroundColor: colors.BRG,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+  },
+  filterButtonTextActive: {
+    color: colors.WHITE,
+  },
   errorText: {
     fontSize: 16,
     color: colors.TEXT_SECONDARY,

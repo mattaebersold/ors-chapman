@@ -62,6 +62,43 @@ export const carTypes = [
   { key: 'other', label: 'Other' },
 ];
 
+export const articleTypes = [
+  { key: 'news', label: 'News' },
+  { key: 'profile', label: 'Profile' },
+  { key: 'opinion', label: 'Opinion/Editorial' },
+  { key: 'other', label: 'Other' },
+];
+
+export const articleCategories = [
+  {
+    type: "news",
+    items: [
+      { key: "siteUpdates", label: "Site Updates" },
+      { key: "other", label: "Other" },
+    ],
+  },
+  {
+    type: "profile",
+    items: [
+      { key: "user", label: "User Profile" },
+      { key: "car", label: "Car Profile" },
+    ],
+  },
+  {
+    type: "opinion",
+    items: [
+      { key: "hotTake", label: "Hot Take" },
+      { key: "other", label: "Other" },
+    ],
+  },
+  {
+    type: "other",
+    items: [
+      { key: "other", label: "Other" },
+    ],
+  },
+];
+
 export const carCategories = [
   {
     type: "daily",

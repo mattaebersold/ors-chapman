@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   FlatList,
   KeyboardAvoidingView,
-  Platform,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,7 +33,6 @@ const ComposeMessageScreen = ({ navigation, route }) => {
 
   const handleUserSelect = (user) => {
     // Use the same ID mapping as SocietyScreen
-    console.log('Selected user:', user);
     // Backend expects user_id field, so prioritize user.user_id over user._id
     setRecipient({
       user_id: user.user_id || user._id,
@@ -68,8 +66,6 @@ const ComposeMessageScreen = ({ navigation, route }) => {
 
     setIsSending(true);
     try {
-      console.log('Sending message with recipient:', recipient);
-      console.log('Recipient ID being sent:', recipient.user_id);
       await createMessage({
         recipient_id: recipient.user_id,
         subject: subject.trim(),
@@ -127,7 +123,7 @@ const ComposeMessageScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior='height'
       >
         {renderHeader()}
 

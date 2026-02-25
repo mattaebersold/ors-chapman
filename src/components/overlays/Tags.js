@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { getPostTypeColor, getCategoryColor } from '../../constants/colors';
-import { postCategories, postTypes, carTypes, carCategories } from '../../constants/categories';
+import { postCategories, postTypes, carTypes, carCategories, articleTypes, articleCategories } from '../../constants/categories';
 import BaseTag from '../atoms/BaseTag';
 
 const Tags = ({ entryType, type, category, specificStyles, small = false }) => {
@@ -9,13 +9,17 @@ const Tags = ({ entryType, type, category, specificStyles, small = false }) => {
   let categories, types;
 
   switch(entryType) {
-    case 'post': 
+    case 'post':
       categories = postCategories;
       types = postTypes;
       break;
-    case 'garagecar': 
+    case 'garagecar':
       categories = carCategories;
       types = carTypes;
+      break;
+    case 'article':
+      categories = articleCategories;
+      types = articleTypes;
       break;
     default:
       categories = null;
@@ -28,8 +32,8 @@ const Tags = ({ entryType, type, category, specificStyles, small = false }) => {
   // Add type tag if provided
   if (type && type !== 'listing' && type !== 'want') {
     const backgroundColor = getPostTypeColor(type);
-    const typeLabel = types.find(pt => pt.key === type)?.label || type;
-    
+    const typeLabel = types?.find(pt => pt.key === type)?.label || type;
+
     tags.push(
       <BaseTag color={backgroundColor} key={1} label={typeLabel} />
     );
@@ -41,14 +45,16 @@ const Tags = ({ entryType, type, category, specificStyles, small = false }) => {
 
     // Find the category label by searching through all postCategories
     let categoryLabel = category;
-    for (const postCategory of categories) {
-      const found = postCategory.items.find(item => item.key === category);
-      if (found) {
-        categoryLabel = found.label;
-        break;
+    if (categories) {
+      for (const postCategory of categories) {
+        const found = postCategory.items?.find(item => item.key === category);
+        if (found) {
+          categoryLabel = found.label;
+          break;
+        }
       }
     }
-    
+
     tags.push(
       <BaseTag color={backgroundColor} key={2} label={categoryLabel} />
     );

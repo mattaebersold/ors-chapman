@@ -14,6 +14,7 @@ const BaseBadge = ({
   small = false
 }) => {
   const truncateText = (text, maxLength = 8) => {
+    if (!text || typeof text !== 'string') return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
@@ -42,7 +43,7 @@ const BaseBadge = ({
         )}
       </View>
 
-      {displayName.length > 0 && (
+      {displayName && displayName.length > 0 && (
         <Text style={styles.text} numberOfLines={1}>
           {truncateText(displayName, 8)}
         </Text>

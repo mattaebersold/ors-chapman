@@ -8,38 +8,48 @@ import {
 } from 'react-native';
 import { colors } from '../constants/colors';
 import FAIcon from './ui/FAIcon';
-import { useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery } from '../services/apiService';
+import { useFollowUserMutation, useUnfollowUserMutation, useGetFollowStatusQuery, useGetUserQuery } from '../services/apiService';
 import { useSelector } from 'react-redux';
 
-const UserRow = ({ user, onPress, displayOptions = {} }) => {
+const UserRow = ({ user, userId: userIdProp, onPress, displayOptions = {} }) => {
   const { userInfo } = useSelector(state => state.auth);
-  const userId = user?._id || user?.id;
+
+  // Fetch user data if only userId is provided
+  const { data: fetchedUser } = useGetUserQuery(userIdProp, {
+    skip: !!user || !userIdProp
+  });
+
+  // Use provided user or fetched user
+  const actualUser = user || fetchedUser;
+  const userId = actualUser?._id || actualUser?.id || actualUser?.user_id || userIdProp;
   
   // Don't show follow button for own profile
   const isOwnProfile = userId === userInfo?.id || userId === userInfo?._id;
   
   // Check if follow status is already included in user object (Murray approach)
-  const userHasFollowStatus = user?.isFollowing !== undefined || user?.is_following !== undefined;
-  
+  const userHasFollowStatus = actualUser?.isFollowing !== undefined || actualUser?.is_following !== undefined;
+
   // Fetch current follow status from API only if not already included - backend uses username
-  const shouldSkipQuery = !user?.username || isOwnProfile || userHasFollowStatus;
-  
-  const { data: followStatus, isLoading: statusLoading, error: followStatusError } = useGetFollowStatusQuery(user?.username, {
+  const shouldSkipQuery = !actualUser?.username || isOwnProfile || userHasFollowStatus;
+
+  const { data: followStatus, isLoading: statusLoading, error: followStatusError } = useGetFollowStatusQuery(actualUser?.username, {
     skip: shouldSkipQuery
   });
-  
+
   const [followUser, { isLoading: isFollowLoading }] = useFollowUserMutation();
   const [unfollowUser, { isLoading: isUnfollowLoading }] = useUnfollowUserMutation();
-  
-  const followLoading = isFollowLoading || isUnfollowLoading;
-  
-  // Determine follow status from user object first, then API response
-  const isFollowing = user?.isFollowing || user?.is_following || followStatus?.isFollowing || false;
 
+  const followLoading = isFollowLoading || isUnfollowLoading;
+
+  // Determine follow status from user object first, then API response
+  const isFollowing = actualUser?.isFollowing || actualUser?.is_following || followStatus?.isFollowing || false;
+
+  // Don't render if no user data
+  if (!actualUser) return null;
 
   const handleFollowToggle = async () => {
     try {
-      const username = user?.username;
+      const username = actualUser?.username;
       if (isFollowing) {
         await unfollowUser(username).unwrap();
       } else {
@@ -59,12 +69,12 @@ const UserRow = ({ user, onPress, displayOptions = {} }) => {
 
   const getImageSource = () => {
     // First check for gallery[0] (like Murray does)
-    if (user?.gallery?.[0]?.filename) {
-      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${user.gallery[0].filename}` };
+    if (actualUser?.gallery?.[0]?.filename) {
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${actualUser.gallery[0].filename}` };
     }
     // Fallback to profile_image if available
-    if (user?.profile_image) {
-      return { uri: user.profile_image };
+    if (actualUser?.profile_image) {
+      return { uri: actualUser.profile_image };
     }
     // Return null to show placeholder background color
     return null;
@@ -90,14 +100,14 @@ const UserRow = ({ user, onPress, displayOptions = {} }) => {
         {/* User Info */}
         <View style={styles.userInfo}>
           <Text style={styles.username} numberOfLines={1}>
-            {user?.username || user?.name || 'Unknown User'}
+            {actualUser?.username || actualUser?.name || 'Unknown User'}
           </Text>
           <Text style={styles.subtitle} numberOfLines={1}>
-            {user?.location || user?.bio || 'Member'}
+            {actualUser?.location || actualUser?.bio || 'Member'}
           </Text>
-          {user?.car_count && (
+          {actualUser?.car_count && (
             <Text style={styles.carCount}>
-              {user.car_count} car{user.car_count !== 1 ? 's' : ''}
+              {actualUser.car_count} car{actualUser.car_count !== 1 ? 's' : ''}
             </Text>
           )}
         </View>

@@ -12,7 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useDeleteGarageCarMutation, useGetUserDetailsQuery, useToggleGarageCarFeaturedMutation, useGetUserQuery } from '../services/apiService';
+import { useGetCarsQuery, useGetModsQuery, useGetCarGalleriesQuery, useGetCarGalleriesByInternalIdQuery, useGetCarModsByInternalIdQuery, useGetCarTasksQuery, useCreateCarTaskMutation, useUpdateCarTaskMutation, useToggleCarTaskCompletionMutation, useUpdateCarTaskPositionsMutation, useDeleteCarTaskMutation, useDeleteModMutation, useDeleteCarGalleryMutation, useDeleteGarageCarMutation, useGetUserDetailsQuery, useToggleGarageCarFeaturedMutation, useGetUserQuery, useGetCarFollowersQuery } from '../services/apiService';
 import LoadingIndicator from '../components/ui/LoadingIndicator';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import EmptyState from '../components/ui/EmptyState';
@@ -54,6 +54,9 @@ const CarDetailScreen = ({ route, navigation }) => {
   const [feedModalVisible, setFeedModalVisible] = useState(false);
   const [relatedMakeModalVisible, setRelatedMakeModalVisible] = useState(false);
   const [relatedModelModalVisible, setRelatedModelModalVisible] = useState(false);
+  const [followersModalVisible, setFollowersModalVisible] = useState(false);
+  const [modDetailModalVisible, setModDetailModalVisible] = useState(false);
+  const [selectedModDetail, setSelectedModDetail] = useState(null);
 
   if (!carId) {
     return (
@@ -128,6 +131,12 @@ const CarDetailScreen = ({ route, navigation }) => {
   const { data: carOwnerUser } = useGetUserQuery(carData?.user_id, {
     skip: !carData?.user_id
   });
+
+  // Fetch car followers
+  const { data: carFollowersData, isLoading: followersLoading } = useGetCarFollowersQuery(
+    { car_id: carData?.internal_id, page: 0, limit: 100 },
+    { skip: !carData?.internal_id }
+  );
 
   // CarTask mutations
   const [createCarTask] = useCreateCarTaskMutation();
@@ -609,7 +618,15 @@ const CarDetailScreen = ({ route, navigation }) => {
         </View>
         <View style={styles.modsList}>
           {mods.map((mod, index) => (
-            <View key={mod._id || index} style={styles.modItem}>
+            <TouchableOpacity
+              key={mod._id || index}
+              style={styles.modItem}
+              activeOpacity={0.7}
+              onPress={() => {
+                setSelectedModDetail(mod);
+                setModDetailModalVisible(true);
+              }}
+            >
               {/* Mod Header */}
               <View style={styles.modHeader}>
                 <View style={styles.modIconContainer}>
@@ -629,18 +646,22 @@ const CarDetailScreen = ({ route, navigation }) => {
                   )}
                   {isCarOwner && (
                     <View style={styles.modActionButtons}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.modActionButton}
-                        onPress={() => {
+                        onPress={(e) => {
+                          e.stopPropagation();
                           setEditingMod(mod);
                           setModFormModalVisible(true);
                         }}
                       >
                         <FAIcon name="edit" size={12} color={colors.WHITE} />
                       </TouchableOpacity>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.modActionButton}
-                        onPress={() => handleDeleteMod(mod)}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMod(mod);
+                        }}
                       >
                         <FAIcon name="trash" size={12} color={colors.ERROR} />
                       </TouchableOpacity>
@@ -651,7 +672,7 @@ const CarDetailScreen = ({ route, navigation }) => {
 
               {/* Mod Description */}
               {mod.description && (
-                <Text style={styles.modDescription}>{mod.description}</Text>
+                <Text style={styles.modDescription} numberOfLines={2}>{mod.description}</Text>
               )}
 
               {/* Mod Costs */}
@@ -672,23 +693,17 @@ const CarDetailScreen = ({ route, navigation }) => {
                 </View>
               )}
 
-              {/* Mod Images */}
+              {/* Mod Images - Preview thumbnail */}
               {mod.gallery && mod.gallery.length > 0 && (
                 <View style={styles.modGallery}>
-                  <TouchableOpacity 
-                    style={styles.modGalleryPreview}
-                    onPress={() => {
-                      setSelectedMod(mod);
-                      setModsModalVisible(true);
-                    }}
-                  >
+                  <View style={styles.modGalleryPreview}>
                     {/* Show only first image as preview */}
                     <Image
                       source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${mod.gallery[0].filename}` }}
                       style={styles.modPreviewImage}
                       resizeMode="cover"
                     />
-                    
+
                     {/* Image count overlay */}
                     {mod.gallery.length > 1 && (
                       <View style={styles.modImageCount}>
@@ -698,16 +713,16 @@ const CarDetailScreen = ({ route, navigation }) => {
                         </Text>
                       </View>
                     )}
-                    
+
                     {/* Tap to view overlay */}
                     <View style={styles.modTapOverlay}>
                       <FAIcon name="expand" size={16} color={colors.WHITE} />
                       <Text style={styles.modTapText}>Tap to view</Text>
                     </View>
-                  </TouchableOpacity>
+                  </View>
                 </View>
               )}
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       </View>
@@ -1071,13 +1086,27 @@ const CarDetailScreen = ({ route, navigation }) => {
             <FAIcon name="times" size={18} color={colors.WHITE} />
           </TouchableOpacity>
 
-          {/* Main Header Image */}
+          {/* Main Header Image - Tappable to open gallery */}
           {carData?.gallery?.length > 0 ? (
-            <Image
-              source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${carData.gallery[0].filename}` }}
-              style={styles.carImage}
-              resizeMode="cover"
-            />
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => {
+                setCarHeaderGalleryStartIndex(0);
+                setCarHeaderGalleryModalVisible(true);
+              }}
+              style={styles.carImageTouchable}
+            >
+              <Image
+                source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${carData.gallery[0].filename}` }}
+                style={styles.carImage}
+                resizeMode="cover"
+              />
+              {/* Tap to expand indicator */}
+              <View style={styles.tapToExpandIndicator}>
+                <FAIcon name="expand" size={14} color={colors.WHITE} />
+                <Text style={styles.tapToExpandText}>Tap to view</Text>
+              </View>
+            </TouchableOpacity>
           ) : (
             <GradientPlaceholder
               height={250}
@@ -1087,18 +1116,12 @@ const CarDetailScreen = ({ route, navigation }) => {
             />
           )}
 
-          {/* Gallery Button */}
-          {carData?.gallery?.length > 0 && (
-            <TouchableOpacity
-              style={styles.galleryButton}
-              onPress={() => {
-                setCarHeaderGalleryStartIndex(0);
-                setCarHeaderGalleryModalVisible(true);
-              }}
-            >
-              <FAIcon name="images" size={20} color={colors.WHITE} />
+          {/* Gallery Button - Image Count Badge */}
+          {carData?.gallery?.length > 1 && (
+            <View style={styles.galleryButton}>
+              <FAIcon name="images" size={16} color={colors.WHITE} />
               <Text style={styles.galleryButtonText}>{carData.gallery.length}</Text>
-            </TouchableOpacity>
+            </View>
           )}
 
           {/* likes button */}
@@ -1183,6 +1206,20 @@ const CarDetailScreen = ({ route, navigation }) => {
               <UserRow user={carOwnerUser} owner nostats />
             )}
           </View>
+
+          {/* Car Followers Row */}
+          {!followersLoading && carFollowersData?.total > 0 && (
+            <TouchableOpacity
+              style={styles.carFollowersRow}
+              onPress={() => setFollowersModalVisible(true)}
+            >
+              <FAIcon name="users" size={16} color={colors.BRG} />
+              <Text style={styles.carFollowersText}>
+                {carFollowersData.total} {carFollowersData.total === 1 ? 'Follower' : 'Followers'}
+              </Text>
+              <FAIcon name="chevron-right" size={14} color={colors.TEXT_SECONDARY} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -1491,6 +1528,187 @@ const CarDetailScreen = ({ route, navigation }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Car Followers Modal */}
+      <Modal
+        visible={followersModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setFollowersModalVisible(false)}
+      >
+        <View style={styles.relatedModalContainer}>
+          <View style={styles.relatedModalHeader}>
+            <TouchableOpacity onPress={() => setFollowersModalVisible(false)}>
+              <FAIcon name="times" size={24} color={colors.BRG} />
+            </TouchableOpacity>
+            <Text style={styles.relatedModalTitle}>
+              Car Followers ({carFollowersData?.total || 0})
+            </Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <View style={styles.relatedModalContent}>
+            {followersLoading ? (
+              <LoadingIndicator text="Loading followers..." />
+            ) : carFollowersData?.entries && carFollowersData.entries.length > 0 ? (
+              <FlatList
+                data={carFollowersData.entries}
+                renderItem={({ item }) => (
+                  <UserRow user={item} nostats />
+                )}
+                keyExtractor={(item) => item.user_id || item._id}
+                showsVerticalScrollIndicator={false}
+              />
+            ) : (
+              <EmptyState
+                title="No Followers"
+                message="This car doesn't have any followers yet"
+                icon="users"
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Mod Detail Modal */}
+      <Modal
+        visible={modDetailModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setModDetailModalVisible(false);
+          setSelectedModDetail(null);
+        }}
+      >
+        <View style={styles.relatedModalContainer}>
+          <View style={styles.relatedModalHeader}>
+            <TouchableOpacity
+              onPress={() => {
+                setModDetailModalVisible(false);
+                setSelectedModDetail(null);
+              }}
+            >
+              <FAIcon name="times" size={24} color={colors.BRG} />
+            </TouchableOpacity>
+            <Text style={styles.relatedModalTitle}>
+              {selectedModDetail?.title || 'Modification'}
+            </Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <ScrollView style={styles.relatedModalContent} showsVerticalScrollIndicator={false}>
+            {selectedModDetail && (
+              <View style={styles.modDetailContainer}>
+                {/* Mod Category and Date */}
+                <View style={styles.modDetailMeta}>
+                  {selectedModDetail.category && (
+                    <View style={styles.modDetailMetaItem}>
+                      <FAIcon name="tag" size={14} color={colors.BRG} />
+                      <Text style={styles.modDetailMetaText}>{selectedModDetail.category}</Text>
+                    </View>
+                  )}
+                  {selectedModDetail.installation_date && (
+                    <View style={styles.modDetailMetaItem}>
+                      <FAIcon name="calendar" size={14} color={colors.TEXT_SECONDARY} />
+                      <Text style={styles.modDetailMetaText}>
+                        {new Date(selectedModDetail.installation_date).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Mod Gallery */}
+                {selectedModDetail.gallery && selectedModDetail.gallery.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.modDetailGallery}
+                    onPress={() => {
+                      setSelectedMod(selectedModDetail);
+                      setModsModalVisible(true);
+                    }}
+                  >
+                    <Image
+                      source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${selectedModDetail.gallery[0].filename}` }}
+                      style={styles.modDetailImage}
+                      resizeMode="cover"
+                    />
+                    {selectedModDetail.gallery.length > 1 && (
+                      <View style={styles.modDetailImageCount}>
+                        <FAIcon name="images" size={16} color={colors.WHITE} />
+                        <Text style={styles.modDetailImageCountText}>
+                          View all {selectedModDetail.gallery.length} images
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                )}
+
+                {/* Mod Description */}
+                {selectedModDetail.description && (
+                  <View style={styles.modDetailSection}>
+                    <Text style={styles.modDetailSectionTitle}>Description</Text>
+                    <Text style={styles.modDetailDescription}>{selectedModDetail.description}</Text>
+                  </View>
+                )}
+
+                {/* Mod Costs */}
+                {(selectedModDetail.parts_cost || selectedModDetail.labor_cost) && (
+                  <View style={styles.modDetailSection}>
+                    <Text style={styles.modDetailSectionTitle}>Cost Breakdown</Text>
+                    {selectedModDetail.parts_cost && (
+                      <View style={styles.modDetailCostRow}>
+                        <FAIcon name="shopping-cart" size={16} color={colors.BRG} />
+                        <Text style={styles.modDetailCostLabel}>Parts:</Text>
+                        <Text style={styles.modDetailCostValue}>${selectedModDetail.parts_cost}</Text>
+                      </View>
+                    )}
+                    {selectedModDetail.labor_cost && (
+                      <View style={styles.modDetailCostRow}>
+                        <FAIcon name="user" size={16} color={colors.BRG} />
+                        <Text style={styles.modDetailCostLabel}>Labor:</Text>
+                        <Text style={styles.modDetailCostValue}>${selectedModDetail.labor_cost}</Text>
+                      </View>
+                    )}
+                    {selectedModDetail.parts_cost && selectedModDetail.labor_cost && (
+                      <View style={[styles.modDetailCostRow, styles.modDetailTotalCost]}>
+                        <FAIcon name="calculator" size={16} color={colors.WHITE} />
+                        <Text style={styles.modDetailCostLabel}>Total:</Text>
+                        <Text style={[styles.modDetailCostValue, styles.modDetailTotalValue]}>
+                          ${(parseFloat(selectedModDetail.parts_cost) + parseFloat(selectedModDetail.labor_cost)).toFixed(2)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Edit/Delete Actions for Owner */}
+                {isCarOwner && (
+                  <View style={styles.modDetailActions}>
+                    <TouchableOpacity
+                      style={styles.modDetailEditButton}
+                      onPress={() => {
+                        setModDetailModalVisible(false);
+                        setEditingMod(selectedModDetail);
+                        setModFormModalVisible(true);
+                      }}
+                    >
+                      <FAIcon name="edit" size={16} color={colors.WHITE} />
+                      <Text style={styles.modDetailEditButtonText}>Edit Modification</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.modDetailDeleteButton}
+                      onPress={() => {
+                        setModDetailModalVisible(false);
+                        handleDeleteMod(selectedModDetail);
+                      }}
+                    >
+                      <FAIcon name="trash" size={16} color={colors.ERROR} />
+                      <Text style={styles.modDetailDeleteButtonText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </>
   );
 };
@@ -1544,10 +1762,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  carImage: {
+  carImageTouchable: {
     position: 'absolute',
     width: '100%',
     height: '100%',
+  },
+  carImage: {
+    width: '100%',
+    height: '100%',
+  },
+  tapToExpandIndicator: {
+    position: 'absolute',
+    bottom: 60,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  tapToExpandText: {
+    color: colors.WHITE,
+    fontSize: 12,
+    fontWeight: '500',
   },
 
   titleContainer: {
@@ -1692,6 +1931,24 @@ const styles = StyleSheet.create({
   },
   carActionsContainer: {
     marginLeft: 12,
+  },
+  carFollowersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: colors.LIGHT_GRAY,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.BORDER,
+    gap: 8,
+  },
+  carFollowersText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.WHITE,
+    flex: 1,
   },
   
   // Tabs
@@ -2350,6 +2607,132 @@ const styles = StyleSheet.create({
   relatedCarOwner: {
     fontSize: 14,
     color: colors.TEXT_SECONDARY,
+  },
+
+  // Mod Detail Modal Styles
+  modDetailContainer: {
+    padding: 16,
+  },
+  modDetailMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
+  },
+  modDetailMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  modDetailMetaText: {
+    fontSize: 14,
+    color: colors.TEXT_SECONDARY,
+    fontWeight: '500',
+  },
+  modDetailGallery: {
+    marginBottom: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  modDetailImage: {
+    width: '100%',
+    height: 250,
+  },
+  modDetailImageCount: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  modDetailImageCountText: {
+    color: colors.WHITE,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modDetailSection: {
+    marginBottom: 20,
+  },
+  modDetailSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.WHITE,
+    marginBottom: 12,
+  },
+  modDetailDescription: {
+    fontSize: 16,
+    color: colors.TEXT_SECONDARY,
+    lineHeight: 24,
+  },
+  modDetailCostRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: colors.LIGHT_GRAY,
+    borderRadius: 8,
+    marginBottom: 8,
+    gap: 12,
+  },
+  modDetailCostLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.WHITE,
+  },
+  modDetailCostValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.BRG,
+  },
+  modDetailTotalCost: {
+    backgroundColor: colors.BRG,
+    marginTop: 8,
+  },
+  modDetailTotalValue: {
+    color: colors.WHITE,
+    fontSize: 18,
+  },
+  modDetailActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  modDetailEditButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.BRG,
+    paddingVertical: 14,
+    borderRadius: 8,
+    gap: 8,
+  },
+  modDetailEditButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.WHITE,
+  },
+  modDetailDeleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.ERROR,
+    gap: 8,
+  },
+  modDetailDeleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.ERROR,
   },
 });
 

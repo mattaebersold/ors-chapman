@@ -34,17 +34,6 @@ const CarsScreen = ({ navigation }) => {
   // Fetch featured spotted cars
   const { data: featuredSpottedCarsData, isLoading: featuredSpottedCarsLoading } = useGetFeaturedSpottedCarsQuery({ limit: 10 });
 
-  // Debug featured cars
-  useEffect(() => {
-    if (featuredCarsData) {
-      console.log('Featured cars data:', {
-        total: featuredCarsData.total,
-        entries: featuredCarsData.entries?.length,
-        firstCarFeatured: featuredCarsData.entries?.[0]?.featured,
-        allFeatured: featuredCarsData.entries?.map(car => ({ id: car._id, featured: car.featured }))
-      });
-    }
-  }, [featuredCarsData]);
 
   
   // Debug brands data
