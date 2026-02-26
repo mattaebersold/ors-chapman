@@ -10,8 +10,8 @@ import {
   FlatList,
   Share,
   Alert,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';

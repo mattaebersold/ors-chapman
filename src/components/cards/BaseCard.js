@@ -16,10 +16,10 @@ const BaseCard = ({
   imageSource,
   // placeholderIcon = 'camera',
   // placeholderText = 'No Image',
-  
+
   // Action props
   onPress,
-    
+
   // Layout props
   headerComponent,
   footerComponent,
@@ -32,7 +32,8 @@ const BaseCard = ({
   topCenter,
   bottomCenter,
 
-  small
+  small,
+  aspectRatio,
 
 }) => {
   
@@ -101,10 +102,16 @@ const BaseCard = ({
   );
 
   const CardContainer = onPress ? TouchableOpacity : View;
-  const containerProps = onPress ? { onPress, activeOpacity: 0.8 } : {};
+  const containerProps = onPress ? { onPress, activeOpacity: 1 } : {};
 
   return (
-    <CardContainer style={small ? styles.cardMultiColumn : styles.card} {...containerProps}>
+    <CardContainer
+      style={[
+        small ? styles.cardMultiColumn : styles.card,
+        aspectRatio != null ? { aspectRatio } : null,
+      ]}
+      {...containerProps}
+    >
       {renderImageContainer()}
       {renderContent()}
     </CardContainer>

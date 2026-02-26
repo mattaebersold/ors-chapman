@@ -632,16 +632,14 @@ const styles = StyleSheet.create({
   },
   unreadIndicator: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -4,
+    right: -4,
     backgroundColor: colors.ERROR,
     borderRadius: 10,
     minWidth: 20,
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.WHITE,
   },
   unreadText: {
     color: colors.WHITE,

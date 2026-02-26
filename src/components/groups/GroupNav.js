@@ -4,6 +4,7 @@ import { colors } from '../../constants/colors';
 import FAIcon from '../ui/FAIcon';
 
 const navItems = [
+  { key: 'Posts', label: 'Posts', icon: 'feed' },
   { key: 'Forum', label: 'Forum', icon: 'comments' },
   { key: 'Cars', label: 'Cars', icon: 'car' },
   { key: 'Market', label: 'Market', icon: 'money' },
@@ -20,16 +21,20 @@ const GroupNav = ({ group, activeTab, onTabPress }) => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {navItems.map((item) => (
-          <TouchableOpacity
-            key={item.key}
-            style={[styles.navItem, activeTab === item.key && styles.navItemActive]}
-            onPress={() => onTabPress(item.key)}
-          >
-            <FAIcon name={item.icon} size={18} color={colors.WHITE} />
-            <Text style={styles.navLabel}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
+        {navItems.map((item) => {
+          const isActive = activeTab === item.key;
+          return (
+            <TouchableOpacity
+              key={item.key}
+              style={[styles.navItem, isActive && styles.navItemActive]}
+              onPress={() => onTabPress(item.key)}
+              activeOpacity={1}
+            >
+              <FAIcon name={item.icon} size={18} color={isActive ? colors.BLACK : colors.WHITE} />
+              <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>{item.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -55,6 +60,7 @@ const styles = StyleSheet.create({
   },
   navItemActive: {
     backgroundColor: colors.WHITE,
+    borderColor: colors.WHITE,
   },
   navLabel: {
     color: colors.WHITE,
@@ -62,9 +68,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: '500',
   },
+  navLabelActive: {
+    color: colors.BLACK,
+    fontWeight: '700',
+  },
 });
-
-// Override text color when active
-GroupNav.navItemActiveText = { color: colors.BLACK };
 
 export default GroupNav;

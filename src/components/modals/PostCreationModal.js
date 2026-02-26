@@ -10,8 +10,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Alert,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../constants/colors';
 import ImageUploader from '../ImageUploader';
 import MakeModelPicker from '../forms/MakeModelPicker';

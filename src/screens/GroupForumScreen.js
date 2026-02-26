@@ -40,14 +40,16 @@ const GroupForumScreen = () => {
   const [newPostBody, setNewPostBody] = useState('');
   const [newPostCategory, setNewPostCategory] = useState('general');
 
+  const gid = group?.internal_id || groupId;
+
   const { data: forumData, isLoading, refetch } = useGetGroupForumPostsQuery(
-    { group_id: group?.internal_id, category: selectedCategory },
-    { skip: !group?.internal_id }
+    { group_id: gid, category: selectedCategory },
+    { skip: !gid }
   );
 
   const { data: membersData } = useGetGroupMembersQuery(
-    { group_id: group?.internal_id },
-    { skip: !group?.internal_id }
+    { group_id: gid },
+    { skip: !gid }
   );
 
   const [createPost, { isLoading: isCreating }] = useCreateGroupForumPostMutation();
@@ -94,17 +96,16 @@ const GroupForumScreen = () => {
   };
 
   const handleTabPress = (tab) => {
+    if (tab === 'Posts') { navigation.navigate('GroupDetail', { groupId }); return; }
+    if (tab === 'Forum') return;
     const screenMap = {
-      Forum: 'GroupForum',
       Cars: 'GroupCars',
       Market: 'GroupMarketplace',
       Events: 'GroupEvents',
       News: 'GroupNews',
       Resources: 'GroupResources',
     };
-    if (tab !== 'Forum') {
-      navigation.replace(screenMap[tab], { groupId, group });
-    }
+    navigation.replace(screenMap[tab], { groupId, group });
   };
 
   const renderItem = ({ item }) => (

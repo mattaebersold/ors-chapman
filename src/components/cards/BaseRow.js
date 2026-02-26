@@ -101,7 +101,7 @@ const BaseRow = ({
 	);
 
 	const CardContainer = onPress ? TouchableOpacity : View;
-	const containerProps = onPress ? { onPress, activeOpacity: 0.8 } : {};
+	const containerProps = onPress ? { onPress, activeOpacity: 1 } : {};
 
 	return (
 		<CardContainer style={styles.card} {...containerProps}>

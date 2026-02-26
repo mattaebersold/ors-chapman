@@ -31,12 +31,6 @@ const GroupResourceCard = ({ item, onPress, userVote, netVotes = 0, onVote }) =>
           <Text style={styles.categoryBadge}>{item.category}</Text>
         )}
         <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-        {item.url && (
-          <View style={styles.linkRow}>
-            <FAIcon name="link" size={11} color={colors.BLUE} />
-            <Text style={styles.linkText} numberOfLines={1}>External Link</Text>
-          </View>
-        )}
         <View style={styles.authorRow}>
           <Text style={styles.authorName}>{item.user?.username}</Text>
           <Text style={styles.date}>{formatDate(item.created_at)}</Text>

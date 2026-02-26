@@ -113,6 +113,7 @@ const FeedItemCard = ({ post, displayOptions = {} }) => {
           style={styles.userInfo}
           onPress={handleUserPress}
           disabled={userLoading || !user}
+          activeOpacity={1}
         >
           {userProfileImage ? (
             <Image source={userProfileImage} style={styles.userAvatar} />
@@ -139,13 +140,13 @@ const FeedItemCard = ({ post, displayOptions = {} }) => {
       </View>
 
       {/* Title */}
-      <TouchableOpacity onPress={handlePress} style={styles.titleContainer}>
+      <TouchableOpacity onPress={handlePress} style={styles.titleContainer} activeOpacity={1}>
         <Text style={styles.title}>{post.title}</Text>
       </TouchableOpacity>
 
       {/* Image/Media */}
       {imageSource && (
-        <TouchableOpacity onPress={handlePress} style={styles.mediaContainer}>
+        <TouchableOpacity onPress={handlePress} style={styles.mediaContainer} activeOpacity={1}>
           <Image
             source={imageSource}
             style={styles.image}
@@ -201,6 +202,7 @@ const FeedItemCard = ({ post, displayOptions = {} }) => {
         <TouchableOpacity
           style={styles.commentsSection}
           onPress={handleCommentsPress}
+          activeOpacity={1}
         >
           <FAIcon name="comment-outline" size={16} color={colors.TEXT_SECONDARY} />
           <Text style={styles.commentsText}>
@@ -246,9 +248,7 @@ const LikedUserAvatar = ({ userId, index }) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.WHITE,
-    marginHorizontal: 0,
     marginVertical: 8,
-    borderRadius: 12,
     overflow: 'hidden',
   },
   topBar: {

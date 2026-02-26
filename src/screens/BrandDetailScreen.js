@@ -5,10 +5,10 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGetBrandModelsQuery } from '../services/apiService';
 import { colors } from '../constants/colors';
 import FAIcon from '../components/ui/FAIcon';

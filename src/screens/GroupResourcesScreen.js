@@ -46,14 +46,16 @@ const GroupResourcesScreen = () => {
   const [newUrl, setNewUrl] = useState('');
   const [newCategory, setNewCategory] = useState('general');
 
+  const gid = group?.internal_id || groupId;
+
   const { data: resourcesData, isLoading, refetch } = useGetGroupResourcesQuery(
-    { group_id: group?.internal_id, category: selectedCategory },
-    { skip: !group?.internal_id }
+    { group_id: gid, category: selectedCategory },
+    { skip: !gid }
   );
 
   const { data: membersData } = useGetGroupMembersQuery(
-    { group_id: group?.internal_id },
-    { skip: !group?.internal_id }
+    { group_id: gid },
+    { skip: !gid }
   );
 
   const [createResource, { isLoading: isCreating }] = useCreateGroupResourceMutation();
@@ -102,17 +104,16 @@ const GroupResourcesScreen = () => {
   };
 
   const handleTabPress = (tab) => {
+    if (tab === 'Posts') { navigation.navigate('GroupDetail', { groupId }); return; }
+    if (tab === 'Resources') return;
     const screenMap = {
       Forum: 'GroupForum',
       Cars: 'GroupCars',
       Market: 'GroupMarketplace',
       Events: 'GroupEvents',
       News: 'GroupNews',
-      Resources: 'GroupResources',
     };
-    if (tab !== 'Resources') {
-      navigation.replace(screenMap[tab], { groupId, group });
-    }
+    navigation.replace(screenMap[tab], { groupId, group });
   };
 
   const renderItem = ({ item }) => (
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { color: colors.WHITE, fontSize: 17, fontWeight: '700' },
-  categoryBar: { maxHeight: 50, backgroundColor: colors.WHITE },
+  categoryBar: { backgroundColor: colors.WHITE },
   categoryContent: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
   categoryChip: {
     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,

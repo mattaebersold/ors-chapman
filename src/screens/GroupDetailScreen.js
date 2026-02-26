@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Image, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Alert, FlatList,
+  ActivityIndicator, RefreshControl, Alert,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -13,22 +13,28 @@ import {
   useGetGroupMembersQuery,
   useJoinGroupMutation,
   useLeaveGroupMutation,
+  useGetPostsQuery,
 } from '../services/apiService';
 import GroupNav from '../components/groups/GroupNav';
-import Comments from '../components/Comments';
+import FeedItemCard from '../components/cards/FeedItemCard';
 
 const GroupDetailScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { groupId } = route.params || {};
   const { userInfo } = useSelector(state => state.auth);
-  const [activeTab, setActiveTab] = useState(null);
+  const [activeTab, setActiveTab] = useState('Posts');
 
   const { data: groupData, isLoading, refetch } = useGetGroupDetailQuery(groupId, { skip: !groupId });
   const group = groupData?.entry || (groupData?.internal_id ? groupData : null);
 
   const { data: membersData } = useGetGroupMembersQuery(
     { group_id: group?.internal_id },
+    { skip: !group?.internal_id }
+  );
+
+  const { data: postsData, isLoading: postsLoading } = useGetPostsQuery(
+    { group_id: group?.internal_id, limit: 20, page: 1 },
     { skip: !group?.internal_id }
   );
 
@@ -41,6 +47,7 @@ const GroupDetailScreen = () => {
   const isAdmin = isMember && (currentMembership?.member_type === 'admin' || currentMembership?.member_type === 'owner');
   const isPending = currentMembership?.status === 'pending';
   const activeMembers = members.filter(m => m.status === 'active');
+  const groupPosts = postsData?.entries || [];
 
   const handleJoin = async () => {
     try {
@@ -63,6 +70,11 @@ const GroupDetailScreen = () => {
   };
 
   const handleTabPress = useCallback((tab) => {
+    if (tab === 'Posts') {
+      setActiveTab('Posts');
+      return;
+    }
+    setActiveTab(tab);
     const screenMap = {
       Forum: 'GroupForum',
       Cars: 'GroupCars',
@@ -75,14 +87,19 @@ const GroupDetailScreen = () => {
   }, [navigation, groupId, group]);
 
   const getBannerSource = () => {
-    if (group?.banners?.[0]?.filename) {
-      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${group.banners[0].filename}` };
-    }
     if (group?.gallery?.[0]?.filename) {
       return { uri: `https://d2481n2uw7a0p.cloudfront.net/${group.gallery[0].filename}` };
     }
+    if (group?.banners?.[0]?.filename) {
+      return { uri: `https://d2481n2uw7a0p.cloudfront.net/${group.banners[0].filename}` };
+    }
     return null;
   };
+
+  const handleMemberPress = useCallback((member) => {
+    const user = member.user || { user_id: member.user_id };
+    navigation.navigate('UserDetail', { user });
+  }, [navigation]);
 
   if (isLoading) {
     return (
@@ -158,15 +175,6 @@ const GroupDetailScreen = () => {
             </View>
           )}
 
-          {/* Tags */}
-          {group.tags?.length > 0 && (
-            <View style={styles.tagsRow}>
-              {group.tags.map((tag, i) => (
-                <Text key={i} style={styles.tag}>{tag}</Text>
-              ))}
-            </View>
-          )}
-
           {/* Member count */}
           <Text style={styles.memberCount}>{activeMembers.length} member{activeMembers.length !== 1 ? 's' : ''}</Text>
 
@@ -188,7 +196,7 @@ const GroupDetailScreen = () => {
           )}
         </View>
 
-        {/* Navigation tabs */}
+        {/* Navigation tabs — members only */}
         {isMember && (
           <GroupNav group={group} activeTab={activeTab} onTabPress={handleTabPress} />
         )}
@@ -228,21 +236,45 @@ const GroupDetailScreen = () => {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.avatarRow}>
               {activeMembers.slice(0, 10).map((member, i) => {
                 const img = member.user?.gallery?.[0]?.filename;
-                return img ? (
-                  <Image
+                return (
+                  <TouchableOpacity
                     key={i}
-                    source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${img}` }}
-                    style={styles.memberAvatar}
-                  />
-                ) : (
-                  <View key={i} style={[styles.memberAvatar, styles.memberAvatarPlaceholder]}>
-                    <FAIcon name="user" size={12} color={colors.WHITE} />
-                  </View>
+                    onPress={() => handleMemberPress(member)}
+                    activeOpacity={0.8}
+                  >
+                    {img ? (
+                      <Image
+                        source={{ uri: `https://d2481n2uw7a0p.cloudfront.net/${img}` }}
+                        style={styles.memberAvatar}
+                      />
+                    ) : (
+                      <View style={[styles.memberAvatar, styles.memberAvatarPlaceholder]}>
+                        <FAIcon name="user" size={12} color={colors.WHITE} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
                 );
               })}
             </ScrollView>
           </View>
         )}
+
+        {/* Posts feed — always visible on group home */}
+        <View style={styles.postsSection}>
+          <Text style={styles.sectionTitle}>Posts</Text>
+          {postsLoading ? (
+            <ActivityIndicator size="small" color={colors.BRG} style={styles.postsLoader} />
+          ) : groupPosts.length === 0 ? (
+            <Text style={styles.emptyPosts}>No posts yet</Text>
+          ) : (
+            groupPosts.map((post, i) => (
+              <FeedItemCard
+                key={post.internal_id || post._id || i}
+                post={post}
+              />
+            ))
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -311,6 +343,9 @@ const styles = StyleSheet.create({
   avatarRow: { gap: 8 },
   memberAvatar: { width: 44, height: 44, borderRadius: 22 },
   memberAvatarPlaceholder: { backgroundColor: colors.BRG, justifyContent: 'center', alignItems: 'center' },
+  postsSection: { paddingHorizontal: 16, paddingBottom: 32 },
+  postsLoader: { marginTop: 16 },
+  emptyPosts: { fontSize: 14, color: colors.TEXT_SECONDARY, textAlign: 'center', paddingVertical: 24 },
 });
 
 export default GroupDetailScreen;

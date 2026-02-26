@@ -12,6 +12,7 @@ import {
   faTimes,
   faHeart,
   faComment,
+  faComments,
   faShare,
   faChevronLeft,
   faChevronRight,
@@ -53,7 +54,12 @@ import {
   faExpand,
   faBell,
   faBellSlash,
-  faArchive
+  faArchive,
+  faArrowLeft,
+  faArrowUp,
+  faArrowDown,
+  faBullhorn,
+  faDollarSign,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -142,6 +148,16 @@ const iconMap = {
   'bell-slash': faBellSlash,
   archive: faArchive,
   send: faPaperPlane,
+  // Navigation
+  'arrow-left': faArrowLeft,
+  'arrow-up': faArrowUp,
+  'arrow-down': faArrowDown,
+  'back': faArrowLeft,
+  // Group nav icons
+  comments: faComments,
+  bullhorn: faBullhorn,
+  money: faDollarSign,
+  map: faMapMarker,
 };
 
 const FAIcon = ({ name, size = 20, color = '#000', style, ...props }) => {

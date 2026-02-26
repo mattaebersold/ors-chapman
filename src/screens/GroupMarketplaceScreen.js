@@ -17,17 +17,16 @@ const GroupMarketplaceScreen = () => {
   const [activeTab, setActiveTab] = useState('listings');
 
   const handleTabPress = (tab) => {
+    if (tab === 'Posts') { navigation.navigate('GroupDetail', { groupId }); return; }
+    if (tab === 'Market') return;
     const screenMap = {
       Forum: 'GroupForum',
       Cars: 'GroupCars',
-      Market: 'GroupMarketplace',
       Events: 'GroupEvents',
       News: 'GroupNews',
       Resources: 'GroupResources',
     };
-    if (tab !== 'Market') {
-      navigation.replace(screenMap[tab], { groupId, group });
-    }
+    navigation.replace(screenMap[tab], { groupId, group });
   };
 
   const tabs = [
@@ -35,16 +34,18 @@ const GroupMarketplaceScreen = () => {
     { key: 'wantads', label: 'Want Ads' },
   ];
 
+  const gid = group?.internal_id || groupId;
+
   const getConfig = () => {
     if (activeTab === 'listings') {
       return {
         type: 'listings',
-        apiUrl: `/api/post?type=listing&group_id=${group?.internal_id}`,
+        apiUrl: `/api/post?type=listing&group_id=${gid}`,
       };
     }
     return {
       type: 'wantads',
-      apiUrl: `/api/post?type=wantad&group_id=${group?.internal_id}`,
+      apiUrl: `/api/post?type=wantad&group_id=${gid}`,
     };
   };
 

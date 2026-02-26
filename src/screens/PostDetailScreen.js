@@ -10,17 +10,13 @@ import {
   FlatList,
   Share,
   Alert,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
 import { colors } from '../constants/colors';
 import FAIcon from '../components/ui/FAIcon';
 import Tags from '../components/overlays/Tags';
 import UserBadge from '../components/overlays/UserBadge';
-import CarBadge from '../components/overlays/CarBadge';
-import EventBadge from '../components/overlays/EventBadge';
 import UserRow from '../components/UserRow';
 import CarRow from '../components/CarRow';
 import EventRow from '../components/EventRow';
@@ -69,7 +65,7 @@ const PostDetailScreen = ({ route, navigation }) => {
 
   if (!post) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
             <FAIcon name="times" size={16} color={colors.WHITE} />
@@ -178,6 +174,7 @@ const PostDetailScreen = ({ route, navigation }) => {
 
     const renderCarouselItem = ({ item, index }) => (
       <TouchableOpacity
+        activeOpacity={1}
         onPress={() => {
           setImageGalleryStartIndex(index);
           setImageGalleryModalVisible(true);
@@ -233,7 +230,7 @@ const PostDetailScreen = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
@@ -435,7 +432,6 @@ const PostDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.BACKGROUND,
   },
   header: {
     flexDirection: 'row',
@@ -524,7 +520,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    backgroundColor: colors.WHITE,
   },
   carouselContainer: {
     position: 'relative',

@@ -22,13 +22,6 @@ const SearchScreen = ({ navigation, route }) => {
   const [hasSearched, setHasSearched] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
-  // Popular searches for automotive community
-  const popularSearches = [
-    'BMW E30', 'Honda Civic', 'Toyota Supra', 'engine swap', 
-    'turbo build', 'restoration', 'track day', 'drift build',
-    'JDM', 'stance', 'autocross', 'car meet'
-  ];
-
   // Search API integration - matches Murray's approach
   const { 
     data: searchResults, 
@@ -159,24 +152,6 @@ const SearchScreen = ({ navigation, route }) => {
     </ScrollView>
   );
 
-  const renderPopularSearches = () => (
-    <View style={styles.popularContainer}>
-      <Text style={styles.popularTitle}>Popular Searches</Text>
-      <View style={styles.popularGrid}>
-        {popularSearches.map((term, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.popularItem}
-            onPress={() => handlePopularSearch(term)}
-          >
-            <FAIcon name="search" size={12} color={colors.BRG} />
-            <Text style={styles.popularText}>{term}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <FAIcon name="search" size={48} color={colors.LIGHT_GRAY} />
@@ -200,7 +175,6 @@ const SearchScreen = ({ navigation, route }) => {
               the Open Road Society community
             </Text>
           </View>
-          {renderPopularSearches()}
         </ScrollView>
       );
     }

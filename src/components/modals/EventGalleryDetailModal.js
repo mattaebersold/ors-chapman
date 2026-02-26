@@ -8,10 +8,10 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
-  SafeAreaView,
   FlatList,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../constants/colors';
 import FAIcon from '../ui/FAIcon';
 import { useGetEventGalleryBucketImagesQuery } from '../../services/apiService';

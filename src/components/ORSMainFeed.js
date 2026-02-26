@@ -21,7 +21,7 @@ const ORSMainFeed = ({ params }) => {
 
   // Create post input header
   const CreatePostHeader = () => (
-    <View style={styles.createPostContainer}>
+    <View>
       <TouchableOpacity
         style={styles.createPostButton}
         onPress={handleCreatePost}
@@ -43,13 +43,14 @@ const ORSMainFeed = ({ params }) => {
 
   return (
     <View style={styles.container}>
+      <CreatePostHeader />
       <Listing
         config={listingConfig}
         numColumns={1}
         showFilters={false}
         CustomComponent={FeedItemCard}
-        customHeaderSection={CreatePostHeader}
         heading=""
+        cardPadding={0}
       />
     </View>
   );
@@ -60,14 +61,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.BACKGROUND,
   },
-  createPostContainer: {
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 5,
-  },
   createPostButton: {
     backgroundColor: colors.WHITE,
-    borderRadius: 24,
     paddingVertical: 12,
     paddingHorizontal: 16,
     flexDirection: 'row',

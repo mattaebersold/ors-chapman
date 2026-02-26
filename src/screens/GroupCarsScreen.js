@@ -17,25 +17,26 @@ const GroupCarsScreen = () => {
   const navigation = useNavigation();
   const { groupId, group } = route.params || {};
 
+  const gid = group?.internal_id || groupId;
+
   const { data: carsData, isLoading, refetch } = useGetGroupCarsQuery(
-    { group_id: group?.internal_id },
-    { skip: !group?.internal_id }
+    { group_id: gid },
+    { skip: !gid }
   );
 
   const cars = carsData?.entries || [];
 
   const handleTabPress = (tab) => {
+    if (tab === 'Posts') { navigation.navigate('GroupDetail', { groupId }); return; }
+    if (tab === 'Cars') return;
     const screenMap = {
       Forum: 'GroupForum',
-      Cars: 'GroupCars',
       Market: 'GroupMarketplace',
       Events: 'GroupEvents',
       News: 'GroupNews',
       Resources: 'GroupResources',
     };
-    if (tab !== 'Cars') {
-      navigation.replace(screenMap[tab], { groupId, group });
-    }
+    navigation.replace(screenMap[tab], { groupId, group });
   };
 
   const getFilterDescription = () => {

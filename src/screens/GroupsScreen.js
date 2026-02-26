@@ -22,13 +22,19 @@ const GroupsScreen = () => {
   const [activeSection, setActiveSection] = useState('myGroups');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // My Groups — always fetch so we can filter Discover
+  // Active memberships — for My Groups display and Discover filtering
   const {
     data: myGroupsData,
     isLoading: myGroupsLoading,
     refetch: refetchMyGroups,
   } = useGetUserGroupsQuery(
     { user_id: userInfo?.user_id, status: 'active' },
+    { skip: !userInfo?.user_id }
+  );
+
+  // Pending memberships — to label groups in Discover with "Pending"
+  const { data: pendingGroupsData } = useGetUserGroupsQuery(
+    { user_id: userInfo?.user_id, status: 'pending' },
     { skip: !userInfo?.user_id }
   );
 
@@ -63,52 +69,55 @@ const GroupsScreen = () => {
     return { adminGroups: admin, memberGroups: member };
   }, [myGroupsData]);
 
-  // Build flat list data for My Groups with section headers + 2-col rows
+  // Build flat list for My Groups — individual full-width items with section headers
   const myGroupsListData = useMemo(() => {
     const result = [];
 
     if (adminGroups.length > 0) {
       result.push({ type: 'header', id: 'admin-header', title: 'Groups I Manage' });
-      for (let i = 0; i < adminGroups.length; i += 2) {
-        result.push({
-          type: 'row',
-          id: `admin-row-${i}`,
-          items: adminGroups.slice(i, i + 2),
-        });
-      }
+      adminGroups.forEach((item, i) =>
+        result.push({ type: 'item', id: `admin-${i}`, groupItem: item, membershipStatus: 'active' })
+      );
     }
 
     if (memberGroups.length > 0) {
       result.push({ type: 'header', id: 'member-header', title: "Groups I'm In" });
-      for (let i = 0; i < memberGroups.length; i += 2) {
-        result.push({
-          type: 'row',
-          id: `member-row-${i}`,
-          items: memberGroups.slice(i, i + 2),
-        });
-      }
+      memberGroups.forEach((item, i) =>
+        result.push({ type: 'item', id: `member-${i}`, groupItem: item, membershipStatus: 'active' })
+      );
     }
 
     return result;
   }, [adminGroups, memberGroups]);
 
-  // Build set of IDs the user has joined, to filter Discover
+  // Set of active member group IDs — used to filter Discover
   const userGroupIds = useMemo(() => {
     const ids = new Set();
     (myGroupsData?.groups || []).forEach(item => {
       const g = item.group || item;
-      const id = g.internal_id || (g._id ? String(g._id) : null);
-      if (id) ids.add(id);
+      if (g.internal_id) ids.add(String(g.internal_id));
+      if (g._id) ids.add(String(g._id));
     });
     return ids;
   }, [myGroupsData]);
+
+  // Set of pending group IDs — shown in Discover with "Pending" label
+  const pendingGroupIds = useMemo(() => {
+    const ids = new Set();
+    (pendingGroupsData?.groups || []).forEach(item => {
+      const g = item.group || item;
+      if (g.internal_id) ids.add(String(g.internal_id));
+      if (g._id) ids.add(String(g._id));
+    });
+    return ids;
+  }, [pendingGroupsData]);
 
   // Filter discover: exclude joined groups + apply search
   const filteredDiscoverEntries = useMemo(() => {
     const entries = discoverData?.entries || [];
     return entries.filter(entry => {
-      const id = entry.internal_id || (entry._id ? String(entry._id) : null);
-      if (id && userGroupIds.has(id)) return false;
+      if (userGroupIds.has(String(entry.internal_id || '')) ||
+          userGroupIds.has(String(entry._id || ''))) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
@@ -122,18 +131,14 @@ const GroupsScreen = () => {
     });
   }, [discoverData, userGroupIds, searchQuery]);
 
-  // Build flat list data for Discover with 2-col rows
+  // Build flat list for Discover — individual items with membership status
   const discoverListData = useMemo(() => {
-    const result = [];
-    for (let i = 0; i < filteredDiscoverEntries.length; i += 2) {
-      result.push({
-        type: 'row',
-        id: `discover-row-${i}`,
-        items: filteredDiscoverEntries.slice(i, i + 2),
-      });
-    }
-    return result;
-  }, [filteredDiscoverEntries]);
+    return filteredDiscoverEntries.map((entry, i) => {
+      const entryId = String(entry.internal_id || entry._id || '');
+      const membershipStatus = pendingGroupIds.has(entryId) ? 'pending' : null;
+      return { type: 'item', id: `discover-${i}`, groupItem: entry, membershipStatus };
+    });
+  }, [filteredDiscoverEntries, pendingGroupIds]);
 
   const isLoading = activeSection === 'myGroups' ? myGroupsLoading : discoverLoading;
   const refetch = activeSection === 'myGroups' ? refetchMyGroups : refetchDiscover;
@@ -150,23 +155,12 @@ const GroupsScreen = () => {
       return <Text style={styles.sectionHeader}>{item.title}</Text>;
     }
 
-    // type === 'row': render up to 2 group cards side by side
+    const group = item.groupItem.group || item.groupItem;
     return (
-      <View style={styles.row}>
-        {item.items.map((groupItem, index) => {
-          const group = groupItem.group || groupItem;
-          return (
-            <View
-              key={`${item.id}-${index}`}
-              style={styles.cardWrapper}
-            >
-              <GroupCard post={group} displayOptions={{ small: true }} />
-            </View>
-          );
-        })}
-        {/* Fill empty slot so odd-count rows stay left-aligned */}
-        {item.items.length === 1 && <View style={styles.cardWrapper} />}
-      </View>
+      <GroupCard
+        post={group}
+        membershipStatus={item.membershipStatus}
+      />
     );
   };
 
@@ -300,7 +294,7 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.CARD_BACKGROUND || '#1e3a3b',
+    backgroundColor: colors.WHITE,
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 4,
@@ -327,13 +321,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingTop: 12,
     paddingBottom: 8,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cardWrapper: {
-    width: '49%',
   },
   loader: {
     marginTop: 40,

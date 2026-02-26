@@ -16,22 +16,23 @@ const GroupEventsScreen = () => {
   const { groupId, group } = route.params || {};
 
   const handleTabPress = (tab) => {
+    if (tab === 'Posts') { navigation.navigate('GroupDetail', { groupId }); return; }
+    if (tab === 'Events') return;
     const screenMap = {
       Forum: 'GroupForum',
       Cars: 'GroupCars',
       Market: 'GroupMarketplace',
-      Events: 'GroupEvents',
       News: 'GroupNews',
       Resources: 'GroupResources',
     };
-    if (tab !== 'Events') {
-      navigation.replace(screenMap[tab], { groupId, group });
-    }
+    navigation.replace(screenMap[tab], { groupId, group });
   };
+
+  const gid = group?.internal_id || groupId;
 
   const config = {
     type: 'events',
-    apiUrl: `/api/event?group_id=${group?.internal_id}`,
+    apiUrl: `/api/event?group_id=${gid}`,
   };
 
   return (

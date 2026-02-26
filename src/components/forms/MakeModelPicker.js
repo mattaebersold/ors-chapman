@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../constants/colors';
 import { useGetAllBrandsQuery, useGetBrandModelsQuery } from '../../services/apiService';
 import FAIcon from '../ui/FAIcon';

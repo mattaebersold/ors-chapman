@@ -31,7 +31,7 @@ import FilterBar from './FilterBar';
 import FAIcon from './ui/FAIcon';
 
 
-const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false, numColumns = 1, heading, customHeaderButtons, customFilterBar, customHeaderSection, CustomComponent, onItemPress }) => {
+const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrollEventThrottle, showFilters = false, filterTypes = ['postType', 'category'], customEvents = null, nestedScrollEnabled = false, numColumns = 1, heading, customHeaderButtons, customFilterBar, customHeaderSection, CustomComponent, onItemPress, cardPadding = 10 }) => {
 	// const { userInfo } = useSelector(state => state.auth);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [allPosts, setAllPosts] = useState([]);
@@ -310,7 +310,7 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 		// If CustomComponent is provided, use it for posts
 		if (CustomComponent && item.entry_type === 'post') {
 			return (
-				<View style={numColumns > 1 ? styles.cardWrapperGrid : styles.cardWrapper}>
+				<View style={numColumns > 1 ? styles.cardWrapperGrid : [styles.cardWrapper, { paddingHorizontal: cardPadding }]}>
 					<CustomComponent
 						post={item}
 						displayOptions={cardDisplayOptions}
@@ -336,7 +336,7 @@ const Listing = ({ config, displayOptions = {}, HeaderComponent, onScroll, scrol
 		})();
 
 		return (
-			<View style={numColumns > 1 ? styles.cardWrapperGrid : styles.cardWrapper}>
+			<View style={numColumns > 1 ? styles.cardWrapperGrid : [styles.cardWrapper, { paddingHorizontal: cardPadding }]}>
 				{card}
 			</View>
 		);
@@ -622,7 +622,6 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 10,
 	},
 	cardWrapper: {
-		paddingHorizontal: 10,
 	},
 	cardWrapperGrid: {
 		flex: 1,

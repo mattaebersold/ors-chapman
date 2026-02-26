@@ -31,14 +31,16 @@ const GroupNewsScreen = () => {
   const [newBody, setNewBody] = useState('');
   const [newUrl, setNewUrl] = useState('');
 
+  const gid = group?.internal_id || groupId;
+
   const { data: newsData, isLoading, refetch } = useGetGroupNewsQuery(
-    { group_id: group?.internal_id },
-    { skip: !group?.internal_id }
+    { group_id: gid },
+    { skip: !gid }
   );
 
   const { data: membersData } = useGetGroupMembersQuery(
-    { group_id: group?.internal_id },
-    { skip: !group?.internal_id }
+    { group_id: gid },
+    { skip: !gid }
   );
 
   const [createNews, { isLoading: isCreating }] = useCreateGroupNewsMutation();
@@ -72,17 +74,16 @@ const GroupNewsScreen = () => {
   };
 
   const handleTabPress = (tab) => {
+    if (tab === 'Posts') { navigation.navigate('GroupDetail', { groupId }); return; }
+    if (tab === 'News') return;
     const screenMap = {
       Forum: 'GroupForum',
       Cars: 'GroupCars',
       Market: 'GroupMarketplace',
       Events: 'GroupEvents',
-      News: 'GroupNews',
       Resources: 'GroupResources',
     };
-    if (tab !== 'News') {
-      navigation.replace(screenMap[tab], { groupId, group });
-    }
+    navigation.replace(screenMap[tab], { groupId, group });
   };
 
   const renderItem = ({ item }) => (
