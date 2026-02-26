@@ -25,7 +25,7 @@ const GroupDetailScreen = () => {
   const [activeTab, setActiveTab] = useState(null);
 
   const { data: groupData, isLoading, refetch } = useGetGroupDetailQuery(groupId, { skip: !groupId });
-  const group = groupData?.entry;
+  const group = groupData?.entry || (groupData?.internal_id ? groupData : null);
 
   const { data: membersData } = useGetGroupMembersQuery(
     { group_id: group?.internal_id },

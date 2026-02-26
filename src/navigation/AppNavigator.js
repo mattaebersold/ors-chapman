@@ -130,7 +130,9 @@ const TabNavigator = ({ navigation }) => (
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === 'Groups') {
+          if (route.name === 'Feed') {
+            iconName = 'home';
+          } else if (route.name === 'Groups') {
             iconName = 'users';
           } else if (route.name === 'Society') {
             iconName = 'society';
@@ -205,11 +207,7 @@ const TabNavigator = ({ navigation }) => (
     <Tab.Screen
       name="Feed"
       component={HomeScreen}
-      options={{
-        tabBarButton: () => null,
-        tabBarLabel: () => null,
-        tabBarIcon: () => null,
-      }}
+      options={{ title: 'Feed' }}
     />
     <Tab.Screen
       name="Groups"

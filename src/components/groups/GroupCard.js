@@ -15,7 +15,7 @@ const GroupCard = ({ post, onPress, displayOptions = {} }) => {
     if (onPress) {
       onPress(post);
     } else {
-      navigation.navigate('GroupDetail', { groupId: post._id || post.id || post.internal_id });
+      navigation.navigate('GroupDetail', { groupId: post.internal_id || String(post._id || post.id || '') });
     }
   }, [navigation, onPress, post]);
 

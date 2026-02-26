@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
@@ -19,15 +20,16 @@ const GroupsScreen = () => {
   const navigation = useNavigation();
   const { userInfo } = useSelector(state => state.auth);
   const [activeSection, setActiveSection] = useState('myGroups');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // My Groups — single query, split client-side by member_type
+  // My Groups — always fetch so we can filter Discover
   const {
     data: myGroupsData,
     isLoading: myGroupsLoading,
     refetch: refetchMyGroups,
   } = useGetUserGroupsQuery(
     { user_id: userInfo?.user_id, status: 'active' },
-    { skip: !userInfo?.user_id || activeSection !== 'myGroups' }
+    { skip: !userInfo?.user_id }
   );
 
   // Discover — all public groups
@@ -90,19 +92,48 @@ const GroupsScreen = () => {
     return result;
   }, [adminGroups, memberGroups]);
 
+  // Build set of IDs the user has joined, to filter Discover
+  const userGroupIds = useMemo(() => {
+    const ids = new Set();
+    (myGroupsData?.groups || []).forEach(item => {
+      const g = item.group || item;
+      const id = g.internal_id || (g._id ? String(g._id) : null);
+      if (id) ids.add(id);
+    });
+    return ids;
+  }, [myGroupsData]);
+
+  // Filter discover: exclude joined groups + apply search
+  const filteredDiscoverEntries = useMemo(() => {
+    const entries = discoverData?.entries || [];
+    return entries.filter(entry => {
+      const id = entry.internal_id || (entry._id ? String(entry._id) : null);
+      if (id && userGroupIds.has(id)) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          entry.title?.toLowerCase().includes(q) ||
+          entry.body?.toLowerCase().includes(q) ||
+          entry.category?.toLowerCase().includes(q) ||
+          (entry.tags || []).some(t => t.toLowerCase().includes(q))
+        );
+      }
+      return true;
+    });
+  }, [discoverData, userGroupIds, searchQuery]);
+
   // Build flat list data for Discover with 2-col rows
   const discoverListData = useMemo(() => {
-    const entries = discoverData?.entries || [];
     const result = [];
-    for (let i = 0; i < entries.length; i += 2) {
+    for (let i = 0; i < filteredDiscoverEntries.length; i += 2) {
       result.push({
         type: 'row',
         id: `discover-row-${i}`,
-        items: entries.slice(i, i + 2),
+        items: filteredDiscoverEntries.slice(i, i + 2),
       });
     }
     return result;
-  }, [discoverData]);
+  }, [filteredDiscoverEntries]);
 
   const isLoading = activeSection === 'myGroups' ? myGroupsLoading : discoverLoading;
   const refetch = activeSection === 'myGroups' ? refetchMyGroups : refetchDiscover;
@@ -112,7 +143,7 @@ const GroupsScreen = () => {
     !isLoading &&
     (activeSection === 'myGroups'
       ? (myGroupsData?.groups || []).length === 0
-      : (discoverData?.entries || []).length === 0);
+      : filteredDiscoverEntries.length === 0);
 
   const renderItem = ({ item }) => {
     if (item.type === 'header') {
@@ -147,7 +178,7 @@ const GroupsScreen = () => {
           <TouchableOpacity
             key={section.key}
             style={[styles.tab, activeSection === section.key && styles.activeTab]}
-            onPress={() => setActiveSection(section.key)}
+            onPress={() => { setActiveSection(section.key); setSearchQuery(''); }}
           >
             <Text
               style={[
@@ -169,6 +200,28 @@ const GroupsScreen = () => {
         <FAIcon name="plus" size={14} color={colors.WHITE} />
         <Text style={styles.createButtonText}>Create Group</Text>
       </TouchableOpacity>
+
+      {/* Discover search */}
+      {activeSection === 'discover' && (
+        <View style={styles.searchRow}>
+          <FAIcon name="search" size={14} color={colors.TEXT_SECONDARY} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search groups..."
+            placeholderTextColor={colors.TEXT_SECONDARY}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCorrect={false}
+            autoCapitalize="none"
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <FAIcon name="times" size={14} color={colors.TEXT_SECONDARY} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {isLoading ? (
         <ActivityIndicator size="large" color={colors.BRG} style={styles.loader} />
@@ -243,6 +296,24 @@ const styles = StyleSheet.create({
     color: colors.WHITE,
     fontWeight: '700',
     fontSize: 14,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.CARD_BACKGROUND || '#1e3a3b',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.TEXT_PRIMARY,
+    padding: 0,
   },
   list: {
     padding: 8,
