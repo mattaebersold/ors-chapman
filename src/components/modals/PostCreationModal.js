@@ -19,11 +19,16 @@ import FAIcon from '../ui/FAIcon';
 import {
   useGetUserGarageQuery,
   useGetUserProjectsQuery,
-  useGetUserEventsQuery
+  useGetUserEventsQuery,
+  useSyncPostTagsMutation,
 } from '../../services/apiService';
 import { useBanner } from '../../contexts/BannerContext';
 import { postTypes, postCategories } from '../../constants/categories';
 import TagScreen from '../../screens/TagScreen';
+import UserSearchModal from './UserSearchModal';
+import CarSearchModal from './CarSearchModal';
+import EventSearchModal from './EventSearchModal';
+import GroupSearchModal from './GroupSearchModal';
 
 const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, existingPost = null }) => {
   // Try to use banner context, fallback to Alert if not available
@@ -59,11 +64,25 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
   const [loading, setLoading] = useState(false);
   const [showCustomCarInfo, setShowCustomCarInfo] = useState(false);
 
+  // Pending tags (used during creation mode)
+  const [pendingTaggedUsers, setPendingTaggedUsers] = useState([]);   // [{id, label}]
+  const [pendingTaggedCars, setPendingTaggedCars] = useState([]);
+  const [pendingTaggedEvents, setPendingTaggedEvents] = useState([]);
+  const [pendingTaggedGroups, setPendingTaggedGroups] = useState([]);
+
   // Modal states for association dropdowns
   const [carModalVisible, setCarModalVisible] = useState(false);
   const [projectModalVisible, setProjectModalVisible] = useState(false);
   const [eventModalVisible, setEventModalVisible] = useState(false);
   const [tagModalVisible, setTagModalVisible] = useState(false);
+
+  // Tag search modal states (creation mode)
+  const [userTagVisible, setUserTagVisible] = useState(false);
+  const [carTagVisible, setCarTagVisible] = useState(false);
+  const [eventTagVisible, setEventTagVisible] = useState(false);
+  const [groupTagVisible, setGroupTagVisible] = useState(false);
+
+  const [syncPostTags] = useSyncPostTagsMutation();
 
   // Load association data
   const { data: garageData } = useGetUserGarageQuery({ limit: 100 });
@@ -148,6 +167,35 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
     setEventModalVisible(false);
   };
 
+  // Pending tag handlers (creation mode)
+  const handlePendingTagUser = (user) => {
+    if (!pendingTaggedUsers.find(u => u.id === user.id)) {
+      setPendingTaggedUsers(prev => [...prev, user]);
+    }
+  };
+  const handleRemovePendingUser = (id) => setPendingTaggedUsers(prev => prev.filter(u => u.id !== id));
+
+  const handlePendingTagCar = (car) => {
+    if (!pendingTaggedCars.find(c => c.id === car.id)) {
+      setPendingTaggedCars(prev => [...prev, car]);
+    }
+  };
+  const handleRemovePendingCar = (id) => setPendingTaggedCars(prev => prev.filter(c => c.id !== id));
+
+  const handlePendingTagEvent = (event) => {
+    if (!pendingTaggedEvents.find(e => e.id === event.id)) {
+      setPendingTaggedEvents(prev => [...prev, event]);
+    }
+  };
+  const handleRemovePendingEvent = (id) => setPendingTaggedEvents(prev => prev.filter(e => e.id !== id));
+
+  const handlePendingTagGroup = (group) => {
+    if (!pendingTaggedGroups.find(g => g.id === group.id)) {
+      setPendingTaggedGroups(prev => [...prev, group]);
+    }
+  };
+  const handleRemovePendingGroup = (id) => setPendingTaggedGroups(prev => prev.filter(g => g.id !== id));
+
   const validateForm = () => {
     if (!formData.title.trim()) {
       showError('Title is required');
@@ -165,7 +213,23 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
 
     setLoading(true);
     try {
-      await onSubmit(formData);
+      const result = await onSubmit(formData);
+
+      // Sync pending tags after creation (result contains the new post)
+      if (!editMode) {
+        const postId = result?.internal_id || result?._id;
+        const hasTags = pendingTaggedUsers.length || pendingTaggedCars.length || pendingTaggedEvents.length || pendingTaggedGroups.length;
+        if (postId && hasTags) {
+          await syncPostTags({
+            post_id: postId,
+            tagged_users: pendingTaggedUsers.map(u => u.id),
+            tagged_cars: pendingTaggedCars.map(c => c.id),
+            tagged_events: pendingTaggedEvents.map(e => e.id),
+            tagged_groups: pendingTaggedGroups.map(g => g.id),
+          }).unwrap();
+        }
+      }
+
       showSuccess(editMode ? 'Post updated successfully!' : 'Post created successfully!');
       resetForm();
       onClose();
@@ -195,6 +259,10 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
       condition: '',
     });
     setShowCustomCarInfo(false);
+    setPendingTaggedUsers([]);
+    setPendingTaggedCars([]);
+    setPendingTaggedEvents([]);
+    setPendingTaggedGroups([]);
   };
 
   const handleClose = () => {
@@ -312,19 +380,109 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
             />
           </View>
 
-          {/* Tag Button - only show in edit mode when we have a post ID */}
-          {editMode && existingPost?.internal_id && (
-            <View style={styles.section}>
+          {/* Tagging Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Tags</Text>
+
+            {editMode && existingPost?.internal_id ? (
+              // Edit mode: open full TagScreen
               <TouchableOpacity
                 style={styles.tagButton}
                 onPress={() => setTagModalVisible(true)}
               >
                 <FAIcon name="tag" size={20} color={colors.BRG} />
-                <Text style={styles.tagButtonText}>Tag users & cars</Text>
+                <Text style={styles.tagButtonText}>Manage tags</Text>
                 <FAIcon name="chevron-right" size={16} color={colors.TEXT_SECONDARY} />
               </TouchableOpacity>
-            </View>
-          )}
+            ) : (
+              // Create mode: inline tag management
+              <View>
+                {/* Tagged Users */}
+                <View style={styles.tagRow}>
+                  <FAIcon name="user" size={14} color={colors.BRG} />
+                  <Text style={styles.tagRowLabel}>Users</Text>
+                  <TouchableOpacity onPress={() => setUserTagVisible(true)} style={styles.tagAddButton}>
+                    <FAIcon name="plus" size={14} color={colors.WHITE} />
+                  </TouchableOpacity>
+                </View>
+                {pendingTaggedUsers.length > 0 && (
+                  <View style={styles.chipRow}>
+                    {pendingTaggedUsers.map(u => (
+                      <View key={u.id} style={styles.chip}>
+                        <Text style={styles.chipText}>{u.label}</Text>
+                        <TouchableOpacity onPress={() => handleRemovePendingUser(u.id)}>
+                          <FAIcon name="times" size={12} color={colors.WHITE} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Tagged Cars */}
+                <View style={[styles.tagRow, styles.tagRowBorder]}>
+                  <FAIcon name="car" size={14} color={colors.BRG} />
+                  <Text style={styles.tagRowLabel}>Cars</Text>
+                  <TouchableOpacity onPress={() => setCarTagVisible(true)} style={styles.tagAddButton}>
+                    <FAIcon name="plus" size={14} color={colors.WHITE} />
+                  </TouchableOpacity>
+                </View>
+                {pendingTaggedCars.length > 0 && (
+                  <View style={styles.chipRow}>
+                    {pendingTaggedCars.map(c => (
+                      <View key={c.id} style={styles.chip}>
+                        <Text style={styles.chipText}>{c.label}</Text>
+                        <TouchableOpacity onPress={() => handleRemovePendingCar(c.id)}>
+                          <FAIcon name="times" size={12} color={colors.WHITE} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Tagged Events */}
+                <View style={[styles.tagRow, styles.tagRowBorder]}>
+                  <FAIcon name="calendar" size={14} color={colors.BRG} />
+                  <Text style={styles.tagRowLabel}>Events</Text>
+                  <TouchableOpacity onPress={() => setEventTagVisible(true)} style={styles.tagAddButton}>
+                    <FAIcon name="plus" size={14} color={colors.WHITE} />
+                  </TouchableOpacity>
+                </View>
+                {pendingTaggedEvents.length > 0 && (
+                  <View style={styles.chipRow}>
+                    {pendingTaggedEvents.map(e => (
+                      <View key={e.id} style={styles.chip}>
+                        <Text style={styles.chipText}>{e.label}</Text>
+                        <TouchableOpacity onPress={() => handleRemovePendingEvent(e.id)}>
+                          <FAIcon name="times" size={12} color={colors.WHITE} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Tagged Groups */}
+                <View style={[styles.tagRow, styles.tagRowBorder]}>
+                  <FAIcon name="users" size={14} color={colors.BRG} />
+                  <Text style={styles.tagRowLabel}>Groups</Text>
+                  <TouchableOpacity onPress={() => setGroupTagVisible(true)} style={styles.tagAddButton}>
+                    <FAIcon name="plus" size={14} color={colors.WHITE} />
+                  </TouchableOpacity>
+                </View>
+                {pendingTaggedGroups.length > 0 && (
+                  <View style={styles.chipRow}>
+                    {pendingTaggedGroups.map(g => (
+                      <View key={g.id} style={styles.chip}>
+                        <Text style={styles.chipText}>{g.label}</Text>
+                        <TouchableOpacity onPress={() => handleRemovePendingGroup(g.id)}>
+                          <FAIcon name="times" size={12} color={colors.WHITE} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
 
           {/* Body Input */}
           <View style={styles.section}>
@@ -385,68 +543,6 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
               </View>
             </View>
           )}
-
-          {/* Associations Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Associations (Optional)</Text>
-            <Text style={styles.helpText}>
-              Link this post to items you've created before
-            </Text>
-
-            {/* Car Association */}
-            {garageData?.entries && garageData.entries.length > 0 && (
-              <View style={styles.associationGroup}>
-                <Text style={styles.inputLabel}>Associate with Car</Text>
-                <TouchableOpacity
-                  style={styles.associationSelector}
-                  onPress={() => setCarModalVisible(true)}
-                >
-                  <Text style={styles.associationText}>
-                    {formData.car_id ?
-                      garageData?.entries?.find(car => car.internal_id === formData.car_id)?.title || 'Select a car...' :
-                      'Select a car...'
-                    }
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Project Association */}
-            {projectsData?.entries && projectsData.entries.length > 0 && (
-              <View style={styles.associationGroup}>
-                <Text style={styles.inputLabel}>Associate with Project</Text>
-                <TouchableOpacity
-                  style={styles.associationSelector}
-                  onPress={() => setProjectModalVisible(true)}
-                >
-                  <Text style={styles.associationText}>
-                    {formData.project_id ?
-                      projectsData?.entries?.find(project => project.internal_id === formData.project_id)?.title || 'Select a project...' :
-                      'Select a project...'
-                    }
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Event Association */}
-            {eventsData?.entries && eventsData.entries.length > 0 && (
-              <View style={styles.associationGroup}>
-                <Text style={styles.inputLabel}>Associate with Event</Text>
-                <TouchableOpacity
-                  style={styles.associationSelector}
-                  onPress={() => setEventModalVisible(true)}
-                >
-                  <Text style={styles.associationText}>
-                    {formData.event_id ?
-                      eventsData?.entries?.find(event => event.internal_id === formData.event_id)?.title || 'Select an event...' :
-                      'Select an event...'
-                    }
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
 
           {/* Custom Car Info Section */}
           <View style={styles.section}>
@@ -714,6 +810,28 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
         </SafeAreaView>
       </Modal>
 
+      {/* Creation-mode tag search modals */}
+      <UserSearchModal
+        visible={userTagVisible}
+        onClose={() => setUserTagVisible(false)}
+        onSelect={handlePendingTagUser}
+      />
+      <CarSearchModal
+        visible={carTagVisible}
+        onClose={() => setCarTagVisible(false)}
+        onSelect={handlePendingTagCar}
+      />
+      <EventSearchModal
+        visible={eventTagVisible}
+        onClose={() => setEventTagVisible(false)}
+        onSelect={handlePendingTagEvent}
+      />
+      <GroupSearchModal
+        visible={groupTagVisible}
+        onClose={() => setGroupTagVisible(false)}
+        onSelect={handlePendingTagGroup}
+      />
+
       {/* Tag Modal - only in edit mode */}
       {editMode && existingPost?.internal_id && (
         <Modal
@@ -808,6 +926,50 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.TEXT_PRIMARY,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 8,
+  },
+  tagRowBorder: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.BORDER,
+  },
+  tagRowLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.TEXT_PRIMARY,
+  },
+  tagAddButton: {
+    backgroundColor: colors.BRG,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingBottom: 8,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.BRG,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 6,
+  },
+  chipText: {
+    fontSize: 12,
+    color: colors.WHITE,
+    fontWeight: '500',
   },
   infoBox: {
     flexDirection: 'row',

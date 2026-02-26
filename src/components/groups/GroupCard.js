@@ -42,11 +42,11 @@ const GroupCard = ({ post, onPress, displayOptions = {} }) => {
     <>
       <FAIcon size="20" name="users" color={colors.WHITE} />
       <CardTitle title={post.title} small={small} />
-      {post.group_make && (
+      {typeof post.group_make === 'string' && post.group_make ? (
         <Text style={styles.makeModel} numberOfLines={1}>
-          {post.group_make}{post.group_model ? ` ${post.group_model}` : ''}
+          {post.group_make}{typeof post.group_model === 'string' && post.group_model ? ` ${post.group_model}` : ''}
         </Text>
-      )}
+      ) : null}
     </>
   );
 

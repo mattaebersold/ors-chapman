@@ -1,56 +1,140 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useGetGroupsQuery, useGetUserGroupsQuery } from '../services/apiService';
 import GroupCard from '../components/groups/GroupCard';
 import FAIcon from '../components/ui/FAIcon';
-import Button from '../components/ui/Button';
 
 const GroupsScreen = () => {
   const navigation = useNavigation();
   const { userInfo } = useSelector(state => state.auth);
-  const [activeSection, setActiveSection] = useState('discover');
-  const [page, setPage] = useState(0);
+  const [activeSection, setActiveSection] = useState('myGroups');
 
-  const { data: discoverData, isLoading: discoverLoading, refetch: refetchDiscover } = useGetGroupsQuery(
-    { page, limit: 24 },
-    { skip: activeSection !== 'discover' }
-  );
-
-  const { data: myGroupsData, isLoading: myGroupsLoading, refetch: refetchMyGroups } = useGetUserGroupsQuery(
+  // My Groups — single query, split client-side by member_type
+  const {
+    data: myGroupsData,
+    isLoading: myGroupsLoading,
+    refetch: refetchMyGroups,
+  } = useGetUserGroupsQuery(
     { user_id: userInfo?.user_id, status: 'active' },
     { skip: !userInfo?.user_id || activeSection !== 'myGroups' }
   );
 
-  const { data: adminGroupsData, isLoading: adminLoading, refetch: refetchAdmin } = useGetUserGroupsQuery(
-    { user_id: userInfo?.user_id, status: 'active', member_type: 'admin' },
-    { skip: !userInfo?.user_id || activeSection !== 'admin' }
+  // Discover — all public groups
+  const {
+    data: discoverData,
+    isLoading: discoverLoading,
+    refetch: refetchDiscover,
+  } = useGetGroupsQuery(
+    { page: 0, omit: 'none', limit: 48 },
+    { skip: activeSection !== 'discover' }
   );
 
   const sections = [
-    { key: 'discover', label: 'Discover' },
     { key: 'myGroups', label: 'My Groups' },
-    { key: 'admin', label: 'Admin' },
+    { key: 'discover', label: 'Discover' },
   ];
 
-  const getActiveData = () => {
-    switch (activeSection) {
-      case 'discover': return { data: discoverData?.entries || [], loading: discoverLoading, refetch: refetchDiscover };
-      case 'myGroups': return { data: myGroupsData?.groups || [], loading: myGroupsLoading, refetch: refetchMyGroups };
-      case 'admin': return { data: adminGroupsData?.groups || [], loading: adminLoading, refetch: refetchAdmin };
-      default: return { data: [], loading: false, refetch: () => {} };
-    }
-  };
+  // Split My Groups into admin-managed vs member groups
+  const { adminGroups, memberGroups } = useMemo(() => {
+    const all = myGroupsData?.groups || [];
+    const admin = [];
+    const member = [];
+    all.forEach(item => {
+      const memberType = item.membership?.member_type;
+      if (memberType === 'admin') {
+        admin.push(item);
+      } else {
+        member.push(item);
+      }
+    });
+    return { adminGroups: admin, memberGroups: member };
+  }, [myGroupsData]);
 
-  const { data: groups, loading, refetch } = getActiveData();
+  // Build flat list data for My Groups with section headers + 2-col rows
+  const myGroupsListData = useMemo(() => {
+    const result = [];
+
+    if (adminGroups.length > 0) {
+      result.push({ type: 'header', id: 'admin-header', title: 'Groups I Manage' });
+      for (let i = 0; i < adminGroups.length; i += 2) {
+        result.push({
+          type: 'row',
+          id: `admin-row-${i}`,
+          items: adminGroups.slice(i, i + 2),
+        });
+      }
+    }
+
+    if (memberGroups.length > 0) {
+      result.push({ type: 'header', id: 'member-header', title: "Groups I'm In" });
+      for (let i = 0; i < memberGroups.length; i += 2) {
+        result.push({
+          type: 'row',
+          id: `member-row-${i}`,
+          items: memberGroups.slice(i, i + 2),
+        });
+      }
+    }
+
+    return result;
+  }, [adminGroups, memberGroups]);
+
+  // Build flat list data for Discover with 2-col rows
+  const discoverListData = useMemo(() => {
+    const entries = discoverData?.entries || [];
+    const result = [];
+    for (let i = 0; i < entries.length; i += 2) {
+      result.push({
+        type: 'row',
+        id: `discover-row-${i}`,
+        items: entries.slice(i, i + 2),
+      });
+    }
+    return result;
+  }, [discoverData]);
+
+  const isLoading = activeSection === 'myGroups' ? myGroupsLoading : discoverLoading;
+  const refetch = activeSection === 'myGroups' ? refetchMyGroups : refetchDiscover;
+  const listData = activeSection === 'myGroups' ? myGroupsListData : discoverListData;
+
+  const isEmpty =
+    !isLoading &&
+    (activeSection === 'myGroups'
+      ? (myGroupsData?.groups || []).length === 0
+      : (discoverData?.entries || []).length === 0);
 
   const renderItem = ({ item }) => {
-    const group = item.group || item;
+    if (item.type === 'header') {
+      return <Text style={styles.sectionHeader}>{item.title}</Text>;
+    }
+
+    // type === 'row': render up to 2 group cards side by side
     return (
-      <View style={styles.cardWrapper}>
-        <GroupCard post={group} displayOptions={{ small: true }} />
+      <View style={styles.row}>
+        {item.items.map((groupItem, index) => {
+          const group = groupItem.group || groupItem;
+          return (
+            <View
+              key={`${item.id}-${index}`}
+              style={styles.cardWrapper}
+            >
+              <GroupCard post={group} displayOptions={{ small: true }} />
+            </View>
+          );
+        })}
+        {/* Fill empty slot so odd-count rows stay left-aligned */}
+        {item.items.length === 1 && <View style={styles.cardWrapper} />}
       </View>
     );
   };
@@ -59,13 +143,18 @@ const GroupsScreen = () => {
     <View style={styles.container}>
       {/* Section tabs */}
       <View style={styles.tabBar}>
-        {sections.map((section) => (
+        {sections.map(section => (
           <TouchableOpacity
             key={section.key}
             style={[styles.tab, activeSection === section.key && styles.activeTab]}
             onPress={() => setActiveSection(section.key)}
           >
-            <Text style={[styles.tabText, activeSection === section.key && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeSection === section.key && styles.activeTabText,
+              ]}
+            >
               {section.label}
             </Text>
           </TouchableOpacity>
@@ -81,22 +170,26 @@ const GroupsScreen = () => {
         <Text style={styles.createButtonText}>Create Group</Text>
       </TouchableOpacity>
 
-      {loading ? (
+      {isLoading ? (
         <ActivityIndicator size="large" color={colors.BRG} style={styles.loader} />
       ) : (
         <FlatList
-          data={groups}
+          data={listData}
           renderItem={renderItem}
-          keyExtractor={(item) => (item.group || item)?._id || (item.group || item)?.internal_id || Math.random().toString()}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
+          keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} />}
           ListEmptyComponent={
-            <View style={styles.empty}>
-              <FAIcon name="users" size={40} color={colors.GRAY} />
-              <Text style={styles.emptyText}>No groups found</Text>
-            </View>
+            isEmpty ? (
+              <View style={styles.empty}>
+                <FAIcon name="users" size={40} color={colors.GRAY} />
+                <Text style={styles.emptyText}>
+                  {activeSection === 'myGroups'
+                    ? "You haven't joined any groups yet"
+                    : 'No groups found'}
+                </Text>
+              </View>
+            ) : null
           }
         />
       )}
@@ -154,7 +247,18 @@ const styles = StyleSheet.create({
   list: {
     padding: 8,
   },
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.TEXT_SECONDARY,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    paddingHorizontal: 4,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
   row: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
   },
   cardWrapper: {
@@ -171,6 +275,8 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: colors.TEXT_SECONDARY,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 });
 

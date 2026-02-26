@@ -1281,6 +1281,15 @@ export const apiService = createApi({
       invalidatesTags: ['Tags'],
     }),
 
+    syncPostTags: builder.mutation({
+      query: ({ post_id, tagged_users = [], tagged_cars = [], tagged_events = [], tagged_groups = [] }) => ({
+        url: '/api/tags/sync',
+        method: 'POST',
+        body: { post_id, tagged_users, tagged_cars, tagged_events, tagged_groups },
+      }),
+      invalidatesTags: ['Tags'],
+    }),
+
     // Message endpoints
     getMessages: builder.query({
       query: ({ page = 0, limit = 20, unread_only = false } = {}) => ({
@@ -1873,6 +1882,7 @@ export const {
   useGetRecentTagsQuery,
   useCreateTagMutation,
   useDeleteTagMutation,
+  useSyncPostTagsMutation,
   useGetMessagesQuery,
   useGetMessageThreadQuery,
   useCreateMessageMutation,

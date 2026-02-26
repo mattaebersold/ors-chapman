@@ -50,12 +50,13 @@ const HamburgerMenu = ({ navigation }) => {
     ]).start(() => setIsVisible(false));
   };
 
-  const navigateToPage = (pageName) => {
+  const navigateToPage = (page, params) => {
     closeMenu();
-    setTimeout(() => navigation.navigate(pageName), 220);
+    setTimeout(() => navigation.navigate(page, params), 220);
   };
 
   const menuItems = [
+    { title: 'Main Feed', page: 'Home', params: { screen: 'Feed' }, icon: 'feed' },
     { title: 'Groups', page: 'GroupsList', icon: 'users' },
     { title: 'Messages', page: 'Messages', icon: 'envelope' },
     { title: 'About', page: 'About', icon: 'user' },
@@ -100,7 +101,7 @@ const HamburgerMenu = ({ navigation }) => {
                 <TouchableOpacity
                   key={index}
                   style={styles.menuItem}
-                  onPress={() => navigateToPage(item.page)}
+                  onPress={() => navigateToPage(item.page, item.params)}
                 >
                   <FAIcon name={item.icon} size={20} color={colors.WHITE} />
                   <Text style={styles.menuItemText}>{item.title}</Text>

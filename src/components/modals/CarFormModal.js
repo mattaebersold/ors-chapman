@@ -18,7 +18,9 @@ import CarFormStep2 from '../CarFormStep2';
 import CarFormStep3 from '../CarFormStep3';
 import CarFormStep4 from '../CarFormStep4';
 import CarFormStep5 from '../CarFormStep5';
-import { useCreateGarageCarMutation, useUpdateGarageCarMutation } from '../../services/apiService';
+import { useCreateGarageCarMutation, useUpdateGarageCarMutation, useCreateTagMutation } from '../../services/apiService';
+import UserSearchModal from './UserSearchModal';
+import EventSearchModal from './EventSearchModal';
 
 const CarFormModal = ({ 
   visible, 
@@ -63,8 +65,15 @@ const CarFormModal = ({
 
   const [createGarageCar] = useCreateGarageCarMutation();
   const [updateGarageCar] = useUpdateGarageCarMutation();
+  const [createTag] = useCreateTagMutation();
 
-  const totalSteps = 3; // Start with 3 steps (Required, Optional, Images)
+  // Step 4 tagging state
+  const [taggedUsers, setTaggedUsers] = useState([]);  // [{id, label}]
+  const [taggedEvents, setTaggedEvents] = useState([]); // [{id, label}]
+  const [userTagVisible, setUserTagVisible] = useState(false);
+  const [eventTagVisible, setEventTagVisible] = useState(false);
+
+  const totalSteps = 4;
 
   // Load existing car data when editing
   useEffect(() => {
@@ -82,6 +91,8 @@ const CarFormModal = ({
   useEffect(() => {
     if (!visible) {
       setCurrentStep(1);
+      setTaggedUsers([]);
+      setTaggedEvents([]);
       if (!editMode) {
         setCarData({
           type: 'personal',
@@ -139,6 +150,9 @@ const CarFormModal = ({
         return true;
       case 3:
         // Images step - no validation required
+        return true;
+      case 4:
+        // Tags step - no validation required
         return true;
       default:
         return true;
@@ -236,6 +250,19 @@ const CarFormModal = ({
   const handleComplete = async () => {
     // Save final step and close
     await handleSaveStep();
+
+    // Sync tags if any were added
+    const carId = carData.internal_id;
+    if (carId) {
+      const tagPromises = [
+        ...taggedUsers.map(u => createTag({ car_id: carId, tag_entry_type: 'user', tag_internal_id: u.id }).unwrap()),
+        ...taggedEvents.map(e => createTag({ car_id: carId, tag_entry_type: 'event', tag_internal_id: e.id }).unwrap()),
+      ];
+      if (tagPromises.length) {
+        await Promise.allSettled(tagPromises);
+      }
+    }
+
     if (onSuccess) {
       onSuccess();
     }
@@ -266,6 +293,17 @@ const CarFormModal = ({
             onUpdate={updateCarData}
           />
         );
+      case 4:
+        return (
+          <CarFormStep4
+            taggedUsers={taggedUsers}
+            taggedEvents={taggedEvents}
+            onAddUser={() => setUserTagVisible(true)}
+            onAddEvent={() => setEventTagVisible(true)}
+            onRemoveUser={(id) => setTaggedUsers(prev => prev.filter(u => u.id !== id))}
+            onRemoveEvent={(id) => setTaggedEvents(prev => prev.filter(e => e.id !== id))}
+          />
+        );
       default:
         return null;
     }
@@ -279,6 +317,8 @@ const CarFormModal = ({
         return 'Optional Details';
       case 3:
         return 'Photos & Images';
+      case 4:
+        return 'People & Events';
       default:
         return 'Car Details';
     }
@@ -366,6 +406,26 @@ const CarFormModal = ({
           />
         </View>
       </KeyboardAvoidingView>
+
+      {/* Step 4 tag search modals */}
+      <UserSearchModal
+        visible={userTagVisible}
+        onClose={() => setUserTagVisible(false)}
+        onSelect={(user) => {
+          if (!taggedUsers.find(u => u.id === user.id)) {
+            setTaggedUsers(prev => [...prev, user]);
+          }
+        }}
+      />
+      <EventSearchModal
+        visible={eventTagVisible}
+        onClose={() => setEventTagVisible(false)}
+        onSelect={(event) => {
+          if (!taggedEvents.find(e => e.id === event.id)) {
+            setTaggedEvents(prev => [...prev, event]);
+          }
+        }}
+      />
     </Modal>
   );
 };

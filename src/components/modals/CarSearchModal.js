@@ -7,71 +7,109 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  FlatList,
 } from 'react-native';
 import { colors } from '../../constants/colors';
 import FAIcon from '../ui/FAIcon';
-import { useGetAllBrandsQuery, useGetBrandModelsQuery, useGetCarsQuery, useCreateTagMutation } from '../../services/apiService';
+import {
+  useGetAllBrandsQuery,
+  useGetBrandModelsQuery,
+  useGetCarsQuery,
+  useCreateTagMutation,
+  useGetRecentTagsQuery,
+  useGetCarQuery,
+} from '../../services/apiService';
 import LoadingIndicator from '../ui/LoadingIndicator';
 
-const CarSearchModal = ({ visible, onClose, postId }) => {
+const RecentCarItem = ({ tag, onSelect }) => {
+  const { data: car, isLoading } = useGetCarQuery(tag.tag_internal_id);
+  if (isLoading || !car) return null;
+
+  return (
+    <TouchableOpacity
+      style={styles.carItem}
+      onPress={() => onSelect(car)}
+    >
+      <View style={styles.carInfo}>
+        <FAIcon name="clock-o" size={14} color={colors.TEXT_SECONDARY} />
+        <FAIcon name="car" size={16} color={colors.BRG} />
+        <Text style={styles.carText} numberOfLines={1}>
+          {car.year} {car.make} {car.model}{car.trim ? ` ${car.trim}` : ''}
+        </Text>
+      </View>
+      <FAIcon name="plus" size={16} color={colors.BRG} />
+    </TouchableOpacity>
+  );
+};
+
+const CarSearchModal = ({ visible, onClose, postId, onSelect }) => {
   const [selectedMake, setSelectedMake] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
-  const [selectedCar, setSelectedCar] = useState(null);
   const [makeDropdownVisible, setMakeDropdownVisible] = useState(false);
   const [modelDropdownVisible, setModelDropdownVisible] = useState(false);
 
-  // Fetch brands
   const { data: brandsData, isLoading: brandsLoading } = useGetAllBrandsQuery();
 
-  // Fetch models for selected brand
   const { data: modelsData, isLoading: modelsLoading } = useGetBrandModelsQuery(selectedMake, {
-    skip: !selectedMake
+    skip: !selectedMake,
   });
 
-  // Fetch cars for selected make/model
   const { data: carsData, isLoading: carsLoading } = useGetCarsQuery(
     { make: selectedMake, model: selectedModel, limit: 50 },
     { skip: !selectedMake || !selectedModel }
   );
 
-  const [createTag, { isLoading: tagLoading }] = useCreateTagMutation();
+  const { data: recentTagsData } = useGetRecentTagsQuery(
+    { limit: 20 },
+    { skip: !visible }
+  );
+
+  const [createTag] = useCreateTagMutation();
+
+  const recentCarTags = (recentTagsData?.tags || [])
+    .filter(t => t.tag_entry_type === 'garagecar')
+    .slice(0, 8);
 
   const handleMakeChange = (make) => {
     setSelectedMake(make);
     setSelectedModel('');
-    setSelectedCar(null);
   };
 
-  const handleModelChange = (model) => {
-    setSelectedModel(model);
-    setSelectedCar(null);
+  const handleClose = () => {
+    setSelectedMake('');
+    setSelectedModel('');
+    setMakeDropdownVisible(false);
+    setModelDropdownVisible(false);
+    onClose();
   };
 
-  const handleSelectCar = (car) => {
-    setSelectedCar(car);
-  };
+  const handleSelectCar = async (car) => {
+    if (!car) return;
 
-  const handleTagCar = async () => {
-    if (!selectedCar || !postId) {
-      Alert.alert('Error', 'Please select a car to tag');
+    if (onSelect) {
+      onSelect({
+        id: car.internal_id,
+        label: `${car.year} ${car.make} ${car.model}${car.trim ? ' ' + car.trim : ''}`,
+        type: 'garagecar',
+      });
+      setSelectedMake('');
+      setSelectedModel('');
+      onClose();
       return;
     }
+
+    if (!postId) return;
 
     try {
       await createTag({
         post_id: postId,
         tag_entry_type: 'garagecar',
-        tag_internal_id: selectedCar.internal_id,
+        tag_internal_id: car.internal_id,
       }).unwrap();
-
       Alert.alert('Success', 'Car tagged successfully');
       setSelectedMake('');
       setSelectedModel('');
-      setSelectedCar(null);
       onClose();
     } catch (error) {
-      console.error('Error creating tag:', error);
       Alert.alert('Error', 'Failed to tag car. It may already be tagged.');
     }
   };
@@ -81,23 +119,36 @@ const CarSearchModal = ({ visible, onClose, postId }) => {
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <FAIcon name="times" size={24} color={colors.WHITE} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Search Cars</Text>
+          <Text style={styles.headerTitle}>Tag a Car</Text>
           <View style={styles.placeholder} />
         </View>
 
-        {/* Content */}
+        {/* Use ScrollView at top level — no FlatList nesting */}
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <Text style={styles.instructions}>
             Select a make and model to find cars
           </Text>
+
+          {/* Recently Tagged Cars — shown before a make is selected */}
+          {!selectedMake && recentCarTags.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>Recently Tagged</Text>
+              {recentCarTags.map(tag => (
+                <RecentCarItem
+                  key={`${tag.tag_entry_type}-${tag.tag_internal_id}`}
+                  tag={tag}
+                  onSelect={handleSelectCar}
+                />
+              ))}
+            </View>
+          )}
 
           {/* Make Picker */}
           <View style={styles.pickerContainer}>
@@ -108,24 +159,26 @@ const CarSearchModal = ({ visible, onClose, postId }) => {
               <View>
                 <TouchableOpacity
                   style={styles.dropdownButton}
-                  onPress={() => setMakeDropdownVisible(!makeDropdownVisible)}
+                  onPress={() => {
+                    setMakeDropdownVisible(!makeDropdownVisible);
+                    setModelDropdownVisible(false);
+                  }}
                 >
                   <Text style={[styles.dropdownButtonText, !selectedMake && styles.placeholderText]}>
-                    {selectedMake || "Select a make..."}
+                    {selectedMake || 'Select a make...'}
                   </Text>
                   <FAIcon
-                    name={makeDropdownVisible ? "chevron-up" : "chevron-down"}
+                    name={makeDropdownVisible ? 'chevron-up' : 'chevron-down'}
                     size={16}
                     color={colors.TEXT_SECONDARY}
                   />
                 </TouchableOpacity>
                 {makeDropdownVisible && (
                   <View style={styles.dropdownList}>
-                    <FlatList
-                      data={brandsData}
-                      keyExtractor={(item) => item.make}
-                      renderItem={({ item }) => (
+                    <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                      {(brandsData || []).map(item => (
                         <TouchableOpacity
+                          key={item.make}
                           style={styles.dropdownItem}
                           onPress={() => {
                             handleMakeChange(item.make);
@@ -134,9 +187,8 @@ const CarSearchModal = ({ visible, onClose, postId }) => {
                         >
                           <Text style={styles.dropdownItemText}>{item.make}</Text>
                         </TouchableOpacity>
-                      )}
-                      style={styles.dropdownFlatList}
-                    />
+                      ))}
+                    </ScrollView>
                   </View>
                 )}
               </View>
@@ -156,32 +208,30 @@ const CarSearchModal = ({ visible, onClose, postId }) => {
                     onPress={() => setModelDropdownVisible(!modelDropdownVisible)}
                   >
                     <Text style={[styles.dropdownButtonText, !selectedModel && styles.placeholderText]}>
-                      {selectedModel || "Select a model..."}
+                      {selectedModel || 'Select a model...'}
                     </Text>
                     <FAIcon
-                      name={modelDropdownVisible ? "chevron-up" : "chevron-down"}
+                      name={modelDropdownVisible ? 'chevron-up' : 'chevron-down'}
                       size={16}
                       color={colors.TEXT_SECONDARY}
                     />
                   </TouchableOpacity>
                   {modelDropdownVisible && (
                     <View style={styles.dropdownList}>
-                      <FlatList
-                        data={modelsData}
-                        keyExtractor={(item) => item.model}
-                        renderItem={({ item }) => (
+                      <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                        {(modelsData || []).map(item => (
                           <TouchableOpacity
+                            key={item.model}
                             style={styles.dropdownItem}
                             onPress={() => {
-                              handleModelChange(item.model);
+                              setSelectedModel(item.model);
                               setModelDropdownVisible(false);
                             }}
                           >
                             <Text style={styles.dropdownItemText}>{item.model}</Text>
                           </TouchableOpacity>
-                        )}
-                        style={styles.dropdownFlatList}
-                      />
+                        ))}
+                      </ScrollView>
                     </View>
                   )}
                 </View>
@@ -189,7 +239,7 @@ const CarSearchModal = ({ visible, onClose, postId }) => {
             </View>
           )}
 
-          {/* Cars List */}
+          {/* Cars List — tap to immediately tag */}
           {selectedMake && selectedModel && (
             <View style={styles.carsSection}>
               <Text style={styles.carsSectionTitle}>Available Cars</Text>
@@ -200,29 +250,17 @@ const CarSearchModal = ({ visible, onClose, postId }) => {
                   {carsData.entries.map(car => (
                     <TouchableOpacity
                       key={car._id}
-                      style={[
-                        styles.carItem,
-                        selectedCar?._id === car._id && styles.carItemSelected
-                      ]}
+                      style={styles.carItem}
                       onPress={() => handleSelectCar(car)}
                     >
                       <View style={styles.carInfo}>
-                        <FAIcon
-                          name="car"
-                          size={20}
-                          color={selectedCar?._id === car._id ? colors.BRG : colors.TEXT_SECONDARY}
-                        />
-                        <Text style={[
-                          styles.carText,
-                          selectedCar?._id === car._id && styles.carTextSelected
-                        ]}>
+                        <FAIcon name="car" size={16} color={colors.BRG} />
+                        <Text style={styles.carText}>
                           {car.year} {car.make} {car.model}
                           {car.trim && ` ${car.trim}`}
                         </Text>
                       </View>
-                      {selectedCar?._id === car._id && (
-                        <FAIcon name="check" size={20} color={colors.BRG} />
-                      )}
+                      <FAIcon name="plus" size={16} color={colors.BRG} />
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -232,18 +270,7 @@ const CarSearchModal = ({ visible, onClose, postId }) => {
             </View>
           )}
 
-          {/* Tag Button */}
-          {selectedCar && (
-            <TouchableOpacity
-              style={styles.tagButton}
-              onPress={handleTagCar}
-              disabled={tagLoading}
-            >
-              <Text style={styles.tagButtonText}>
-                {tagLoading ? 'Tagging...' : 'Tag Car'}
-              </Text>
-            </TouchableOpacity>
-          )}
+          <View style={styles.bottomSpacer} />
         </ScrollView>
       </View>
     </Modal>
@@ -282,6 +309,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.TEXT_SECONDARY,
     padding: 16,
+    paddingBottom: 8,
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.TEXT_SECONDARY,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   pickerContainer: {
     backgroundColor: colors.WHITE,
@@ -319,8 +359,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: colors.WHITE,
     maxHeight: 200,
+    overflow: 'hidden',
   },
-  dropdownFlatList: {
+  dropdownScroll: {
     maxHeight: 200,
   },
   dropdownItem: {
@@ -350,15 +391,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
+    backgroundColor: colors.WHITE,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 8,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: colors.BORDER,
-    backgroundColor: colors.BACKGROUND,
-  },
-  carItemSelected: {
-    borderColor: colors.BRG,
-    backgroundColor: colors.LIGHT_BRG + '20',
   },
   carInfo: {
     flexDirection: 'row',
@@ -372,10 +411,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
   },
-  carTextSelected: {
-    color: colors.BRG,
-    fontWeight: '700',
-  },
   emptyText: {
     fontSize: 14,
     color: colors.TEXT_SECONDARY,
@@ -383,17 +418,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 20,
   },
-  tagButton: {
-    backgroundColor: colors.BRG,
-    margin: 16,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  tagButtonText: {
-    color: colors.WHITE,
-    fontSize: 16,
-    fontWeight: '600',
+  bottomSpacer: {
+    height: 60,
   },
 });
 

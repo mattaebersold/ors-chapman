@@ -299,7 +299,7 @@ const ProfileScreen = ({ navigation }) => {
   const handlePostSubmit = async (formData) => {
     try {
       const apiFormData = createFormData(formData);
-      await createPost(apiFormData).unwrap();
+      return await createPost(apiFormData).unwrap();
       setPostModalVisible(false);
       // Optionally refresh data or show success message
     } catch (error) {

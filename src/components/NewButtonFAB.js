@@ -36,7 +36,7 @@ const NewButtonFAB = () => {
         }).unwrap();
       } else {
         // Create new post
-        await createPost(form).unwrap();
+        return await createPost(form).unwrap();
       }
       
       // Close modal and reset state

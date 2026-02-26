@@ -26,7 +26,7 @@ const NewScreen = () => {
       const form = createFormData(postData);
 
       // Make API call
-      await createPost(form).unwrap();
+      return await createPost(form).unwrap();
       
       // Close modal and navigate back to Feed tab
       setModalVisible(false);

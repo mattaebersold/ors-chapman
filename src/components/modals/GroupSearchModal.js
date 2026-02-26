@@ -13,38 +13,33 @@ import {
 import { colors } from '../../constants/colors';
 import FAIcon from '../ui/FAIcon';
 import {
-  useGetUsersQuery,
+  useSearchQuery,
+  useGetGroupsQuery,
   useCreateTagMutation,
   useGetRecentTagsQuery,
-  useGetUserQuery,
+  useGetGroupDetailQuery,
 } from '../../services/apiService';
 
-const RecentUserItem = ({ tag, onSelect }) => {
-  const { data: user, isLoading } = useGetUserQuery(tag.tag_internal_id);
-  if (isLoading || !user) return null;
+const RecentGroupItem = ({ tag, onSelect }) => {
+  const { data: group, isLoading } = useGetGroupDetailQuery(tag.tag_internal_id);
+  if (isLoading || !group) return null;
 
   return (
     <TouchableOpacity
-      style={styles.userItem}
-      onPress={() => onSelect(user)}
+      style={styles.groupItem}
+      onPress={() => onSelect(group)}
     >
-      <View style={styles.userInfo}>
+      <View style={styles.groupInfo}>
         <FAIcon name="clock-o" size={14} color={colors.TEXT_SECONDARY} />
-        <View style={styles.userText}>
-          <Text style={styles.username} numberOfLines={1}>{user.username}</Text>
-          {(user.firstName || user.lastName) && (
-            <Text style={styles.fullName}>
-              {[user.firstName, user.lastName].filter(Boolean).join(' ')}
-            </Text>
-          )}
-        </View>
+        <FAIcon name="users" size={16} color={colors.BRG} />
+        <Text style={styles.groupName} numberOfLines={1}>{group.title || group.name}</Text>
       </View>
       <FAIcon name="plus" size={16} color={colors.BRG} />
     </TouchableOpacity>
   );
 };
 
-const UserSearchModal = ({ visible, onClose, postId, onSelect }) => {
+const GroupSearchModal = ({ visible, onClose, postId, onSelect }) => {
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [createTag, { isLoading: isTagging }] = useCreateTagMutation();
@@ -54,9 +49,13 @@ const UserSearchModal = ({ visible, onClose, postId, onSelect }) => {
     return () => clearTimeout(timer);
   }, [searchText]);
 
-  const { data: usersData, isLoading } = useGetUsersQuery(
-    { page: 1, limit: 20, search: debouncedSearch },
-    { skip: !visible || debouncedSearch.length < 2 }
+  const { data: searchData, isLoading: searchLoading } = useSearchQuery(debouncedSearch, {
+    skip: !visible || debouncedSearch.length < 2,
+  });
+
+  const { data: groupsData, isLoading: groupsLoading } = useGetGroupsQuery(
+    { page: 0, omit: 'none', limit: 20 },
+    { skip: !visible || debouncedSearch.length >= 2 }
   );
 
   const { data: recentTagsData } = useGetRecentTagsQuery(
@@ -64,24 +63,30 @@ const UserSearchModal = ({ visible, onClose, postId, onSelect }) => {
     { skip: !visible }
   );
 
-  const users = usersData?.entries || [];
-  const recentUserTags = (recentTagsData?.tags || [])
-    .filter(t => t.tag_entry_type === 'user')
+  const searchGroups = searchData?.groups || [];
+  const browseGroups = groupsData?.entries || [];
+  const recentGroupTags = (recentTagsData?.tags || [])
+    .filter(t => t.tag_entry_type === 'group')
     .slice(0, 8);
+
+  const isLoading = debouncedSearch.length >= 2 ? searchLoading : groupsLoading;
 
   const handleClose = () => {
     setSearchText('');
     onClose();
   };
 
-  const handleSelectUser = async (user) => {
-    if (!user) return;
+  const handleSelectGroup = async (group) => {
+    if (!group) return;
+
+    const groupId = group.internal_id || group._id;
+    const groupName = group.title || group.name;
 
     if (onSelect) {
       onSelect({
-        id: user.internal_id || user.user_id || user._id,
-        label: user.username,
-        type: 'user',
+        id: groupId,
+        label: groupName,
+        type: 'group',
       });
       setSearchText('');
       onClose();
@@ -93,37 +98,32 @@ const UserSearchModal = ({ visible, onClose, postId, onSelect }) => {
     try {
       await createTag({
         post_id: postId,
-        tag_entry_type: 'user',
-        tag_internal_id: user.internal_id || user.user_id || user._id,
+        tag_entry_type: 'group',
+        tag_internal_id: groupId,
       }).unwrap();
-      Alert.alert('Success', 'User tagged successfully');
+      Alert.alert('Success', 'Group tagged successfully');
       setSearchText('');
       onClose();
     } catch (error) {
-      Alert.alert('Error', 'Failed to tag user. They may already be tagged.');
+      Alert.alert('Error', 'Failed to tag group. It may already be tagged.');
     }
   };
 
-  const renderUserItem = ({ item }) => (
+  const renderGroupItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.userItem}
-      onPress={() => handleSelectUser(item)}
+      style={styles.groupItem}
+      onPress={() => handleSelectGroup(item)}
       disabled={isTagging}
     >
-      <View style={styles.userInfo}>
-        <FAIcon name="user" size={16} color={colors.BRG} />
-        <View style={styles.userText}>
-          <Text style={styles.username} numberOfLines={1}>{item.username}</Text>
-          {(item.firstName || item.lastName) && (
-            <Text style={styles.fullName}>
-              {[item.firstName, item.lastName].filter(Boolean).join(' ')}
-            </Text>
-          )}
-        </View>
+      <View style={styles.groupInfo}>
+        <FAIcon name="users" size={16} color={colors.BRG} />
+        <Text style={styles.groupName} numberOfLines={1}>{item.title || item.name}</Text>
       </View>
       <FAIcon name="plus" size={16} color={colors.BRG} />
     </TouchableOpacity>
   );
+
+  const groupsToShow = debouncedSearch.length >= 2 ? searchGroups : browseGroups;
 
   return (
     <Modal
@@ -137,7 +137,7 @@ const UserSearchModal = ({ visible, onClose, postId, onSelect }) => {
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <FAIcon name="times" size={24} color={colors.WHITE} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Tag Users</Text>
+          <Text style={styles.headerTitle}>Tag a Group</Text>
           <View style={styles.placeholder} />
         </View>
 
@@ -148,10 +148,9 @@ const UserSearchModal = ({ visible, onClose, postId, onSelect }) => {
               style={styles.searchInput}
               value={searchText}
               onChangeText={setSearchText}
-              placeholder="Search by username..."
+              placeholder="Search groups..."
               placeholderTextColor={colors.TEXT_SECONDARY}
               autoCapitalize="none"
-              autoCorrect={false}
               autoFocus
             />
             {searchText.length > 0 && (
@@ -165,33 +164,34 @@ const UserSearchModal = ({ visible, onClose, postId, onSelect }) => {
             <ActivityIndicator size="large" color={colors.BRG} style={styles.loader} />
           )}
 
-          {!isLoading && debouncedSearch.length >= 2 && (
-            <FlatList
-              data={users}
-              renderItem={renderUserItem}
-              keyExtractor={item => item._id || item.internal_id || item.user_id}
-              contentContainerStyle={styles.list}
-              ListEmptyComponent={
-                <Text style={styles.emptyText}>No users found</Text>
-              }
-            />
-          )}
-
-          {debouncedSearch.length < 2 && recentUserTags.length > 0 && (
+          {!isLoading && recentGroupTags.length > 0 && debouncedSearch.length < 2 && (
             <View>
               <Text style={styles.sectionLabel}>Recently Tagged</Text>
-              {recentUserTags.map(tag => (
-                <RecentUserItem
+              {recentGroupTags.map(tag => (
+                <RecentGroupItem
                   key={`${tag.tag_entry_type}-${tag.tag_internal_id}`}
                   tag={tag}
-                  onSelect={handleSelectUser}
+                  onSelect={handleSelectGroup}
                 />
               ))}
+              {browseGroups.length > 0 && (
+                <Text style={[styles.sectionLabel, styles.sectionLabelSpaced]}>All Groups</Text>
+              )}
             </View>
           )}
 
-          {debouncedSearch.length < 2 && recentUserTags.length === 0 && !isLoading && (
-            <Text style={styles.hintText}>Type at least 2 characters to search</Text>
+          {!isLoading && (
+            <FlatList
+              data={groupsToShow}
+              renderItem={renderGroupItem}
+              keyExtractor={item => item._id || item.internal_id}
+              contentContainerStyle={styles.list}
+              ListEmptyComponent={
+                debouncedSearch.length >= 2 ? (
+                  <Text style={styles.emptyText}>No groups found</Text>
+                ) : null
+              }
+            />
           )}
         </View>
       </View>
@@ -251,7 +251,19 @@ const styles = StyleSheet.create({
   list: {
     paddingTop: 8,
   },
-  userItem: {
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.TEXT_SECONDARY,
+    marginTop: 8,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sectionLabelSpaced: {
+    marginTop: 16,
+  },
+  groupItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -263,45 +275,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.BORDER,
   },
-  userInfo: {
+  groupInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     gap: 12,
   },
-  userText: {
-    flex: 1,
-  },
-  username: {
+  groupName: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.TEXT_PRIMARY,
-  },
-  fullName: {
-    fontSize: 12,
-    color: colors.TEXT_SECONDARY,
-    marginTop: 2,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.TEXT_SECONDARY,
-    marginTop: 8,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    flex: 1,
   },
   emptyText: {
     textAlign: 'center',
     color: colors.TEXT_SECONDARY,
     paddingVertical: 40,
   },
-  hintText: {
-    textAlign: 'center',
-    color: colors.TEXT_SECONDARY,
-    paddingVertical: 40,
-    fontStyle: 'italic',
-  },
 });
 
-export default UserSearchModal;
+export default GroupSearchModal;

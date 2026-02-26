@@ -276,7 +276,7 @@ const CarsScreen = ({ navigation }) => {
     return (
       <View style={styles.featuredSection}>
         <View style={styles.featuredHeader}>
-          <Text style={styles.featuredTitle}>Featured</Text>
+          <Text style={styles.featuredTitle}>Featured Member Cars</Text>
         </View>
         <ScrollView
           horizontal
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
   featuredHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'left',
     paddingHorizontal: 16,
     marginBottom: 12,
   },
@@ -708,7 +708,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.WHITE,
-    textTransform: 'uppercase',
   },
   featuredScrollContent: {
     paddingHorizontal: 12,

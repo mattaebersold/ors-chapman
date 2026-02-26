@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   featuredHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'left',
     paddingHorizontal: 16,
     marginBottom: 12,
   },
@@ -319,7 +319,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.WHITE,
-    textTransform: 'uppercase',
   },
   featuredLoadingText: {
     fontSize: 14,

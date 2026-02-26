@@ -29,7 +29,7 @@ const CreateScreen = () => {
       const form = createFormData(postData);
 
       // Create new post
-      await createPost(form).unwrap();
+      return await createPost(form).unwrap();
       
       // Close modal and navigate to feed
       setModalVisible(false);

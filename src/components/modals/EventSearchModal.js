@@ -14,7 +14,7 @@ import { colors } from '../../constants/colors';
 import FAIcon from '../ui/FAIcon';
 import { useGetEventsQuery, useCreateTagMutation } from '../../services/apiService';
 
-const EventSearchModal = ({ visible, onClose, postId }) => {
+const EventSearchModal = ({ visible, onClose, postId, onSelect }) => {
   const [searchText, setSearchText] = useState('');
   const [createTag, { isLoading: isTagging }] = useCreateTagMutation();
 
@@ -26,10 +26,21 @@ const EventSearchModal = ({ visible, onClose, postId }) => {
   const events = eventsData?.entries || [];
 
   const handleSelectEvent = async (event) => {
-    if (!event || !postId) {
-      Alert.alert('Error', 'Please select an event to tag');
+    if (!event) return;
+
+    // Local-state mode: return entity to parent without persisting
+    if (onSelect) {
+      onSelect({
+        id: event.internal_id || event._id,
+        label: event.title,
+        type: 'event',
+      });
+      setSearchText('');
+      onClose();
       return;
     }
+
+    if (!postId) return;
 
     try {
       await createTag({
@@ -42,7 +53,6 @@ const EventSearchModal = ({ visible, onClose, postId }) => {
       setSearchText('');
       onClose();
     } catch (error) {
-      console.error('Error creating tag:', error);
       Alert.alert('Error', error?.data?.message || 'Failed to tag event. It may already be tagged.');
     }
   };

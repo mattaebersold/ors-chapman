@@ -130,8 +130,8 @@ const TabNavigator = ({ navigation }) => (
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === 'Feed') {
-            iconName = 'feed';
+          if (route.name === 'Groups') {
+            iconName = 'users';
           } else if (route.name === 'Society') {
             iconName = 'society';
           } else if (route.name === 'Create') {
@@ -161,20 +161,24 @@ const TabNavigator = ({ navigation }) => (
       },
       headerStyle: {
         backgroundColor: colors.BRG,
-        height: 100, // Increased height for better spacing
+        height: 100,
       },
       headerTintColor: colors.WHITE,
-      headerTitle: () => (
-        <Image
-          source={require('../../assets/logo.png')}
-          style={styles.headerLogo}
-          resizeMode="contain"
-        />
-      ),
+      headerTitle: () => null,
       headerLeft: () => (
         <View style={styles.headerLeft}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Home', { screen: 'Feed' })}
+            style={styles.logoButton}
+          >
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
           <HamburgerMenu navigation={navigation} />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.searchButton}
             onPress={() => navigation.navigate('Search')}
           >
@@ -196,36 +200,46 @@ const TabNavigator = ({ navigation }) => (
         </View>
       ),
     })}
+    initialRouteName="Feed"
   >
-    <Tab.Screen 
-      name="Feed" 
+    <Tab.Screen
+      name="Feed"
       component={HomeScreen}
-      options={{ title: 'Feed' }}
+      options={{
+        tabBarButton: () => null,
+        tabBarLabel: () => null,
+        tabBarIcon: () => null,
+      }}
     />
-    <Tab.Screen 
-      name="Society" 
+    <Tab.Screen
+      name="Groups"
+      component={GroupsScreen}
+      options={{ title: 'Groups' }}
+    />
+    <Tab.Screen
+      name="Society"
       component={SocietyScreen}
       options={{ title: 'Society' }}
     />
-    <Tab.Screen 
-      name="Browse" 
+    <Tab.Screen
+      name="Browse"
       component={MarketplaceScreen}
       options={{ title: 'Market' }}
     />
-    <Tab.Screen 
-      name="Cars" 
+    <Tab.Screen
+      name="Cars"
       component={CarsScreen}
       options={{ title: 'Cars' }}
     />
-    <Tab.Screen 
-      name="Articles" 
+    <Tab.Screen
+      name="Articles"
       component={ArticlesScreen}
       options={{ title: 'Articles' }}
     />
-    <Tab.Screen 
-      name="Create" 
+    <Tab.Screen
+      name="Create"
       component={CreateScreen}
-      options={{ 
+      options={{
         title: 'Create',
         tabBarLabel: () => null, // Hide the label for create button
       }}
@@ -569,7 +583,10 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 0,
+    marginLeft: 4,
+  },
+  logoButton: {
+    marginRight: 0,
   },
   headerRight: {
     flexDirection: 'row',
@@ -655,8 +672,8 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.1 }],
   },
   headerLogo: {
-    height: 30,
-    width: 60,
+    height: 28,
+    width: 56,
   },
 })
 
