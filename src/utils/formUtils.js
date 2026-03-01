@@ -52,6 +52,10 @@ export const createFormData = (postData, schema = Schema) => {
             fd.append(`modifyImage:new:${imgObj.filename || `image_${index}.jpg`}`, index);
           }
         });
+      } else if (key === "group_ids" && Array.isArray(postData[key])) {
+        fd.append(key, JSON.stringify(postData[key]));
+      } else if (key === "also_public" && typeof postData[key] === 'boolean') {
+        fd.append(key, String(postData[key]));
       } else if (key === "video" && postData[key]) {
         // Handle video files (for future video support)
         if (postData[key].uri) {

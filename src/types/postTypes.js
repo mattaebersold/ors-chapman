@@ -13,6 +13,8 @@ export const Schema = {
   color: "",
   car_id: "",
   group_id: "",
+  group_ids: [],
+  also_public: false,
   project_id: "",
   event_id: "",
   video: "",

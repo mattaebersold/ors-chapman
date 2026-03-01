@@ -213,7 +213,10 @@ const PostCreationModal = ({ visible, onClose, onSubmit, editMode = false, exist
 
     setLoading(true);
     try {
-      const result = await onSubmit(formData);
+      const result = await onSubmit({
+        ...formData,
+        group_ids: pendingTaggedGroups.map(g => g.id),
+      });
 
       // Sync pending tags after creation (result contains the new post)
       if (!editMode) {

@@ -41,16 +41,10 @@ const ImageUploader = ({ images = [], onImagesChange, maxImages = 10 }) => {
     try {
       setUploading(true);
 
-      // Check if ImagePicker is properly imported
-      if (!ImagePicker || !ImagePicker.MediaType || !ImagePicker.MediaType.Images) {
-        throw new Error('ImagePicker not properly imported or MediaType.Images not available');
-      }
-
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ['images'],
         allowsMultipleSelection: true,
         quality: 0.8,
-        aspect: [4, 3],
         allowsEditing: false,
       });
 
@@ -89,9 +83,6 @@ const ImageUploader = ({ images = [], onImagesChange, maxImages = 10 }) => {
   };
 
   const takePhoto = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
-
     // Request camera permissions
     const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
     if (cameraPermission.status !== 'granted') {
@@ -110,9 +101,8 @@ const ImageUploader = ({ images = [], onImagesChange, maxImages = 10 }) => {
     try {
       setUploading(true);
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ['images'],
         quality: 0.8,
-        aspect: [4, 3],
         allowsEditing: false,
       });
 
